@@ -27,12 +27,7 @@ describe("tile collision", () => {
   });
 
   it("bonks on a low ceiling and falls back down", () => {
-    const world = makeWorld([
-      "##########",
-      "#........#",
-      "#S.......#",
-      "##########",
-    ]);
+    const world = makeWorld(["##########", "#........#", "#S.......#", "##########"]);
     run(world, 5);
 
     run(world, 1, input({ jump: true, jumpHeld: true }));

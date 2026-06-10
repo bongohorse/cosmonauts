@@ -85,7 +85,9 @@ export class Renderer {
       g.circle(x + p.facing * hw * 0.45, y - hh * 0.45, 3.5).fill(0x10142a);
 
       if (this.showHitboxes) {
-        this.debugLayer.rect(x - hw, y - hh, hw * 2, hh * 2).stroke({ color: COLORS.hitbox, width: 1 });
+        this.debugLayer
+          .rect(x - hw, y - hh, hw * 2, hh * 2)
+          .stroke({ color: COLORS.hitbox, width: 1 });
       }
     }
 

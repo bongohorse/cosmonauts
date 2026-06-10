@@ -59,13 +59,7 @@ export function moveAxis(
 }
 
 /** Ground probe: is there a solid tile a hair below the AABB's bottom edge? */
-export function isOnGround(
-  map: MapData,
-  cx: number,
-  cy: number,
-  hw: number,
-  hh: number,
-): boolean {
+export function isOnGround(map: MapData, cx: number, cy: number, hw: number, hh: number): boolean {
   const ty = Math.floor(cy + hh + SKIN * 2);
   const x0 = Math.floor(cx - hw + SKIN);
   const x1 = Math.floor(cx + hw - SKIN);

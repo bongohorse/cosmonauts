@@ -2,12 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DUMMY_HEALTH } from "./constants";
 import { input, makeWorld, player, run } from "./test-helpers";
 
-const RANGE = [
-  "############",
-  "#..........#",
-  "#S....D....#",
-  "############",
-];
+const RANGE = ["############", "#..........#", "#S....D....#", "############"];
 
 describe("shooting", () => {
   it("spawns one projectile and gates on cooldown", () => {
@@ -55,12 +50,7 @@ describe("shooting", () => {
   });
 
   it("projectile dies on a wall well before its lifetime ends", () => {
-    const world = makeWorld([
-      "######",
-      "#....#",
-      "#S...#",
-      "######",
-    ]);
+    const world = makeWorld(["######", "#....#", "#S...#", "######"]);
     run(world, 5);
     run(world, 1, input({ shoot: true, aimX: 1, aimY: 0 }));
     expect(world.state.projectiles).toHaveLength(1);

@@ -106,7 +106,9 @@ function stepProjectiles(state: GameState, map: MapData): void {
     if (!dead) {
       for (const d of state.dummies) {
         if (d.health <= 0) continue;
-        if (aabbOverlap(pr.pos.x, pr.pos.y, pr.radius, pr.radius, d.pos.x, d.pos.y, dummyHw, dummyHh)) {
+        if (
+          aabbOverlap(pr.pos.x, pr.pos.y, pr.radius, pr.radius, d.pos.x, d.pos.y, dummyHw, dummyHh)
+        ) {
           d.health -= pr.damage;
           if (d.health <= 0) d.respawnTicks = DUMMY_RESPAWN_TICKS;
           dead = true;
@@ -120,7 +122,18 @@ function stepProjectiles(state: GameState, map: MapData): void {
         if (target.id === pr.ownerId || target.health <= 0) continue;
         const thw = 0.4; // M2: players share a generic hit size; real hitboxes come with content lookup in M3
         const thh = 0.8;
-        if (aabbOverlap(pr.pos.x, pr.pos.y, pr.radius, pr.radius, target.pos.x, target.pos.y, thw, thh)) {
+        if (
+          aabbOverlap(
+            pr.pos.x,
+            pr.pos.y,
+            pr.radius,
+            pr.radius,
+            target.pos.x,
+            target.pos.y,
+            thw,
+            thh,
+          )
+        ) {
           target.health = Math.max(0, target.health - pr.damage);
           dead = true;
           break;

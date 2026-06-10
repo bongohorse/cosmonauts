@@ -56,9 +56,8 @@ app.ticker.add((ticker) => {
   while (accumulator >= DT) {
     prev = cloneState(state);
     const player = state.players[0];
-    const input = inputSource.sample(
-      player?.pos ?? { x: 0, y: 0 },
-      (sx, sy) => renderer.screenToWorld(sx, sy),
+    const input = inputSource.sample(player?.pos ?? { x: 0, y: 0 }, (sx, sy) =>
+      renderer.screenToWorld(sx, sy),
     );
     step(state, { [PLAYER_ID]: input }, content);
     accumulator -= DT;

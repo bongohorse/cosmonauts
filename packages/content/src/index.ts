@@ -55,5 +55,5 @@ export function loadContent(): ContentIndex {
   return { characters, maps };
 }
 
-export { CharacterDefSchema, MapDefSchema } from "./schemas";
 export type { CharacterDef, MapDef } from "./schemas";
+export { CharacterDefSchema, MapDefSchema } from "./schemas";

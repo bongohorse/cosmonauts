@@ -1,3 +1,4 @@
+export { aabbHitsSolid, aabbOverlap, isOnGround, isSolid, moveAxis } from "./collision";
 export {
   DT,
   DUMMY_HEALTH,
@@ -14,7 +15,6 @@ export type {
   ContentIndex,
   MapData,
 } from "./content-types";
-export { aabbHitsSolid, aabbOverlap, isOnGround, isSolid, moveAxis } from "./collision";
 export { NEUTRAL_INPUT, type PlayerInput } from "./input";
 export { buildMap } from "./map";
 export { approach, clamp, rand, type Vec2 } from "./math";

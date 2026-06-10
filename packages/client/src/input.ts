@@ -8,7 +8,6 @@ export class InputSource {
   private keys = new Set<string>();
   private mouse = { x: 0, y: 0, down: false };
   private jumpLatch = false;
-  private jumpWasHeld = false;
 
   constructor() {
     window.addEventListener("keydown", (e) => {
@@ -46,12 +45,10 @@ export class InputSource {
   sample(playerWorld: Vec2, screenToWorld: (sx: number, sy: number) => Vec2): PlayerInput {
     const left = this.keys.has("KeyA") || this.keys.has("ArrowLeft");
     const right = this.keys.has("KeyD") || this.keys.has("ArrowRight");
-    const jumpHeld =
-      this.keys.has("Space") || this.keys.has("KeyW") || this.keys.has("ArrowUp");
+    const jumpHeld = this.keys.has("Space") || this.keys.has("KeyW") || this.keys.has("ArrowUp");
 
     const jump = this.jumpLatch;
     this.jumpLatch = false;
-    this.jumpWasHeld = jumpHeld;
 
     const target = screenToWorld(this.mouse.x, this.mouse.y);
     let aimX = target.x - playerWorld.x;

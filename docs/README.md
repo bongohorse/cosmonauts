@@ -1,6 +1,29 @@
 # Cosmonauts — Design Documents
 
-Milestone 1 of the project is this documentation set. Read in order.
+## Current status (2026-06-10)
+
+**Done:** M1 docs · M2 game-feel sandbox · M3 geometry v2 (segments, slopes, curves,
+glass, capsule movement) · M4 in-game map editor MVP (Tab toggle, rect/polygon/spawn/
+dummy tools, undo, autosave, JSON export/import). Live build:
+<https://bongohorse.github.io/cosmonauts/> — auto-deploys on every push to `main`.
+
+**Next session: M5 — map entities (doc 07), wave 1.** The agreed slicing:
+
+1. **Wave 1:** entity framework (schemas in content, `mapEntities` state in sim, shared
+   trigger-volume system, `enabled` flag) + the fun five: jumper (rotatable direction),
+   killZone, fireField, healField, teleporter (+forceField). Each type's zod schema
+   drives the editor palette/inspector automatically — that integration is part of wave 1.
+2. **Wave 2:** wiring — activator, timer, `onDestroyed` events, door, teamBarrier.
+3. **Wave 3:** flux + pickups (silver=1/gold=5, hero kills pull drops to the killer).
+4. **Wave 4:** first actors — spawn entity, base (regen), turret, placeable dummy.
+   Droids/creeps at the tail (they want the M5 path tool).
+
+Deferred decisions and conventions all live in doc 01 §2 (decision log) and §8.1
+(future-systems backlog). Netcode (M7) stays parked until the prototype is in good shape.
+
+---
+
+Milestone 1 of the project was this documentation set. Read in order.
 
 | # | Document | Status |
 |---|---|---|

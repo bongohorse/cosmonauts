@@ -57,14 +57,17 @@ const MapDef = z.object({
   id: z.string(),
   name: z.string(),
   tiles: z.array(z.string()),      // row strings, all equal length
-  legend: "# = solid, . = empty, S = player spawn, D = dummy spawn (fixed, documented)",
+  // legend: # = solid, . = empty, S = player spawn, D = dummy spawn
+  shapes: z.array(ShapeDefSchema).optional(),   // geometry v2 (doc 06): rect/polygon/polyline/arc
+  playerSpawns: z.array(Point).optional(),      // editor-authored; merge with tile markers
+  dummySpawns: z.array(Point).optional(),
 });
 ```
 
-Spawn points are derived from `S`/`D` markers during parsing. M4 extends the format with
-entity layers (turrets, droid paths as waypoint lists, base, shop zone, hideouts) as a
-JSON `entities` section beside `tiles` — markers stay for simple things, structured data
-for things with parameters.
+Tile `S`/`D` markers and the explicit spawn lists merge at load; the editor extracts
+markers into movable spawn objects and always exports the explicit lists. The entities
+milestone extends the format with an `entities` section beside `tiles`/`shapes`
+(doc 07 §2) — every placeable is structured data with parameters and wiring.
 
 ## 4. Upgrade & status-effect model (M4, designed now)
 

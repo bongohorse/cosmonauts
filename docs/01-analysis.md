@@ -256,14 +256,18 @@ when prioritized. The pattern for all of them: data-driven system first, editor 
   navigate editor-made maps without hand-authored paths everywhere. Hand-drawn paths
   (M5 path tool) come first; this generalizes them.
 
-## 9. Open questions (to resolve in docs 02–05)
+## 9. Open questions — status as of 2026-06-10
 
-- Sim tick rate: 60 Hz (simplest, matches render) vs 30 Hz + interpolation (halves bandwidth
-  and server CPU). → doc 02.
-- Reference capture: how do we measure the original's movement values (jump height, air
-  control, gravity, attack timings) to clone the feel? Frame-by-frame video analysis of
-  existing footage is the likely answer. → doc 04.
-- MVP roster: suggest 3 archetypes — a ranged shooter, a melee assassin, a support — to
-  force the ability system to generalize. → doc 04.
-- Snapshot encoding: JSON first vs binary (bitecs-style/flatbuffers) from the start. → doc 03.
-- Server runtime: Node vs Bun vs Deno for the game server. → doc 03.
+Resolved while writing docs 02–05 and shipping M2–M4:
+
+- ~~Sim tick rate~~ → **60 Hz** fixed (doc 02 §2).
+- ~~Snapshot encoding~~ → **JSON first**, codec behind one encode/decode seam (doc 03 §3).
+- ~~Server runtime~~ → **Node 24+** (doc 03 §2).
+
+Still open:
+
+- Reference capture: measuring the original's movement values (jump height, air control,
+  gravity, attack timings) via frame-by-frame footage analysis — the sandbox + tuning
+  panel exist; the side-by-side comparison work hasn't been done yet. → doc 04 §1.
+- MVP roster details beyond the three archetypes (Nova / Claw / Loft working names). →
+  doc 04 §3, abilities milestone.

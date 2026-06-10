@@ -137,6 +137,8 @@ The currency is **Flux** (final name, decided 2026-06-10; replaces Awesomenauts'
 - Step order: players → actors → droids/creeps → projectiles → trigger volumes → pickups
   (incl. homing) → wiring/events → respawn timers.
 - One shared `team` concept across players, turrets, droids, barriers, bases.
+- Color convention (decided 2026-06-10): **Team A renders red, Team B renders blue** —
+  platforms, barriers, droids, turrets, bases all follow it.
 
 ## 6. Out of scope here
 

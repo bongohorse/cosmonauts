@@ -18,7 +18,9 @@ pnpm install
 pnpm dev        # → http://localhost:5173
 ```
 
-A/D move · Space/W jump (double jump) · mouse aim · click shoot · F1 hitboxes · R reset.
+A/D move · Space/W jump (double jump) · S drop through glass · mouse aim · click shoot ·
+F1 hitboxes · R reset · **Tab opens the map editor** (draw platforms, Tab again to play
+them; G snaps, Ctrl+Z undoes, your map autosaves).
 The "tuning" panel edits character stats live — changes apply on the next sim tick.
 
 ## How it works

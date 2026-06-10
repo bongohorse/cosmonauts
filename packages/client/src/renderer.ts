@@ -78,7 +78,16 @@ export class Renderer {
       if (flat.length < 4) continue;
       const tint = shape.tint !== undefined ? Number.parseInt(shape.tint.slice(1), 16) : undefined;
       const glass = shape.solidity === "glass";
-      const color = tint ?? (glass ? 0x9fe8ff : COLORS.tile);
+      // Team color convention (doc 07 §5): Team A is red, Team B is blue.
+      const base =
+        shape.solidity === "teamA"
+          ? 0xff4d5e
+          : shape.solidity === "teamB"
+            ? 0x4d7dff
+            : glass
+              ? 0x9fe8ff
+              : COLORS.tile;
+      const color = tint ?? base;
 
       if (shape.closed) {
         g.poly(flat).fill(color);

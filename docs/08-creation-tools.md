@@ -61,10 +61,10 @@ live-editing philosophy, which our sim/render split makes nearly free.
   here.
 
 ### Staging
-1. **Editor MVP** (now Milestone 4, before entities — it's the testing instrument for
-   them): edit/play toggle, rect + polygon tools with move/resize/rotate handles,
-   solidity (incl. glass) + tint, grid/angle snap, undo/redo, spawn + dummy placement,
-   camera pan/zoom, localStorage autosave + JSON export/import, blank map.
+1. **Editor MVP** ✅ *(shipped 2026-06-10 as Milestone 4)*: edit/play toggle, rect +
+   polygon tools with move/resize/rotate handles, solidity (incl. glass) + tint,
+   grid/angle snap, undo/redo, spawn + dummy placement, camera pan/zoom, localStorage
+   autosave + JSON export/import, blank map. Lives in `packages/client/src/editor/`.
 2. **Editor v2** (grows with M5 entities): schema-driven entity palette, wiring + path
    tools, mirror mode (lands with teams/barriers, which it swaps), align/distribute,
    arcs/curve tool, decoration layer, map check, search/quick-bar, prefab grouping.

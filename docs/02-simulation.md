@@ -82,6 +82,7 @@ and replay options open.
 ```ts
 interface PlayerInput {
   moveX: -1 | 0 | 1;
+  down: boolean;       // level; drops through glass platforms (doc 06 §4a)
   jump: boolean;       // pressed this tick (edge)
   jumpHeld: boolean;   // level
   shoot: boolean;      // level (auto-fire gated by cooldown)

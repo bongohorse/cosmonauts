@@ -57,4 +57,11 @@ CI (`.github/workflows/ci.yml`) runs biome ci, typecheck, test, build, bench.
 - The client renders interpolated between the previous and current sim state; rendering
   never mutates sim state. The tuning panel mutates the loaded `CharacterData` live —
   the sim reads it fresh each tick by design.
-- Maps are ASCII tile rows in JSON (`#` solid, `.` empty, `S` player spawn, `D` dummy).
+- Maps are ASCII tile rows (`#` solid, `.` empty, `S` spawn, `D` dummy) plus a `shapes`
+  array (rect/polygon/polyline/arc with solidity/rotation/tint, doc 06) and optional
+  explicit spawn lists; everything compiles to collision segments in `buildMap`.
+- The in-game editor (`packages/client/src/editor/`) edits a `MapDoc` and autosaves to
+  localStorage under `cosmonauts.editor.mapdoc` — on boot, an autosaved doc wins over
+  the shipped map. `window.__cosmo` (state/teleport/editor/toggleMode) is the E2E hook;
+  drive verification through it rather than fighting CDP input latency.
+- Team color convention: Team A red, Team B blue — everywhere.

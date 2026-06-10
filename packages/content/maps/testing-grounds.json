@@ -52,5 +52,36 @@
       "startDeg": 150,
       "endDeg": 30
     }
+  ],
+  "entities": [
+    {
+      "id": "jump-pad",
+      "type": "jumper",
+      "pos": [8, 16.5],
+      "size": [2, 1],
+      "params": { "direction": 90, "strength": 26 }
+    },
+    {
+      "id": "tp-floor",
+      "type": "teleporter",
+      "pos": [5, 16],
+      "params": { "targetId": "tp-deck" }
+    },
+    {
+      "id": "tp-deck",
+      "type": "teleporter",
+      "pos": [8.5, 12],
+      "params": { "targetId": "tp-floor" }
+    },
+    { "id": "heal-1", "type": "healField", "pos": [14.5, 16], "size": [3, 2] },
+    { "id": "fire-1", "type": "fireField", "pos": [33, 13], "size": [3, 2] },
+    {
+      "id": "updraft",
+      "type": "forceField",
+      "pos": [40, 13.5],
+      "size": [2, 7],
+      "params": { "forceX": 0, "forceY": -60 }
+    },
+    { "id": "kill-1", "type": "killZone", "pos": [20.5, 11.4], "size": [1, 1.2] }
   ]
 }

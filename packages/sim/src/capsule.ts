@@ -165,16 +165,12 @@ export function movePlayer(
   depenetrate(map, p, a, r, prevBottom, contacts);
   let ground = classifyGround(contacts);
 
-  // Ground snap: walking over a crest or down a slope joint shouldn't go
-  // airborne — probe down and keep the result only if it finds ground.
-  // The resolution is strictly vertical: pushing out along a slope normal
-  // would creep the capsule sideways every tick while standing still.
   if (ground === null && wasGrounded && !jumpedThisTick) {
     const saveY = p.pos.y;
     p.pos.y += GROUND_SNAP;
     const snap = deepestGroundContact(map, p, a, r, prevBottom);
     if (snap !== null) {
-      p.pos.y -= (snap.depth + SKIN) / -snap.ny; // vertical lift to rest on the face
+      p.pos.y -= (snap.depth + SKIN) / -snap.ny;
       ground = snap;
     } else {
       p.pos.y = saveY;

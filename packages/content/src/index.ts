@@ -7,6 +7,7 @@ import {
 } from "@cosmonauts/sim";
 import novaJson from "../characters/nova.json";
 import testingGroundsJson from "../maps/testing-grounds.json";
+import { toEntityData } from "./entities";
 import { type CharacterDef, CharacterDefSchema, type MapDef, MapDefSchema } from "./schemas";
 
 const characterSources: unknown[] = [novaJson];
@@ -57,10 +58,17 @@ export function loadContent(): ContentIndex {
 
 /** Compile a validated MapDef (e.g. an editor document) into sim MapData. */
 export function buildMapFromDef(def: MapDef): MapData {
-  return buildMap(def.id, def.name, def.tiles, def.shapes ?? [], {
-    players: (def.playerSpawns ?? []).map(([x, y]) => ({ x, y })),
-    dummies: (def.dummySpawns ?? []).map(([x, y]) => ({ x, y })),
-  });
+  return buildMap(
+    def.id,
+    def.name,
+    def.tiles,
+    def.shapes ?? [],
+    {
+      players: (def.playerSpawns ?? []).map(([x, y]) => ({ x, y })),
+      dummies: (def.dummySpawns ?? []).map(([x, y]) => ({ x, y })),
+    },
+    (def.entities ?? []).map(toEntityData),
+  );
 }
 
 /** Raw, validated map definitions — the editor loads these as documents. */
@@ -68,5 +76,15 @@ export function loadMapDefs(): MapDef[] {
   return mapSources.map((source) => MapDefSchema.parse(source));
 }
 
+export {
+  defaultParams,
+  ENTITY_TYPES,
+  type EntityDef,
+  EntityDefSchema,
+  type EntityTypeSpec,
+  entityTypeSpec,
+  type ParamSpec,
+  toEntityData,
+} from "./entities";
 export type { CharacterDef, MapDef } from "./schemas";
 export { CharacterDefSchema, MapDefSchema } from "./schemas";

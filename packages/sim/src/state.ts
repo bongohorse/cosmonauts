@@ -40,6 +40,16 @@ export interface ProjectileState {
   ticksLeft: number;
 }
 
+/**
+ * Per-entity dynamic state (doc 07 §5), index-aligned with `map.entities`.
+ * Static params stay in content; only what changes at runtime lives here.
+ */
+export interface MapEntityState {
+  id: string;
+  enabled: boolean;
+  cooldown: number; // ticks until this entity may trigger again
+}
+
 export interface DummyState {
   id: number;
   pos: Vec2;
@@ -57,12 +67,20 @@ export interface GameState {
   players: PlayerState[];
   projectiles: ProjectileState[];
   dummies: DummyState[];
+  mapEntities: MapEntityState[]; // index-aligned with map.entities
 }
 
 export interface SpawnSpec {
   playerId: number;
   characterId: string;
   team?: Team; // default "A"
+}
+
+/** Where the i-th player spawns: feet on the bottom edge of the spawn tile. */
+export function playerSpawnPos(map: MapData, index: number, hitboxH: number): Vec2 {
+  const spawn = map.playerSpawns[index % map.playerSpawns.length];
+  if (spawn === undefined) throw new Error(`map "${map.id}" has no player spawns`);
+  return { x: spawn.x, y: spawn.y + 0.5 - hitboxH / 2 };
 }
 
 export function createState(map: MapData, spawns: SpawnSpec[], content: ContentIndex): GameState {
@@ -74,6 +92,7 @@ export function createState(map: MapData, spawns: SpawnSpec[], content: ContentI
     players: [],
     projectiles: [],
     dummies: [],
+    mapEntities: map.entities.map((e) => ({ id: e.id, enabled: e.enabled, cooldown: 0 })),
   };
 
   for (let i = 0; i < spawns.length; i++) {
@@ -81,14 +100,11 @@ export function createState(map: MapData, spawns: SpawnSpec[], content: ContentI
     if (spec === undefined) continue;
     const char = content.characters[spec.characterId];
     if (char === undefined) throw new Error(`unknown character "${spec.characterId}"`);
-    const spawn = map.playerSpawns[i % map.playerSpawns.length];
-    if (spawn === undefined) throw new Error(`map "${map.id}" has no player spawns`);
     state.players.push({
       id: spec.playerId,
       characterId: spec.characterId,
       team: spec.team ?? "A",
-      // Feet on the bottom edge of the spawn tile (spawn is the tile center).
-      pos: { x: spawn.x, y: spawn.y + 0.5 - char.hitbox.h / 2 },
+      pos: playerSpawnPos(map, i, char.hitbox.h),
       vel: { x: 0, y: 0 },
       facing: 1,
       grounded: false,

@@ -33,6 +33,22 @@ export interface CharacterData {
   attack: AttackData;
 }
 
+/**
+ * A placed map entity, static side (doc 07): trigger volumes and friends.
+ * Per-type params arrive validated and defaults-filled from the content
+ * loader, with durations already converted to ticks. The sim reads params by
+ * key and ignores entity types it has no behavior for.
+ */
+export interface MapEntityData {
+  id: string; // unique — the wiring handle
+  type: string;
+  pos: Vec2; // box center
+  size: { w: number; h: number }; // axis-aligned trigger box (doc 07 §2)
+  enabled: boolean; // initial value; runtime flag lives in GameState.mapEntities
+  tint?: string;
+  params: Record<string, number | string | boolean>;
+}
+
 export interface MapData {
   id: string;
   name: string;
@@ -41,6 +57,7 @@ export interface MapData {
   solid: boolean[]; // row-major, width * height — tile layer (renderer + compile source)
   segments: SegmentData[]; // the actual collision world (doc 06)
   shapes: ShapeData[]; // render-ready shape outlines
+  entities: MapEntityData[]; // placed entities (doc 07)
   playerSpawns: Vec2[];
   dummySpawns: Vec2[];
 }

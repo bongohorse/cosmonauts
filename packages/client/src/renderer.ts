@@ -1,3 +1,4 @@
+import { entityTypeSpec } from "@cosmonauts/content";
 import type { ContentIndex, GameState, MapData, Vec2 } from "@cosmonauts/sim";
 import { DUMMY_HEIGHT, DUMMY_WIDTH, isSolid } from "@cosmonauts/sim";
 import { type Application, Container, Graphics } from "pixi.js";
@@ -148,6 +149,27 @@ export class Renderer {
       const x = lerp(before.pos.x, pr.pos.x) * TILE_PX;
       const y = lerp(before.pos.y, pr.pos.y) * TILE_PX;
       g.circle(x, y, pr.radius * TILE_PX).fill(COLORS.projectile);
+    }
+
+    for (let i = 0; i < this.map.entities.length; i++) {
+      const data = this.map.entities[i];
+      const dyn = curr.mapEntities[i];
+      if (data === undefined || dyn === undefined) continue;
+      const x = data.pos.x * TILE_PX;
+      const y = data.pos.y * TILE_PX;
+      const hw = (data.size.w / 2) * TILE_PX;
+      const hh = (data.size.h / 2) * TILE_PX;
+      const spec = entityTypeSpec(data.type);
+      const color = Number.parseInt((data.tint ?? spec?.color ?? "#ffffff").slice(1), 16);
+      g.rect(x - hw, y - hh, hw * 2, hh * 2).fill({
+        color,
+        alpha: dyn.enabled ? 0.4 : 0.15,
+      });
+      g.rect(x - hw, y - hh, hw * 2, hh * 2).stroke({
+        color,
+        width: 1,
+        alpha: dyn.enabled ? 0.6 : 0.2,
+      });
     }
 
     this.updateCamera(curr, prev, alpha);

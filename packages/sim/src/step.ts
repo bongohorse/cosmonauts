@@ -2,6 +2,7 @@ import { movePlayer } from "./capsule";
 import { aabbOverlap } from "./collision";
 import { DROP_IGNORE_TICKS, DT, DUMMY_HEIGHT, DUMMY_RESPAWN_TICKS, DUMMY_WIDTH } from "./constants";
 import type { CharacterData, ContentIndex, MapData } from "./content-types";
+import { stepMapEntities } from "./entities";
 import { closestSegSeg } from "./geometry";
 import { NEUTRAL_INPUT, type PlayerInput } from "./input";
 import { approach } from "./math";
@@ -21,6 +22,7 @@ export function step(state: GameState, inputs: InputMap, content: ContentIndex):
   }
 
   stepProjectiles(state, map);
+  stepMapEntities(state, map, content);
   stepDummies(state);
 
   state.tick += 1;

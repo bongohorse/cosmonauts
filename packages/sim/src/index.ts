@@ -17,7 +17,9 @@ export type {
   CharacterStats,
   ContentIndex,
   MapData,
+  MapEntityData,
 } from "./content-types";
+export { stepMapEntities } from "./entities";
 export {
   closestSegSeg,
   type SegmentData,
@@ -33,8 +35,10 @@ export {
   createState,
   type DummyState,
   type GameState,
+  type MapEntityState,
   type PlayerState,
   type ProjectileState,
+  playerSpawnPos,
   type SpawnSpec,
   type Team,
 } from "./state";

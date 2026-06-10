@@ -1,5 +1,5 @@
 import { DUMMY_HEIGHT } from "./constants";
-import type { MapData } from "./content-types";
+import type { MapData, MapEntityData } from "./content-types";
 import {
   compileShape,
   compileTiles,
@@ -25,6 +25,7 @@ export function buildMap(
   rows: string[],
   shapeDefs: ShapeDef[] = [],
   spawns: ExplicitSpawns = {},
+  entities: MapEntityData[] = [],
 ): MapData {
   const height = rows.length;
   const firstRow = rows[0];
@@ -69,5 +70,5 @@ export function buildMap(
   compileTiles(width, height, solid, segments);
   for (const def of shapeDefs) compileShape(def, segments, shapes);
 
-  return { id, name, width, height, solid, segments, shapes, playerSpawns, dummySpawns };
+  return { id, name, width, height, solid, segments, shapes, entities, playerSpawns, dummySpawns };
 }

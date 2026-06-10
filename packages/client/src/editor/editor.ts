@@ -1,3 +1,9 @@
+import {
+  defaultParams,
+  ENTITY_TYPES,
+  type EntityDef,
+  entityTypeSpec,
+} from "@cosmonauts/content";
 import type { ShapeDef, Solidity, Vec2 } from "@cosmonauts/sim";
 import type { Renderer } from "../renderer";
 import { TILE_PX } from "../renderer";
@@ -12,10 +18,11 @@ import {
 } from "./doc";
 import { History } from "./history";
 
-type Tool = "select" | "rect" | "polygon" | "spawn" | "dummy";
+type Tool = "select" | "rect" | "polygon" | "spawn" | "dummy" | "entity";
 
 type Selection =
   | { kind: "shape"; id: string }
+  | { kind: "entity"; id: string }
   | { kind: "spawn"; index: number }
   | { kind: "dummy"; index: number };
 
@@ -44,9 +51,11 @@ export class Editor {
   private draft: [number, number][] = [];
   private mouseWorld: Vec2 = { x: 0, y: 0 };
   private newSolidity: Solidity = "solid";
+  private newEntityType = ENTITY_TYPES[0]?.type ?? "jumper";
   private snap = true;
   private history = new History();
   private shapeCounter = 1;
+  private entityCounter = 1;
   private saveTimer: ReturnType<typeof setTimeout> | undefined;
 
   private bar!: HTMLElement;
@@ -186,11 +195,24 @@ export class Editor {
       const p = this.doc.dummySpawns[i];
       if (p && Math.hypot(w.x - p[0], w.y - p[1]) < 0.7) return { kind: "dummy", index: i };
     }
+    for (let i = this.doc.entities.length - 1; i >= 0; i--) {
+      const e = this.doc.entities[i];
+      if (e && this.hitEntity(e, w)) return { kind: "entity", id: e.id };
+    }
     for (let i = this.doc.shapes.length - 1; i >= 0; i--) {
       const s = this.doc.shapes[i];
       if (s && this.hitShape(s, w)) return { kind: "shape", id: s.id };
     }
     return null;
+  }
+
+  private hitEntity(e: EntityDef, w: Vec2): boolean {
+    const [hw, hh] = this.entitySize(e);
+    return Math.abs(w.x - e.pos[0]) <= hw / 2 + 0.1 && Math.abs(w.y - e.pos[1]) <= hh / 2 + 0.1;
+  }
+
+  private entitySize(e: EntityDef): [number, number] {
+    return e.size ?? entityTypeSpec(e.type)?.defaultSize ?? [2, 2];
   }
 
   private hitShape(s: ShapeDef, w: Vec2): boolean {
@@ -309,7 +331,35 @@ export class Editor {
         this.doc.dummySpawns.push([this.snapPt(w.x), this.snapPt(w.y)]);
         this.changed();
         break;
+      case "entity":
+        this.placeEntity(w);
+        break;
     }
+  }
+
+  private placeEntity(w: Vec2): void {
+    const spec = entityTypeSpec(this.newEntityType);
+    if (spec === undefined) return;
+    this.beginChange();
+    const id = this.nextEntityId(spec.type);
+    this.doc.entities.push({
+      id,
+      type: spec.type,
+      pos: [this.snapPt(w.x), this.snapPt(w.y)],
+      size: [...spec.defaultSize],
+      params: defaultParams(spec),
+    } as EntityDef);
+    this.selection = { kind: "entity", id };
+    this.tool = "select";
+    this.syncToolButtons();
+    this.changed();
+    this.refreshInspector();
+  }
+
+  private nextEntityId(type: string): string {
+    let id = `${type}-${this.entityCounter++}`;
+    while (this.doc.entities.some((e) => e.id === id)) id = `${type}-${this.entityCounter++}`;
+    return id;
   }
 
   private pointerMove(e: PointerEvent): void {
@@ -392,6 +442,9 @@ export class Editor {
     if (sel.kind === "shape") {
       const s = this.doc.shapes.find((sh) => sh.id === sel.id);
       if (s) this.translateShape(s, dx, dy);
+    } else if (sel.kind === "entity") {
+      const e = this.doc.entities.find((en) => en.id === sel.id);
+      if (e) e.pos = [e.pos[0] + dx, e.pos[1] + dy];
     } else if (sel.kind === "spawn") {
       const p = this.doc.playerSpawns[sel.index];
       if (p) this.doc.playerSpawns[sel.index] = [p[0] + dx, p[1] + dy];
@@ -481,6 +534,8 @@ export class Editor {
     this.beginChange();
     if (sel.kind === "shape") {
       this.doc.shapes = this.doc.shapes.filter((s) => s.id !== sel.id);
+    } else if (sel.kind === "entity") {
+      this.doc.entities = this.doc.entities.filter((e) => e.id !== sel.id);
     } else if (sel.kind === "spawn") {
       if (this.doc.playerSpawns.length > 1) this.doc.playerSpawns.splice(sel.index, 1);
     } else {
@@ -552,6 +607,22 @@ export class Editor {
       });
     }
 
+    // Entities.
+    for (const e of this.doc.entities) {
+      const [w, h] = this.entitySize(e);
+      const spec = entityTypeSpec(e.type);
+      const color = Number.parseInt((e.tint ?? spec?.color ?? "#ffffff").slice(1), 16);
+      g.rect(px(e.pos[0] - w / 2), px(e.pos[1] - h / 2), px(w), px(h)).fill({
+        color,
+        alpha: e.enabled === false ? 0.3 : 0.6,
+      });
+      g.rect(px(e.pos[0] - w / 2), px(e.pos[1] - h / 2), px(w), px(h)).stroke({
+        color,
+        width: lw(1),
+        alpha: 0.8,
+      });
+    }
+
     // Polygon draft.
     if (this.draft.length > 0) {
       const first = this.draft[0];
@@ -578,6 +649,15 @@ export class Editor {
     if (sel?.kind === "shape") {
       const s = this.doc.shapes.find((sh) => sh.id === sel.id);
       if (s) this.drawShapeSelection(g, s, lw);
+    } else if (sel?.kind === "entity") {
+      const e = this.doc.entities.find((en) => en.id === sel.id);
+      if (e) {
+        const [w, h] = this.entitySize(e);
+        g.rect(px(e.pos[0] - w / 2), px(e.pos[1] - h / 2), px(w), px(h)).stroke({
+          color: 0xff2bd6,
+          width: lw(2),
+        });
+      }
     } else if (sel?.kind === "spawn") {
       const p = this.doc.playerSpawns[sel.index];
       if (p) g.circle(px(p[0]), px(p[1]), px(0.5)).stroke({ color: 0xffffff, width: lw(2) });
@@ -679,6 +759,26 @@ export class Editor {
     });
     bar.appendChild(sol);
 
+    // Entity palette: generated from the registry — new types auto-appear
+    // (doc 07 §1). One click-to-place button per type, tinted to match.
+    const sep = document.createElement("span");
+    sep.textContent = "·";
+    bar.appendChild(sep);
+    for (const spec of ENTITY_TYPES) {
+      const b = document.createElement("button");
+      b.textContent = spec.label;
+      b.title = `place a ${spec.label}`;
+      b.dataset.entity = spec.type;
+      b.style.borderBottom = `2px solid ${spec.color}`;
+      b.addEventListener("click", () => {
+        this.tool = "entity";
+        this.newEntityType = spec.type;
+        this.draft = [];
+        this.syncToolButtons();
+      });
+      bar.appendChild(b);
+    }
+
     const actions: [string, () => void][] = [
       ["undo", () => this.undo()],
       ["redo", () => this.redo()],
@@ -710,6 +810,12 @@ export class Editor {
   private syncToolButtons(): void {
     for (const b of this.bar.querySelectorAll("button[data-tool]")) {
       b.classList.toggle("active", (b as HTMLButtonElement).dataset.tool === this.tool);
+    }
+    for (const b of this.bar.querySelectorAll("button[data-entity]")) {
+      b.classList.toggle(
+        "active",
+        this.tool === "entity" && (b as HTMLButtonElement).dataset.entity === this.newEntityType,
+      );
     }
   }
 
@@ -783,6 +889,101 @@ export class Editor {
         });
         rotLabel.appendChild(rot);
         panel.appendChild(rotLabel);
+      }
+    } else if (sel.kind === "entity") {
+      const e = this.doc.entities.find((en) => en.id === sel.id);
+      if (!e) return;
+      const spec = entityTypeSpec(e.type);
+      heading.textContent = `${spec?.label ?? e.type} · ${e.id}`;
+
+      const enLabel = document.createElement("label");
+      enLabel.textContent = "enabled";
+      const en = document.createElement("input");
+      en.type = "checkbox";
+      en.checked = e.enabled !== false;
+      en.addEventListener("change", () => {
+        this.beginChange();
+        e.enabled = en.checked;
+        this.changed();
+      });
+      enLabel.appendChild(en);
+      panel.appendChild(enLabel);
+
+      const tintLabel = document.createElement("label");
+      tintLabel.textContent = "tint";
+      const tint = document.createElement("input");
+      tint.type = "color";
+      tint.value = e.tint ?? spec?.color ?? "#ffffff";
+      tint.addEventListener("input", () => {
+        this.beginChange();
+        e.tint = tint.value;
+        this.changed();
+      });
+      tintLabel.appendChild(tint);
+      panel.appendChild(tintLabel);
+
+      if (spec) {
+        for (const [key, p] of Object.entries(spec.params)) {
+          const row = document.createElement("label");
+          row.textContent = p.label;
+          const params = (e.params ??= {}) as Record<string, number | string | boolean>;
+          const val = params[key] ?? (p.kind === "entityId" ? "" : p.default);
+
+          if (p.kind === "boolean") {
+            const input = document.createElement("input");
+            input.type = "checkbox";
+            input.checked = !!val;
+            input.addEventListener("change", () => {
+              this.beginChange();
+              params[key] = input.checked;
+              this.changed();
+            });
+            row.appendChild(input);
+          } else if (p.kind === "entityId") {
+            const sel = document.createElement("select");
+            const none = document.createElement("option");
+            none.value = "";
+            none.textContent = "(none)";
+            sel.appendChild(none);
+            for (const other of this.doc.entities) {
+              if (other.id === e.id) continue;
+              if (p.sameType && other.type !== e.type) continue;
+              const o = document.createElement("option");
+              o.value = other.id;
+              o.textContent = other.id;
+              o.selected = other.id === val;
+              sel.appendChild(o);
+            }
+            sel.addEventListener("change", () => {
+              this.beginChange();
+              params[key] = sel.value;
+              this.changed();
+            });
+            row.appendChild(sel);
+          } else {
+            const input = document.createElement("input");
+            input.type = "number";
+            if (p.kind === "number") {
+              if (p.min !== undefined) input.min = String(p.min);
+              if (p.max !== undefined) input.max = String(p.max);
+              if (p.step !== undefined) input.step = String(p.step);
+              else input.step = "any";
+            } else {
+              input.step = "any";
+            }
+            input.value = String(val);
+            input.addEventListener("input", () => {
+              const v = Number.parseFloat(input.value);
+              if (Number.isFinite(v)) {
+                this.beginChange();
+                params[key] = v;
+                this.changed();
+              }
+            });
+            row.appendChild(input);
+          }
+          panel.appendChild(row);
+        }
       }
     } else {
       heading.textContent = sel.kind === "spawn" ? "player spawn" : "dummy";

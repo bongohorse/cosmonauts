@@ -1,4 +1,4 @@
-import type { CharacterData, ContentIndex, MapData } from "./content-types";
+import type { CharacterData, ContentIndex, MapData, MapEntityData } from "./content-types";
 import type { ShapeDef } from "./geometry";
 import { NEUTRAL_INPUT, type PlayerInput } from "./input";
 import { buildMap } from "./map";
@@ -39,8 +39,12 @@ export interface World {
   map: MapData;
 }
 
-export function makeWorld(rows: string[], shapes: ShapeDef[] = []): World {
-  const map = buildMap("test-map", "Test Map", rows, shapes);
+export function makeWorld(
+  rows: string[],
+  shapes: ShapeDef[] = [],
+  entities: MapEntityData[] = [],
+): World {
+  const map = buildMap("test-map", "Test Map", rows, shapes, {}, entities);
   const character = makeCharacter();
   const content: ContentIndex = {
     characters: { [character.id]: character },
@@ -48,6 +52,24 @@ export function makeWorld(rows: string[], shapes: ShapeDef[] = []): World {
   };
   const state = createState(map, [{ playerId: 1, characterId: character.id }], content);
   return { state, content, map };
+}
+
+export function entity(
+  type: string,
+  x: number,
+  y: number,
+  params: MapEntityData["params"] = {},
+  overrides: Partial<MapEntityData> = {},
+): MapEntityData {
+  return {
+    id: `${type}-1`,
+    type,
+    pos: { x, y },
+    size: { w: 2, h: 2 },
+    enabled: true,
+    params,
+    ...overrides,
+  };
 }
 
 export function input(partial: Partial<PlayerInput> = {}): InputMap {

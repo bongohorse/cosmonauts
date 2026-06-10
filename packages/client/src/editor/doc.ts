@@ -1,4 +1,4 @@
-import { buildMapFromDef, type MapDef, MapDefSchema } from "@cosmonauts/content";
+import { buildMapFromDef, type EntityDef, type MapDef, MapDefSchema } from "@cosmonauts/content";
 import { DUMMY_HEIGHT, type MapData, type ShapeDef } from "@cosmonauts/sim";
 
 /**
@@ -11,6 +11,7 @@ export interface MapDoc {
   name: string;
   tiles: string[];
   shapes: ShapeDef[];
+  entities: EntityDef[];
   playerSpawns: [number, number][];
   dummySpawns: [number, number][];
 }
@@ -39,6 +40,7 @@ export function docFromDef(def: MapDef): MapDoc {
     name: def.name,
     tiles,
     shapes: structuredClone(def.shapes ?? []),
+    entities: structuredClone(def.entities ?? []),
     playerSpawns,
     dummySpawns,
   };
@@ -50,6 +52,7 @@ export function docToDef(doc: MapDoc): MapDef {
     name: doc.name,
     tiles: [...doc.tiles],
     shapes: structuredClone(doc.shapes),
+    entities: structuredClone(doc.entities),
     playerSpawns: structuredClone(doc.playerSpawns),
     dummySpawns: structuredClone(doc.dummySpawns),
   };
@@ -70,6 +73,7 @@ export function blankDoc(width = 48, height = 18): MapDoc {
     name: "Custom Map",
     tiles,
     shapes: [],
+    entities: [],
     playerSpawns: [[3.5, height - 1.5]],
     dummySpawns: [],
   };

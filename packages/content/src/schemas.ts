@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { EntityDefSchema } from "./entities";
 
 // Authoring units are human-friendly: seconds and tiles (doc 05 §1).
 // The loader converts durations to ticks before the sim ever sees them.
@@ -74,6 +75,13 @@ export const MapDefSchema = z.object({
       message: "all tile rows must have the same length",
     }),
   shapes: z.array(ShapeDefSchema).optional(),
+  // Placed entities (doc 07 §2). Ids must be unique — they are wiring handles.
+  entities: z
+    .array(EntityDefSchema)
+    .optional()
+    .refine((es) => es === undefined || new Set(es.map((e) => e.id)).size === es.length, {
+      message: "entity ids must be unique",
+    }),
   // Editor-authored spawn lists; merge with any tile markers (sim buildMap).
   playerSpawns: z.array(PointSchema).optional(),
   dummySpawns: z.array(PointSchema).optional(),

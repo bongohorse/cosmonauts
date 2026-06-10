@@ -1,43 +1,71 @@
 # 08 — Creation Tools: Map Editor & Hero Editor
 
-**Status:** v1, 2026-06-10. Decisions: **in-game edit mode** (not a standalone app);
-persistence via **JSON download/upload + localStorage autosave** (no backend). The goal in
-one sentence: anyone can make a map.
+**Status:** v2, 2026-06-10 (expanded: manipulation handles, mirror mode, align tools,
+tinting, search/quick-bar, validation). Decisions: **in-game edit mode** (not a
+standalone app); persistence via **JSON download/upload + localStorage autosave** (no
+backend). The goal in one sentence: anyone can make a map.
 
 ## 1. Map editor — in-game edit mode
 
 One key (Tab) flips the running sandbox between **play** and **edit** on the same map in
 the same browser tab. Place a platform, Tab, jump on it two seconds later — the Ronimo
-live-editing philosophy, which our sim/render split makes nearly free (edit mode pauses
-the sim and mutates the loaded MapData/entity list; play mode re-derives collision and
-runs).
+live-editing philosophy, which our sim/render split makes nearly free.
 
-### Editing model
-- **Geometry tools:** rectangle (drag, then rotate via handle), polygon/polyline (click
-  vertices), arc/curve (3-point), eraser. Grid snap and angle snap (15° steps) on by
-  default, toggleable — "easy to use" means snapping does the precision work.
-- **Entity palette:** every type from doc 07, **auto-generated from the zod schemas** —
-  palette entries, inspector forms, parameter validation, and error messages all derive
-  from the same schemas the loader uses. New entity type in content = new editor support
-  for free. This is the single highest-leverage implementation choice in the editor.
-- **Wiring tool:** select an activator, click targets; links render as curves in edit mode.
-- **Inspector:** click anything → form of its params (schema-driven), plus id/enabled.
-- **Undo/redo** as a command stack from day one (retrofitting undo is misery).
-- **Playtest loop:** Tab back into play spawns you at a droppable "test spawn" marker;
-  Esc returns to edit with everything as it was.
+### Selection & manipulation
+- Everything selected shows **anchor handles**: 8 resize handles on the bounding
+  rectangle (drag a corner/edge to resize) plus a **rotation handle** above it. Same
+  interaction for geometry and entities — one manipulation model to learn.
+- Grid snap and **angle snap (15° steps)** on by default, toggleable — "easy to use"
+  means snapping does the precision work. Jumpers rotate the same way; their launch
+  arrow is the rotation handle (default 45°/up).
+- **Align tools:** center on map axis, align selected (left/right/top/bottom/center),
+  distribute evenly.
+- **Tint:** color picker on most entities and geometry (the `tint` param, doc 07 §1) for
+  theming without new content.
 
-### Persistence (decided)
-- **Autosave to localStorage** (debounced, keyed by map id) — work survives reloads.
-- **Export/Import JSON** — the map format IS the save format; files are shareable,
-  diffable, and forum-postable. Validation on import shows zod errors inline.
-- Out of scope for now: share-links, galleries, backends. The format is designed so these
-  bolt on later without migration.
+### Mirror mode (the balance tool)
+- Every map has a **center point/axis**. With mirroring toggled on, placing, moving, or
+  deleting anything applies the mirrored operation on the other side — with **team
+  swap**: a red-team barrier placed on the left creates the blue-team barrier on the
+  right; a cosmium cube near red spawn creates its twin near blue spawn.
+- Mirroring is a **tool, not a constraint**: toggle it off and build fully asymmetric
+  maps. Most competitive maps will keep it on — symmetry is balance you don't have to
+  guess at. Mirrored pairs stay linked (edit one, the twin follows) until explicitly
+  unlinked.
+
+### Palette, search, quick bar
+- **Entity palette** auto-generated from the zod schemas (doc 07) — palette entries,
+  inspector forms, validation messages all derive from the same schemas the loader uses.
+  New entity type in content = full editor support for free. The single
+  highest-leverage implementation choice in the editor.
+- **Search box** over all entity types + a **quick bar** of the most common ones
+  (platform, glass platform, jumper, turret, spawner, cosmium cube…), customizable.
+- **Wiring tool:** select an activator/turret, click targets; links render as curves.
+  `onDestroyed` event wires use the same gesture from the source entity.
+- **Path tool:** draw droid lane paths and moving-platform routes as clickable waypoint
+  chains (used by `droidSpawner`, `movingPlatform`, flying droid routes).
+
+### Layers
+- **Collision/gameplay layer** (everything above) and a **decoration layer**: visual-only
+  shapes with z-order and parallax factor, never collided. Layers lock individually so
+  decorating can't move gameplay objects.
+
+### Safety & save
+- **Undo/redo** as a command stack from day one.
+- **Map check on save:** both teams have spawns, at least one core per team in MOBA
+  maps, kill zone coverage under open pits, droid paths reach the enemy base, no entity
+  with broken wiring targets. Warnings, not hard blocks — prototypes are allowed to be
+  weird.
+- **Autosave to localStorage** (debounced, keyed by map id) + **Export/Import JSON** —
+  the map format IS the save format. `meta` (author, description, team size) is edited
+  here.
 
 ### Staging
-1. **Editor MVP** (its own milestone): geometry tools + ~6 trigger/solid types + inspector
-   + undo + save/load. Proves "anyone can make a map."
-2. **Editor v2:** wiring tool, actors (turret/droid/core), test-spawn marker, polish driven
-   by watching someone non-technical build a map.
+1. **Editor MVP:** geometry tools with handles, snap, ~8 placeable types, inspector,
+   undo, save/load, mirror mode.
+2. **Editor v2:** wiring + path tools, full actor set, align/distribute, decoration
+   layer, map check, quick-bar customization, prefab grouping (save a selection — e.g.
+   "turret + barrier + button" — as a reusable stamp).
 
 ## 2. Hero editor
 
@@ -53,9 +81,9 @@ isn't defined):
 
 ## 3. Honest constraints
 
-- Custom content is **local-only** until a sharing mechanism exists; two players can swap
-  JSON files by hand and that's fine for this phase.
+- Custom content is **local-only** until a sharing mechanism exists; swapping JSON files
+  by hand is fine for this phase.
 - Hand-rolled DOM/HTML UI for panels (like the tuning panel) rather than a UI framework,
-  until the editor's complexity proves a need — keep the client dependency-light.
-- The editor edits **maps**, not game balance; hero JSON shipped with the game changes via
-  PRs so CI validates it.
+  until the editor's complexity proves a need.
+- The editor edits **maps**, not game balance; hero JSON shipped with the game changes
+  via PRs so CI validates it.

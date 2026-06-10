@@ -1,109 +1,144 @@
-# 07 — Map Entities & Wiring
+# 07 — Map Entities, Wiring & Economy
 
-**Status:** v1, 2026-06-10. The placeable-object system: everything a map creator can drop
-into a level beyond raw geometry. Extends the map format (doc 05 §3) to v2.
+**Status:** v2, 2026-06-10 (expanded after maintainer direction talk: barriers, droid
+types, creeps, pickups/currency, kill zones). The placeable-object system: everything a
+map creator can drop into a level beyond raw geometry.
 
 ## 1. Design rules
 
 - **Everything placeable is data.** Each entity type is a zod schema + a sim behavior;
   maps reference types by name with parameters. The editor (doc 08) auto-generates its
-  inspector UI from the same schemas — adding an entity type automatically makes it
-  editable and placeable.
-- **Triggers are dumb, behaviors are shared.** Most of the wishlist is a box volume plus
-  one effect; they share one trigger-volume system in the sim.
-- **Wiring is first-class.** Activators toggle other entities by ID. One small signal
-  model, designed once, powers doors, switchable fields, appearing platforms, traps.
+  inspector UI from the same schemas.
+- **Triggers are dumb, behaviors are shared.** Most placeables are a box volume plus one
+  effect; they share one trigger-volume system in the sim.
+- **Wiring is first-class.** Two signal sources flip the `enabled` flag on target
+  entities: **activators** (touched/damaged buttons) and **entity events**
+  (`onDestroyed` of a turret, glass collider, core…). One boolean, one mechanism —
+  doors, switchable fields, droid releases, and barrier downgrades all use it.
+- **Cosmetics are parameters.** Most entities and geometry accept an optional
+  `tint`/color override so designers can theme maps without new content types.
 
 ## 2. Map format v2
 
 ```jsonc
 {
   "id": "dunes", "name": "The Dunes", "version": 2,
+  "meta": { "author": "...", "description": "...", "teamSize": 3, "mirrored": true },
   "geometry": {
     "tiles": ["..."],            // optional block-out layer (compiles to segments)
     "shapes": [                   // doc 06: polygons/polylines/arcs, any rotation
       { "id": "ramp1", "kind": "polygon", "solidity": "solid", "points": [[x,y], ...] },
-      { "id": "arc1", "kind": "arc", "solidity": "glass", "center": [x,y], "radius": r,
-        "from": [x,y], "to": [x,y] }
+      { "id": "plat2", "kind": "rect", "solidity": "glass", "pos": [x,y], "size": [w,h],
+        "rotation": 15, "tint": "#88ddff" }
     ]
   },
   "entities": [
-    { "id": "jmp1", "type": "jumper", "pos": [12, 30], "params": { "impulse": [0, -22] } },
-    { "id": "act1", "type": "activator", "pos": [40, 31],
-      "params": { "mode": "toggle" }, "targets": ["fire1", "door3"] }
+    { "id": "jmp1", "type": "jumper", "pos": [12, 30],
+      "params": { "direction": 45, "strength": 22 } },
+    { "id": "btn1", "type": "activator", "pos": [40, 31],
+      "params": { "mode": "once" }, "targets": ["container1"] },
+    { "id": "tur1", "type": "turret", "pos": [60, 28],
+      "params": { "team": "B" }, "onDestroyed": ["barrier1"] }
   ],
-  "spawns": { "teamA": [[x,y]], "teamB": [[x,y]], "dummies": [[x,y]] }
+  "spawns": { "teamA": [[x,y]], "teamB": [[x,y]] }
 }
 ```
 
-Every entity: `id` (unique in map, wiring handle), `type`, `pos`, optional `enabled`
-(default true), `params` (per-type schema), optional `targets` (wiring). Trigger volumes
-add `size` (axis-aligned, doc 06 §5).
+Every entity: `id` (unique, the wiring handle), `type`, `pos`, optional `enabled`
+(default true), optional `tint`, `params` (per-type schema), optional `targets`
+(activator wiring) and `onDestroyed` (event wiring). Trigger volumes add `size`
+(axis-aligned boxes, doc 06 §5 — but *parameters* like a jumper's launch direction
+rotate freely).
 
-## 3. Entity catalog (initial)
+## 3. Entity catalog
 
 ### Trigger volumes — one shared system, per-type effect
 | Type | Effect | Key params |
 |---|---|---|
-| `jumper` | sets/adds velocity impulse on touch | impulse vector, cooldown per entity |
-| `gravityField` | overrides or scales gravity while inside | vector or multiplier |
+| `jumper` | launch impulse on touch; **direction fully rotatable**, default 45° or straight up | direction (degrees), strength, cooldown |
+| `forceField` | constant force while inside: gravity override, anti-gravity, wind, conveyor | vector or gravity multiplier |
 | `teleporter` | moves the toucher to a target teleporter | targetId, cooldown, preserveVelocity |
 | `fireField` | damage over time while inside | dps, tick interval |
-| `deathTrap` | instant kill + respawn | — |
-| `healField` | heal over time (base regen zone, the shop area) | hps |
+| `killZone` | instant kill + respawn; also the bottom-of-map catcher for fall-off maps | — |
+| `healField` | heal over time while inside | hps |
+| `hideZone` *(proposed)* | heroes inside are hidden from the enemy team until they act | — |
 
-### Stateful solids — colliders with rules
+### Solids — colliders with rules
 
-Glass platforms (drop-through: jump up through, stand on top, down+jump to fall through)
-and team platforms are **geometry solidity types, not entities** — see doc 06 §2 and §4a.
-Only colliders with runtime state live here:
+Glass platforms (jump up through, stand on top, down+jump to drop) and plain team
+platforms are **geometry solidity types** (doc 06 §2, §4a). Stateful colliders live here:
 
 | Type | Behavior | Key params |
 |---|---|---|
-| `door` | collider that `enabled` toggles on/off (wired to activators) | — |
+| `teamBarrier` | own team passes through (glass-like); enemy team fully blocked. Placeable horizontally or vertically (any rotation). When disabled — typically wired to a turret's `onDestroyed` — it **downgrades**: `glass` (everyone passes) or `gone` | team, downgradeTo: glass\|gone |
+| `door` | collider toggled on/off by wiring | — |
 | `movingPlatform` | collider following a waypoint loop (v2.1 — riders inherit velocity; needs care) | path, speed, mode |
+
+A classic composition: a glass platform at the base entrance *wrapped in* a `teamBarrier`
+— defenders drop in and out freely, attackers are walled off until they take the outer
+turret, then the barrier downgrades to glass and the base is open. Composition over
+special cases: it's two placeables and one wire.
 
 ### Actors — entities with per-tick behavior
 | Type | Behavior | Key params |
 |---|---|---|
-| `turret` | targets nearest enemy in range, shoots projectiles, destructible | team, range, dps, health, priority |
-| `droid` | walks a waypoint path, attacks on contact/range | team, statsRef, path, behavior: patrol\|lane |
-| `droidSpawner` | spawns droids on an interval (MOBA waves later) | droidType, interval, count |
-| `core` | the destructible win objective | team, health, regen, shield rules (later) |
+| `base` | team spawn + regeneration zone + **shop** (buy ability upgrades: movement shoes, fire rate…). One per team | team, hps |
+| `turret` | targets enemies in range, shoots, destructible; fires `onDestroyed` wiring | team, range, dps, health, priority |
+| `droidSpawner` | spawns droid waves per lane | droidType, interval, count, path |
+| `droidContainer` | holds droids (e.g. the flying-droid barrel); wired activator button releases them | droidType, count |
+| `creepDen` *(spawner for neutrals)* | spawns neutral creeps that respawn on a timer | creepType, respawnTime |
+| `core` | the destructible win objective; fires `onDestroyed` (= game end) | team, health, regen |
 | `scripted` | named bespoke behaviors coded in sim, parameterized in the map | behavior key + params |
 
-The **sandworm** is the first `scripted` behavior: anchored to a zone (the sand pit
-mid-map), on a cycle it telegraphs (rumble/particles), then erupts and devours — instant
-kill — anything inside the zone, then submerges. Params: zone, period, telegraphTime,
-eruptDuration. Exactly the Sorona-worm role: a map-defining hazard that forces movement
-decisions. The `scripted` escape hatch means future bosses/hazards need sim code but no
-format changes.
+**Droid types (three, per design):**
+1. `small` — the standard wave unit; spawns **in pairs of 2 per lane** on an interval.
+2. `super` — heavy rocket-launcher droid; **granted to the team that destroys an enemy
+   turret** (joins that lane's next wave). The snowball reward for objective play.
+3. `flying` — released from a `droidContainer` via its activation button; flies a path.
+
+**Creeps are neutral droids** (no team): jungle dwellers that drop **health pickups**
+when killed. The **boss creep** is the big neutral objective: killing it heals the killer
+for 3000 HP and pays 20 currency to the killing team. The **sandworm** stays a `scripted`
+map hazard (zone-anchored, telegraphs, devours — doc 07 v1).
 
 ### Logic
 | Type | Behavior | Key params |
 |---|---|---|
-| `activator` | flips `enabled` on its targets when touched/attacked | mode: toggle\|momentary\|once, trigger: touch\|damage, cooldown |
+| `activator` | button/plate/lever: flips `enabled` on its targets when touched or damaged | mode: toggle\|momentary\|once, trigger: touch\|damage, cooldown |
+| `timer` | fires its targets on a fixed cycle (periodic traps, scheduled releases) | period, onDuration, startDelay |
 
-Signal model (all of it): every entity has `enabled`; disabled triggers don't fire,
-disabled colliders don't collide, disabled actors sleep. Activators set or flip the flag
-on their targets. `momentary` reverts when the activator releases. That is the whole
-wiring system — small enough to be editor-friendly, expressive enough for doors, trap
-arming, field switches, and timed challenges (a `timer` pseudo-activator can come later).
+## 4. Pickups & economy
 
-## 4. Sim integration
+Currency working name: **Cosmium** (replaces Awesomenauts' "solar"; final name open —
+see decision log). Two denominations, both physical cubes in the world:
 
-- `GameState` gains a `mapEntities` array: per-entity dynamic state only (`enabled`,
-  health, cooldown timers, worm phase) — static params stay in content. Snapshot size
-  stays small; determinism rules unchanged.
-- Step order: players → actors → projectiles → trigger volumes → wiring effects → dummies.
-- Team filtering reuses one `team` concept shared by players, turrets, droids, platforms.
+- **Silver cosmium cube = 1**, **golden cosmium cube = 5**.
+- **Drop rules:** when droids, creeps, or heroes die to a **non-hero** cause (turret,
+  trap, kill zone, worm), their cosmium drops on the ground as pickups. When the killer
+  is a **hero**, the cosmium **flies to that hero** automatically.
+- **Placeable cubes:** designers drop cubes directly in maps; optional `respawnTime`
+  makes ambient cosmium that regenerates (jungle income routes).
+- **Health pickups:** same pickup system, restores HP; dropped by creeps, also placeable.
+- Mirrored placement keeps economy symmetric (doc 08 §1, mirror mode).
 
-## 5. Out of scope here
+| Type | Effect | Key params |
+|---|---|---|
+| `cosmiumCube` | +1 (silver) or +5 (gold) on pickup | denomination, respawnTime? |
+| `healthPickup` | +HP on pickup | amount, respawnTime? |
 
-Hero abilities (doc 05 §4 grows in the abilities milestone), upgrade shop contents, and
-moving-platform rider physics (flagged v2.1 — the only catalog entry with real physics
-subtlety).
+## 5. Sim integration
 
-Terminology, fixed 2026-06-10: **droids** are the dumb map/lane creeps above. **Bots** are
-AI-controlled *heroes* filling player slots — they are not map entities and live in
-doc 09.
+- `GameState` gains `mapEntities` (per-entity dynamic state: `enabled`, health, timers,
+  phase) and `pickups` (live cosmium/health drops, homing state). Static params stay in
+  content; snapshots stay small; determinism rules unchanged.
+- Step order: players → actors → droids/creeps → projectiles → trigger volumes → pickups
+  (incl. homing) → wiring/events → respawn timers.
+- One shared `team` concept across players, turrets, droids, barriers, bases.
+
+## 6. Out of scope here
+
+Shop contents/upgrade trees (abilities milestone, doc 05 §4), moving-platform rider
+physics (v2.1), minimap generation (editor era).
+
+Terminology, fixed 2026-06-10: **droids** are map/lane creep units (above). **Bots** are
+AI-controlled *heroes* filling player slots — doc 09. **Creeps** are neutral droids.

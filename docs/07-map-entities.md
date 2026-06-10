@@ -23,7 +23,7 @@ into a level beyond raw geometry. Extends the map format (doc 05 §3) to v2.
     "tiles": ["..."],            // optional block-out layer (compiles to segments)
     "shapes": [                   // doc 06: polygons/polylines/arcs, any rotation
       { "id": "ramp1", "kind": "polygon", "solidity": "solid", "points": [[x,y], ...] },
-      { "id": "arc1", "kind": "arc", "solidity": "oneWay", "center": [x,y], "radius": r,
+      { "id": "arc1", "kind": "arc", "solidity": "glass", "center": [x,y], "radius": r,
         "from": [x,y], "to": [x,y] }
     ]
   },
@@ -53,10 +53,13 @@ add `size` (axis-aligned, doc 06 §5).
 | `healField` | heal over time (base regen zone, the shop area) | hps |
 
 ### Stateful solids — colliders with rules
+
+Glass platforms (drop-through: jump up through, stand on top, down+jump to fall through)
+and team platforms are **geometry solidity types, not entities** — see doc 06 §2 and §4a.
+Only colliders with runtime state live here:
+
 | Type | Behavior | Key params |
 |---|---|---|
-| `glassPlatform` | collider with health; shatters on damage, respawns | health, respawnTime |
-| `teamPlatform` | solid for one team, pass-through for the other | team |
 | `door` | collider that `enabled` toggles on/off (wired to activators) | — |
 | `movingPlatform` | collider following a waypoint loop (v2.1 — riders inherit velocity; needs care) | path, speed, mode |
 

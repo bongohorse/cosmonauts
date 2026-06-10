@@ -17,9 +17,9 @@ community content to break.
 
 - A map's collision is a list of **colliders**. Each collider is a polyline or closed
   polygon: an ordered list of vertices producing edge segments.
-- Collider properties (apply to all its edges): `solidity` — `solid`, `oneWay` (pass from
-  the back side, land on the front), `team` (solid for one team only), or `breakable`
-  (linked to a glass-platform entity, doc 07).
+- Collider properties (apply to all its edges): `solidity` — `solid`, `glass`
+  (pass-through platform, §4a), or `team` (solid for one team only). Breakable-on-damage
+  colliders may arrive later as a fourth type; not in v2.
 - **Curves are an authoring concept, not a sim concept.** The editor stores arcs/Bézier
   sections in the map file; the content loader flattens them to polylines with a fixed,
   deterministic algorithm (pure arithmetic, fixed max-error). The sim only ever sees
@@ -65,6 +65,26 @@ Contacts classify by surface normal. With `up = (0,-1)`:
 - `grounded`/`jumpsUsed`/jump-cut logic is untouched; `grounded` now also stores the
   ground normal for tangent math.
 
+## 4a. Glass platforms (drop-through)
+
+The user-facing name for pass-through platforms, Mario/Awesomenauts-style. Decided
+2026-06-10 (corrected: glass ≠ breakable):
+
+- **From below or the side:** no collision — heroes jump up *through* the platform and
+  land on top.
+- **Standing on it:** it's ground; all slope rules of §4 apply.
+- **Down + jump while standing on glass: drop through.** This press does **not** consume
+  a jump or trigger a double jump — it's a drop, not a jump. The player ignores that
+  specific collider for `DROP_IGNORE_TICKS` (~0.25 s) or until fully clear of it.
+- Landing only registers when approaching the front face from above while moving
+  downward (`vel.y >= 0`) — rising heroes never catch on glass.
+- **Projectiles ignore glass entirely** (both directions); only `solid` geometry blocks
+  shots. Keeps platform fights readable.
+- `solid` platforms have none of these behaviors — no pass-through, no drop.
+
+Input consequence: `PlayerInput` gains `down: boolean` (S / down-arrow / stick-down) in
+this milestone; the drop intent is `down && jump` while grounded on glass.
+
 ## 5. Projectiles and triggers
 
 - Projectiles sweep as circles against segments (swept circle-segment test, arithmetic +
@@ -85,8 +105,9 @@ doc 07 §2. `tiles`-only maps remain valid forever — they compile to segments.
    at most numeric-tolerance edits (flat ground on segments must feel identical to flat
    ground on tiles — this is the regression gate for "the jump feel you already approved").
 2. New test suites: slope walk/climb/slide, crest snapping, valley joints, capsule vs
-   vertex edge cases, one-way segments from both sides, swept projectiles.
+   vertex edge cases, glass platforms (jump up through, land, down+jump drop, no jump
+   consumed by the drop), swept projectiles.
 3. Property test: N random maps × random scripted inputs → the capsule never ends a tick
    intersecting geometry; determinism double-run stays bit-identical.
-4. A new hand-written test map with ramps at several angles, a curved bowl, and a one-way
-   platform, used for feel-tuning in the sandbox before any editor work starts.
+4. A new hand-written test map with ramps at several angles, a curved bowl, and glass
+   platforms, used for feel-tuning in the sandbox before any editor work starts.

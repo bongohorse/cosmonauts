@@ -12,7 +12,8 @@ const COLORS = {
   projectile: 0xffd166,
   healthBack: 0x222741,
   health: 0x66ff8c,
-  hitbox: 0x7df9ff,
+  hitbox: 0xff2bd6, // must clash with every entity color — it outlines them
+
 };
 
 /**

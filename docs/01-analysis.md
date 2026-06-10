@@ -204,9 +204,9 @@ cosmonauts/
 ```
 
 Toolchain: TypeScript strict, Vite (client dev/build), Vitest (sim gets the heaviest test
-coverage — it's pure functions, so it's the most testable code in the project), ESLint +
-Prettier. The dependency rule that must never break: **`sim` imports nothing from any other
-package.**
+coverage — it's pure functions, so it's the most testable code in the project), Biome
+(linting + formatting in one fast tool). The dependency rule that must never break:
+**`sim` imports nothing from any other package.**
 
 ## 8. Roadmap
 

@@ -44,7 +44,7 @@ pnpm lint         # biome
 pnpm build        # client production build
 ```
 
-Node ≥ 22, pnpm 10. The one architectural rule: **`sim` imports nothing from any other
+Node ≥ 22, pnpm 11 (auto-selected via the `packageManager` field). The one architectural rule: **`sim` imports nothing from any other
 package** — that property is what makes prediction, replays, and headless testing work.
 
 ## License

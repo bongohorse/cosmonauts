@@ -24,7 +24,7 @@ and Milestone 2 (local game-feel sandbox) are done; Milestone 3 is netcode (doc 
 
 ## Commands
 
-All from the repo root (Node ≥ 22, pnpm 10):
+All from the repo root (Node ≥ 22, pnpm 11 — auto-selected via `packageManager`):
 
 - `pnpm dev` — client sandbox at http://localhost:5173
 - `pnpm test` — all tests; single file: `pnpm exec vitest run packages/sim/src/movement.test.ts`

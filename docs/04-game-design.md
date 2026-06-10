@@ -41,6 +41,14 @@ The Lonestar-class testbed: the most neutral kit, exercises every M2 system.
 | projectile radius | 0.25 tiles | |
 | projectile lifetime | 0.9 s | ≈ 20-tile effective range |
 
+### Controls — current and reserved
+
+Keyboard: A/D move, S down, Space/W jump (double-tap = double jump, S+jump = glass drop).
+Mouse: aim; **left = basic attack**; **right and middle are reserved for skill
+activation** (abilities milestone) — the client already suppresses the browser's context
+menu, middle-click autoscroll, and ctrl+wheel zoom so those buttons are clean game
+inputs. Browser-level keyboard zoom (ctrl±) can't be blocked from a page; accepted.
+
 ## 3. MVP roster plan (M4+)
 
 Three archetypes to force the ability system to generalize — one per movement gimmick:

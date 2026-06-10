@@ -33,7 +33,7 @@ await app.init({
 document.body.appendChild(app.canvas);
 
 const renderer = new Renderer(app, map, content);
-const inputSource = new InputSource();
+const inputSource = new InputSource(app.canvas);
 const debugPanel = new DebugPanel(character);
 
 window.addEventListener("keydown", (e) => {

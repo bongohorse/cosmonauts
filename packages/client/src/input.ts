@@ -9,7 +9,25 @@ export class InputSource {
   private mouse = { x: 0, y: 0, down: false };
   private jumpLatch = false;
 
-  constructor() {
+  constructor(canvas: HTMLElement) {
+    // Claim mouse buttons from the browser: right and middle click are reserved
+    // for skill activation (abilities milestone). Scoped to the canvas so the
+    // tuning panel keeps native context menus.
+    canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+    canvas.addEventListener("mousedown", (e) => {
+      if (e.button === 1 || e.button === 2) e.preventDefault(); // middle: no autoscroll
+    });
+    canvas.addEventListener("auxclick", (e) => e.preventDefault());
+    // Block ctrl+wheel page zoom anywhere — zooming mid-fight is never intended.
+    // Needs passive: false, or preventDefault is ignored for wheel events.
+    window.addEventListener(
+      "wheel",
+      (e) => {
+        if (e.ctrlKey) e.preventDefault();
+      },
+      { passive: false },
+    );
+
     window.addEventListener("keydown", (e) => {
       if (e.code === "Space" || e.code.startsWith("Arrow")) e.preventDefault();
       if (!e.repeat) {

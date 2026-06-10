@@ -13,7 +13,6 @@ const COLORS = {
   healthBack: 0x222741,
   health: 0x66ff8c,
   hitbox: 0xff2bd6, // must clash with every entity color — it outlines them
-
 };
 
 /**

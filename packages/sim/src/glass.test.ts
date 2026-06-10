@@ -42,6 +42,27 @@ describe("glass platforms (drop-through)", () => {
     expect(p.pos.y + 0.8).toBeCloseTo(4.5, 2); // feet on the glass face
   });
 
+  it("pressing down alone drops through (the default)", () => {
+    const world = makeWorld(ROOM, GLASS);
+    landOnGlass(world);
+
+    run(world, 1, input({ down: true }));
+    expect(player(world).grounded).toBe(false);
+    expect(player(world).jumpsUsed).toBe(0);
+
+    run(world, 90);
+    expect(player(world).pos.y + 0.8).toBeCloseTo(7, 2); // on the floor below
+  });
+
+  it("holding down on solid ground does nothing", () => {
+    const world = makeWorld(ROOM, GLASS);
+    run(world, 10);
+    run(world, 30, input({ down: true }));
+    const p = player(world);
+    expect(p.grounded).toBe(true);
+    expect(p.pos.y + 0.8).toBeCloseTo(7, 2); // still standing on the floor
+  });
+
   it("down+jump drops through without consuming a jump", () => {
     const world = makeWorld(ROOM, GLASS);
     landOnGlass(world);

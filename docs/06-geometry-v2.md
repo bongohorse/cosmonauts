@@ -73,9 +73,11 @@ The user-facing name for pass-through platforms, Mario/Awesomenauts-style. Decid
 - **From below or the side:** no collision — heroes jump up *through* the platform and
   land on top.
 - **Standing on it:** it's ground; all slope rules of §4 apply.
-- **Down + jump while standing on glass: drop through.** This press does **not** consume
-  a jump or trigger a double jump — it's a drop, not a jump. The player ignores that
-  specific collider for `DROP_IGNORE_TICKS` (~0.25 s) or until fully clear of it.
+- **Down while standing on glass: drop through** (decided 2026-06-10: down alone is the
+  default; down+jump also drops since it includes down — the jump press is absorbed).
+  Holding down chains drops through stacked platforms. A drop never consumes a jump or
+  triggers a double jump. The player ignores that specific collider for
+  `DROP_IGNORE_TICKS` (~0.25 s) or until fully clear of it.
 - Landing only registers when approaching the front face from above while moving
   downward (`vel.y >= 0`) — rising heroes never catch on glass.
 - **Projectiles ignore glass entirely** (both directions); only `solid` geometry blocks

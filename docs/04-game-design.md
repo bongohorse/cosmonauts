@@ -43,7 +43,8 @@ The Lonestar-class testbed: the most neutral kit, exercises every M2 system.
 
 ### Controls — current and reserved
 
-Keyboard: A/D move, S down, Space/W jump (double-tap = double jump, S+jump = glass drop).
+Keyboard: A/D move, S down (drops through glass platforms; S+jump also works), Space/W
+jump (press again mid-air = double jump).
 Mouse: aim; **left = basic attack**; **right and middle are reserved for skill
 activation** (abilities milestone) — the client already suppresses the browser's context
 menu, middle-click autoscroll, ctrl+wheel zoom, and keyboard zoom (ctrl/cmd +, −, 0) so

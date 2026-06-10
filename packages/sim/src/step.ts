@@ -40,9 +40,10 @@ function stepPlayer(
     if (p.dropTicks === 0) p.dropShapeId = "";
   }
 
-  // Jump button: on glass with down held it's a drop, not a jump (doc 06 §4a).
+  // Down on glass drops through — held or pressed, with or without jump
+  // (doc 06 §4a). A jump press in the same tick is absorbed: a drop is not a jump.
   let jumpedThisTick = false;
-  if (input.jump && p.grounded && p.groundGlass && input.down) {
+  if (p.grounded && p.groundGlass && input.down) {
     p.dropShapeId = p.groundShapeId;
     p.dropTicks = DROP_IGNORE_TICKS;
     p.grounded = false;

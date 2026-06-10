@@ -17,6 +17,15 @@ names, art, music, maps — is original IP.
 | IP / art | Original universe with cloned mechanics. Geometric placeholder art during prototyping; art, music, and story come last. |
 | Milestone 1 | Design and architecture documents (this folder). |
 
+Added 2026-06-10 (post-sandbox direction talk):
+
+| Topic | Decision |
+|---|---|
+| Level geometry | **Segment-based collision v2** — platforms at any rotation, curves as polylines, slopes; capsule world-collision, AABB combat hitboxes stay (doc 06). |
+| Map content | Data-driven placeable entity system with activator wiring (doc 07). |
+| Creation tools | In-game map editor (play/edit toggle); hero editor after the ability system; JSON download/upload + localStorage persistence, no backend (doc 08). |
+| Netcode timing | **Deferred** until the prototype is in good shape — creation tools and content systems come first. |
+
 The rationale for each decision is captured in the relevant sections below.
 
 ## 3. What "feels like Awesomenauts" means, concretely
@@ -210,14 +219,22 @@ coverage — it's pure functions, so it's the most testable code in the project)
 
 ## 8. Roadmap
 
+Revised 2026-06-10 after sandbox playtesting: creation tools and content systems moved
+ahead of netcode (maintainer decision — multiplayer starts once the prototype is in good
+shape).
+
 | Milestone | Deliverable | Proves |
 |---|---|---|
-| **M1 — Design docs** *(current)* | Docs 01–05: this analysis, sim core design, netcode design, MVP game design, content schemas | Shared understanding; contributors can orient |
-| **M2 — Game-feel sandbox** | One test map, one placeholder character: run/jump/double-jump/shoot a dummy, live tuning panel. Local only, sim built to netcode spec. | The feel — the project's core promise |
-| **M3 — Netcode** | Authoritative server, two browsers playing together with prediction + interpolation; network debug overlay | The biggest technical risk |
-| **M4 — Vertical slice** | One lane: droids, two turrets, destructible base, solar + shop + upgrades, 2 characters, 3v3 with bot backfill | The complete MOBA loop is fun |
-| **M5 — Content breadth** | More characters/maps via the data-driven pipeline; balance iteration; contributor content guide | The content system scales |
-| **M6 — Identity & service** | Art direction replaces placeholders; lobby/matchmaking hardening; community server hosting (Docker) | A game people can actually play and share |
+| **M1 — Design docs** ✅ | Docs 01–08 | Shared understanding; contributors can orient |
+| **M2 — Game-feel sandbox** ✅ | One test map, one placeholder character, live tuning panel; auto-deployed to GitHub Pages | The feel — the project's core promise |
+| **M3 — Geometry v2** | Segment collision: rotated platforms, curves, slopes, capsule movement; tiles still compile in; ramp/curve test map (doc 06) | Creative-freedom geometry without losing the approved feel |
+| **M4 — Map entities** | Trigger volumes (jumper, gravity, teleport, fire, death, heal), glass/team platforms, activator wiring, first actors (doc 07) | Maps can be *designed*, not just drawn |
+| **M5 — Map editor** | In-game edit mode: geometry tools, schema-driven entity palette + inspector, undo, JSON + localStorage saves (doc 08) | Anyone can make a map |
+| **M6 — Abilities & heroes** | Ability template system, 2–3 distinct heroes, hero editor (docs 05 §4, 08 §2) | Combat depth; the content pipeline generalizes |
+| **M7 — Netcode** | Authoritative server, two browsers playing together with prediction + interpolation; network debug overlay (doc 03) | The biggest technical risk |
+| **M8 — MOBA vertical slice** | Lanes with bot waves, turrets, destructible core, solar + shop + upgrades, 3v3 with bot backfill | The complete MOBA loop is fun |
+| **M9 — Content breadth** | More heroes/maps via the pipeline; balance iteration; contributor guide | The content system scales |
+| **M10 — Identity & service** | Art direction replaces placeholders; lobby/matchmaking hardening; community server hosting (Docker) | A game people can actually play and share |
 
 ## 9. Open questions (to resolve in docs 02–05)
 

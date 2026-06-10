@@ -1,7 +1,8 @@
 # 03 — Netcode Design
 
 **Status:** v1, 2026-06-10. The contract for `packages/protocol` + `packages/server` and the
-client prediction layer. Implementation target: Milestone 3.
+client prediction layer. Implementation target: the netcode milestone (M7 in the revised
+roadmap, doc 01 §8 — deliberately after creation tools).
 
 ## 1. Architecture recap
 

@@ -109,6 +109,10 @@ All parameters live in character content (doc 05), tunable live in the sandbox.
 
 ## 8. Collision
 
+> **2026-06-10:** Level collision (layer 1) is superseded by [doc 06](06-geometry-v2.md) —
+> segment-based geometry with slopes/curves and capsule world-collision. Layer 2
+> (entity-vs-entity AABB combat) and everything else in this doc stand unchanged.
+
 Two layers, both AABB:
 
 1. **vs. level geometry** (solid tile grid): per-axis move-and-resolve. Move X, clamp

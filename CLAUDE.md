@@ -9,15 +9,20 @@ recreates Awesomenauts (Ronimo Games, 2012). All IP — characters, world, art, 
 is original. Geometric placeholder art is used until gameplay is proven.
 
 Design documents live in `docs/` (start with `docs/01-analysis.md`); they are the source
-of truth for architecture and are kept up to date as decisions change. Milestone 1 (docs)
-and Milestone 2 (local game-feel sandbox) are done; Milestone 3 is netcode (doc 03).
+of truth for architecture and are kept up to date as decisions change. M1 (docs) and M2
+(sandbox, auto-deployed to GitHub Pages) are done. Next per the revised roadmap (doc 01
+§8): M3 geometry v2 (doc 06) → M4 map entities (doc 07) → M5 in-game map editor (doc 08)
+→ M6 abilities/heroes → M7 netcode. **Netcode is deliberately deferred** until the
+prototype is in good shape — don't start it unprompted.
 
 ## Decisions (do not relitigate without the maintainer)
 
 - **Stack:** TypeScript (strict) + Pixi.js, custom engine. No Phaser/Godot/etc.
 - **Netcode target:** authoritative server + client-side prediction. The simulation is
   built transport-agnostic from day one.
-- **Physics:** velocity-based AABB only, like the original. No rigid-body physics engine.
+- **Physics:** velocity-based, no rigid-body physics engine. Level geometry is line
+  segments (any rotation; curves flatten to polylines) with capsule world-collision per
+  doc 06; combat hitboxes remain AABB. Tile maps still compile to segments.
 - **Planned layout:** pnpm monorepo — `packages/sim`, `content`, `protocol`, `client`,
   `server`. Hard rule: `sim` is pure TS and imports nothing from other packages, no DOM,
   no Pixi, no Node APIs (it runs identically in browser and server).

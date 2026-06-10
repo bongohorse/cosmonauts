@@ -61,11 +61,13 @@ live-editing philosophy, which our sim/render split makes nearly free.
   here.
 
 ### Staging
-1. **Editor MVP:** geometry tools with handles, snap, ~8 placeable types, inspector,
-   undo, save/load, mirror mode.
-2. **Editor v2:** wiring + path tools, full actor set, align/distribute, decoration
-   layer, map check, quick-bar customization, prefab grouping (save a selection — e.g.
-   "turret + barrier + button" — as a reusable stamp).
+1. **Editor MVP** (now Milestone 4, before entities — it's the testing instrument for
+   them): edit/play toggle, rect + polygon tools with move/resize/rotate handles,
+   solidity (incl. glass) + tint, grid/angle snap, undo/redo, spawn + dummy placement,
+   camera pan/zoom, localStorage autosave + JSON export/import, blank map.
+2. **Editor v2** (grows with M5 entities): schema-driven entity palette, wiring + path
+   tools, mirror mode (lands with teams/barriers, which it swaps), align/distribute,
+   arcs/curve tool, decoration layer, map check, search/quick-bar, prefab grouping.
 
 ## 2. Hero editor
 

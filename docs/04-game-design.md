@@ -51,7 +51,7 @@ menu, middle-click autoscroll, ctrl+wheel zoom, and keyboard zoom (ctrl/cmd +, â
 those inputs belong to the game. Truly browser-reserved shortcuts (ctrl+T/W/N, F11)
 cannot be intercepted by any page; accepted.
 
-## 3. MVP roster plan (M4+)
+## 3. MVP roster plan (abilities milestone)
 
 Three archetypes to force the ability system to generalize â€” one per movement gimmick:
 
@@ -74,7 +74,7 @@ two horizontal lanes joined by vertical neutral space, two turrets per lane, bas
 behind the lanes, droid spawners on a timer, a hideout area off the lanes. Detailed design
 deferred to its own doc when M4 starts.
 
-## 5. MOBA loop (M4 definition, recorded now for scope)
+## 5. MOBA loop (recorded now for scope; lands with the entities + MOBA milestones)
 
 - **Win:** destroy the enemy base core.
 - **Turrets:** high damage, target droids first; block lane progress until escorted droids

@@ -9,11 +9,12 @@ recreates Awesomenauts (Ronimo Games, 2012). All IP — characters, world, art, 
 is original. Geometric placeholder art is used until gameplay is proven.
 
 Design documents live in `docs/` (start with `docs/01-analysis.md`); they are the source
-of truth for architecture and are kept up to date as decisions change. M1 (docs) and M2
-(sandbox, auto-deployed to GitHub Pages) are done. Next per the revised roadmap (doc 01
-§8): M3 geometry v2 (doc 06) → M4 map entities (doc 07) → M5 in-game map editor (doc 08)
-→ M6 abilities/heroes → M7 netcode. **Netcode is deliberately deferred** until the
-prototype is in good shape — don't start it unprompted.
+of truth for architecture and are kept up to date as decisions change. M1 (docs), M2
+(sandbox, auto-deployed to GitHub Pages), and M3 (geometry v2: segment collision, slopes,
+curves, glass platforms, capsule movement — doc 06) are done. Next per the roadmap (doc
+01 §8): M4 map entities (doc 07) → M5 in-game map editor (doc 08) → M6 abilities/heroes
+→ M7 netcode. **Netcode is deliberately deferred** until the prototype is in good shape —
+don't start it unprompted.
 
 ## Decisions (do not relitigate without the maintainer)
 

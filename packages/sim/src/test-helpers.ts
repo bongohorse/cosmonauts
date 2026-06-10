@@ -1,4 +1,5 @@
 import type { CharacterData, ContentIndex, MapData } from "./content-types";
+import type { ShapeDef } from "./geometry";
 import { NEUTRAL_INPUT, type PlayerInput } from "./input";
 import { buildMap } from "./map";
 import { createState, type GameState } from "./state";
@@ -38,8 +39,8 @@ export interface World {
   map: MapData;
 }
 
-export function makeWorld(rows: string[]): World {
-  const map = buildMap("test-map", "Test Map", rows);
+export function makeWorld(rows: string[], shapes: ShapeDef[] = []): World {
+  const map = buildMap("test-map", "Test Map", rows, shapes);
   const character = makeCharacter();
   const content: ContentIndex = {
     characters: { [character.id]: character },

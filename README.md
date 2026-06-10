@@ -4,8 +4,10 @@ An open-source, browser-based 2D action-platformer MOBA. The gameplay feel chase
 [Awesomenauts](https://en.wikipedia.org/wiki/Awesomenauts) (Ronimo Games, 2012);
 everything else — characters, world, art — is original.
 
-**Status: Milestone 2 (game-feel sandbox).** A single character on a test map, playable in
-the browser with placeholder art and a live tuning panel. Multiplayer is Milestone 3.
+**Status: Milestone 3 complete (geometry v2).** A single character on a test map with
+slopes, curved surfaces, rotated platforms, and drop-through glass platforms — playable in
+the browser with placeholder art and a live tuning panel. Next up: placeable map entities,
+then the in-game map editor. Multiplayer comes after the creation tools.
 
 ## Play the sandbox
 

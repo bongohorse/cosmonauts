@@ -45,6 +45,7 @@ export class InputSource {
   sample(playerWorld: Vec2, screenToWorld: (sx: number, sy: number) => Vec2): PlayerInput {
     const left = this.keys.has("KeyA") || this.keys.has("ArrowLeft");
     const right = this.keys.has("KeyD") || this.keys.has("ArrowRight");
+    const down = this.keys.has("KeyS") || this.keys.has("ArrowDown");
     const jumpHeld = this.keys.has("Space") || this.keys.has("KeyW") || this.keys.has("ArrowUp");
 
     const jump = this.jumpLatch;
@@ -64,6 +65,7 @@ export class InputSource {
 
     return {
       moveX: ((right ? 1 : 0) - (left ? 1 : 0)) as -1 | 0 | 1,
+      down,
       jump,
       jumpHeld,
       shoot: this.mouse.down,

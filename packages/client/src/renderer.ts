@@ -48,6 +48,29 @@ export class Renderer {
         }
       }
     }
+    this.drawShapes(g);
+  }
+
+  /** Geometry-v2 shapes: filled polygons; open chains (glass, curves) as strokes. */
+  private drawShapes(g: Graphics): void {
+    for (const shape of this.map.shapes) {
+      const flat = shape.points.flatMap(([x, y]) => [x * TILE_PX, y * TILE_PX]);
+      if (flat.length < 4) continue;
+      const tint = shape.tint !== undefined ? Number.parseInt(shape.tint.slice(1), 16) : undefined;
+      const glass = shape.solidity === "glass";
+      const color = tint ?? (glass ? 0x9fe8ff : COLORS.tile);
+
+      if (shape.closed) {
+        g.poly(flat).fill(color);
+        g.poly(flat).stroke({ color: COLORS.tileEdge, width: 2 });
+      } else {
+        g.moveTo(flat[0] ?? 0, flat[1] ?? 0);
+        for (let i = 2; i < flat.length; i += 2) {
+          g.lineTo(flat[i] ?? 0, flat[i + 1] ?? 0);
+        }
+        g.stroke({ color, width: glass ? 5 : 8, alpha: glass ? 0.55 : 1, cap: "round" });
+      }
+    }
   }
 
   render(prev: GameState, curr: GameState, alpha: number): void {

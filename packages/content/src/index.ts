@@ -49,7 +49,7 @@ export function loadContent(): ContentIndex {
   for (const source of mapSources) {
     const def = MapDefSchema.parse(source);
     if (maps[def.id]) throw new Error(`duplicate map id "${def.id}"`);
-    maps[def.id] = buildMap(def.id, def.name, def.tiles);
+    maps[def.id] = buildMap(def.id, def.name, def.tiles, def.shapes ?? []);
   }
 
   return { characters, maps };

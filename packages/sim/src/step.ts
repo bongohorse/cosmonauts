@@ -1,6 +1,8 @@
-import { aabbHitsSolid, aabbOverlap, isOnGround, moveAxis } from "./collision";
-import { DT, DUMMY_HEIGHT, DUMMY_RESPAWN_TICKS, DUMMY_WIDTH } from "./constants";
+import { movePlayer } from "./capsule";
+import { aabbOverlap } from "./collision";
+import { DROP_IGNORE_TICKS, DT, DUMMY_HEIGHT, DUMMY_RESPAWN_TICKS, DUMMY_WIDTH } from "./constants";
 import type { CharacterData, ContentIndex, MapData } from "./content-types";
+import { closestSegSeg } from "./geometry";
 import { NEUTRAL_INPUT, type PlayerInput } from "./input";
 import { approach } from "./math";
 import type { GameState, PlayerState } from "./state";
@@ -32,17 +34,25 @@ function stepPlayer(
   map: MapData,
 ): void {
   const { stats, attack } = char;
-  const hw = char.hitbox.w / 2;
-  const hh = char.hitbox.h / 2;
 
-  // Horizontal: approach target speed; separate ground/air accel is the air-control lever.
-  const accel = p.grounded ? stats.groundAccel : stats.airAccel;
-  p.vel.x = approach(p.vel.x, input.moveX * stats.moveSpeed, accel * DT);
+  if (p.dropTicks > 0) {
+    p.dropTicks -= 1;
+    if (p.dropTicks === 0) p.dropShapeId = "";
+  }
 
-  if (input.jump && p.jumpsUsed < stats.maxJumps) {
+  // Jump button: on glass with down held it's a drop, not a jump (doc 06 §4a).
+  let jumpedThisTick = false;
+  if (input.jump && p.grounded && p.groundGlass && input.down) {
+    p.dropShapeId = p.groundShapeId;
+    p.dropTicks = DROP_IGNORE_TICKS;
+    p.grounded = false;
+    if (p.vel.y < 2) p.vel.y = 2; // exit the face this tick
+  } else if (input.jump && p.jumpsUsed < stats.maxJumps) {
     p.vel.y = -stats.jumpVelocity;
     p.jumpsUsed += 1;
     p.jumpCutApplied = false;
+    jumpedThisTick = true;
+    p.grounded = false;
   }
 
   // Variable jump height: releasing while rising cuts the jump short, once per jump.
@@ -51,22 +61,28 @@ function stepPlayer(
     p.jumpCutApplied = true;
   }
 
-  p.vel.y = Math.min(p.vel.y + stats.gravity * DT, stats.maxFallSpeed);
+  if (p.grounded) {
+    // Walk along the ground tangent at constant surface speed (doc 06 §4).
+    let tx = -p.groundNY;
+    let ty = p.groundNX;
+    if (tx < 0) {
+      tx = -tx;
+      ty = -ty;
+    }
+    const along = p.vel.x * tx + p.vel.y * ty;
+    const next = approach(along, input.moveX * stats.moveSpeed, stats.groundAccel * DT);
+    p.vel.x = tx * next;
+    p.vel.y = ty * next;
+  } else {
+    p.vel.x = approach(p.vel.x, input.moveX * stats.moveSpeed, stats.airAccel * DT);
+    p.vel.y = Math.min(p.vel.y + stats.gravity * DT, stats.maxFallSpeed);
+  }
 
   // Aim direction controls facing, independent of movement (Awesomenauts-style).
   if (input.aimX > 0.01) p.facing = 1;
   else if (input.aimX < -0.01) p.facing = -1;
 
-  const rx = moveAxis(map, p.pos.x, p.pos.y, hw, hh, p.vel.x * DT, "x");
-  p.pos.x = rx.pos;
-  if (rx.hit) p.vel.x = 0;
-
-  const ry = moveAxis(map, p.pos.x, p.pos.y, hw, hh, p.vel.y * DT, "y");
-  p.pos.y = ry.pos;
-  if (ry.hit) p.vel.y = 0;
-
-  p.grounded = p.vel.y >= 0 && isOnGround(map, p.pos.x, p.pos.y, hw, hh);
-  if (p.grounded) p.jumpsUsed = 0;
+  movePlayer(map, p, char, jumpedThisTick);
 
   if (p.attackCooldown > 0) p.attackCooldown -= 1;
   if (input.shoot && p.attackCooldown === 0) {
@@ -86,6 +102,24 @@ function stepPlayer(
   }
 }
 
+/** Swept circle vs solid segments — fast shots can't tunnel (doc 06 §5). */
+function projectileHitsWorld(
+  map: MapData,
+  ox: number,
+  oy: number,
+  nx: number,
+  ny: number,
+  radius: number,
+): boolean {
+  const r2 = radius * radius;
+  for (const seg of map.segments) {
+    if (seg.solidity !== "solid") continue; // glass/team never block shots
+    const cs = closestSegSeg(ox, oy, nx, ny, seg.ax, seg.ay, seg.bx, seg.by);
+    if (cs.dist2 <= r2) return true;
+  }
+  return false;
+}
+
 function stepProjectiles(state: GameState, map: MapData): void {
   const dummyHw = DUMMY_WIDTH / 2;
   const dummyHh = DUMMY_HEIGHT / 2;
@@ -93,13 +127,15 @@ function stepProjectiles(state: GameState, map: MapData): void {
   for (let i = state.projectiles.length - 1; i >= 0; i--) {
     const pr = state.projectiles[i];
     if (pr === undefined) continue;
+    const ox = pr.pos.x;
+    const oy = pr.pos.y;
     pr.pos.x += pr.vel.x * DT;
     pr.pos.y += pr.vel.y * DT;
     pr.ticksLeft -= 1;
 
     let dead = pr.ticksLeft <= 0;
 
-    if (!dead && aabbHitsSolid(map, pr.pos.x, pr.pos.y, pr.radius, pr.radius)) {
+    if (!dead && projectileHitsWorld(map, ox, oy, pr.pos.x, pr.pos.y, pr.radius)) {
       dead = true;
     }
 
@@ -120,7 +156,7 @@ function stepProjectiles(state: GameState, map: MapData): void {
     if (!dead) {
       for (const target of state.players) {
         if (target.id === pr.ownerId || target.health <= 0) continue;
-        const thw = 0.4; // M2: players share a generic hit size; real hitboxes come with content lookup in M3
+        const thw = 0.4; // M2-era: shared hit size; per-character hitbox lookup comes with teams/M4
         const thh = 0.8;
         if (
           aabbOverlap(

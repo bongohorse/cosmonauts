@@ -1,11 +1,24 @@
 import { DUMMY_HEIGHT } from "./constants";
 import type { MapData } from "./content-types";
+import {
+  compileShape,
+  compileTiles,
+  type SegmentData,
+  type ShapeData,
+  type ShapeDef,
+} from "./geometry";
 
 /**
- * Build a MapData from ASCII tile rows (doc 05 §3).
- * Legend: '#' solid, '.' empty, 'S' player spawn, 'D' dummy spawn.
+ * Build a MapData from ASCII tile rows plus optional shapes (docs 05 §3, 06, 07 §2).
+ * Tile legend: '#' solid, '.' empty, 'S' player spawn, 'D' dummy spawn.
+ * Tiles and shapes both compile to the segment list the sim collides against.
  */
-export function buildMap(id: string, name: string, rows: string[]): MapData {
+export function buildMap(
+  id: string,
+  name: string,
+  rows: string[],
+  shapeDefs: ShapeDef[] = [],
+): MapData {
   const height = rows.length;
   const firstRow = rows[0];
   if (firstRow === undefined) throw new Error(`map "${id}": no rows`);
@@ -41,5 +54,11 @@ export function buildMap(id: string, name: string, rows: string[]): MapData {
   }
 
   if (playerSpawns.length === 0) throw new Error(`map "${id}": needs at least one 'S' spawn`);
-  return { id, name, width, height, solid, playerSpawns, dummySpawns };
+
+  const segments: SegmentData[] = [];
+  const shapes: ShapeData[] = [];
+  compileTiles(width, height, solid, segments);
+  for (const def of shapeDefs) compileShape(def, segments, shapes);
+
+  return { id, name, width, height, solid, segments, shapes, playerSpawns, dummySpawns };
 }

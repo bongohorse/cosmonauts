@@ -23,6 +23,14 @@ describe("content loading", () => {
     expect(map?.dummySpawns).toHaveLength(3);
   });
 
+  it("compiles shapes into collision segments", () => {
+    const map = loadContent().maps["testing-grounds"];
+    expect(map?.shapes).toHaveLength(4);
+    expect(map?.shapes.map((s) => s.solidity)).toContain("glass");
+    // Merged tile perimeter (~12) + ramp 4 + tilted rect 4 + glass 1 + 8-step bowl arc.
+    expect(map?.segments.length).toBeGreaterThan(25);
+  });
+
   it("smoke test: 600 neutral ticks of real content settle the player on the ground", () => {
     const content = loadContent();
     const map = content.maps["testing-grounds"];

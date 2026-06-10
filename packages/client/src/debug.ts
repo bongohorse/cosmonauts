@@ -19,7 +19,7 @@ export class DebugPanel {
       `pos ${p.pos.x.toFixed(2)}, ${p.pos.y.toFixed(2)}  vel ${p.vel.x.toFixed(1)}, ${p.vel.y.toFixed(1)}`,
       `grounded ${p.grounded}  jumps ${p.jumpsUsed}  projectiles ${state.projectiles.length}`,
       "",
-      "A/D move · Space/W jump (×2) · mouse aim · click shoot",
+      "A/D move · Space/W jump (×2) · S+jump drop through glass · mouse aim · click shoot",
       `F1 hitboxes ${showHitboxes ? "on" : "off"} · R reset`,
     ].join("\n");
   }

@@ -8,13 +8,22 @@ import type { Vec2 } from "./math";
 // pulling in DOM or Node lib types.
 declare function structuredClone<T>(value: T): T;
 
+export type Team = "A" | "B";
+
 export interface PlayerState {
   id: number;
   characterId: string;
-  pos: Vec2; // AABB center, tile units
+  team: Team;
+  pos: Vec2; // capsule/hitbox center, tile units
   vel: Vec2; // tiles/s
   facing: 1 | -1;
   grounded: boolean;
+  groundNX: number; // contact normal while grounded (0,0 airborne)
+  groundNY: number;
+  groundShapeId: string; // shape under our feet ("" airborne)
+  groundGlass: boolean; // standing on a glass platform
+  dropShapeId: string; // glass collider being dropped through ("" none)
+  dropTicks: number; // remaining ignore ticks for dropShapeId
   jumpsUsed: number;
   jumpCutApplied: boolean;
   attackCooldown: number; // ticks remaining
@@ -53,6 +62,7 @@ export interface GameState {
 export interface SpawnSpec {
   playerId: number;
   characterId: string;
+  team?: Team; // default "A"
 }
 
 export function createState(map: MapData, spawns: SpawnSpec[], content: ContentIndex): GameState {
@@ -76,11 +86,18 @@ export function createState(map: MapData, spawns: SpawnSpec[], content: ContentI
     state.players.push({
       id: spec.playerId,
       characterId: spec.characterId,
+      team: spec.team ?? "A",
       // Feet on the bottom edge of the spawn tile (spawn is the tile center).
       pos: { x: spawn.x, y: spawn.y + 0.5 - char.hitbox.h / 2 },
       vel: { x: 0, y: 0 },
       facing: 1,
       grounded: false,
+      groundNX: 0,
+      groundNY: 0,
+      groundShapeId: "",
+      groundGlass: false,
+      dropShapeId: "",
+      dropTicks: 0,
       jumpsUsed: 0,
       jumpCutApplied: false,
       attackCooldown: 0,

@@ -47,6 +47,24 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
+// Sandbox debug hook: console + E2E-test access to the running sim.
+declare global {
+  interface Window {
+    __cosmo?: { state: () => GameState; teleport: (x: number, y: number) => void };
+  }
+}
+window.__cosmo = {
+  state: () => state,
+  teleport(x, y) {
+    const p = state.players[0];
+    if (p === undefined) return;
+    p.pos.x = x;
+    p.pos.y = y;
+    p.vel.x = 0;
+    p.vel.y = 0;
+  },
+};
+
 // Fixed-timestep driver with render interpolation (doc 02 §2).
 let accumulator = 0;
 app.ticker.add((ticker) => {

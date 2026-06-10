@@ -1,3 +1,4 @@
+import type { SegmentData, ShapeData } from "./geometry";
 import type { Vec2 } from "./math";
 
 // The sim owns the data contract; the content package validates JSON into these
@@ -37,7 +38,9 @@ export interface MapData {
   name: string;
   width: number;
   height: number;
-  solid: boolean[]; // row-major, width * height
+  solid: boolean[]; // row-major, width * height — tile layer (renderer + compile source)
+  segments: SegmentData[]; // the actual collision world (doc 06)
+  shapes: ShapeData[]; // render-ready shape outlines
   playerSpawns: Vec2[];
   dummySpawns: Vec2[];
 }

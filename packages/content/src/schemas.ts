@@ -30,6 +30,39 @@ export const CharacterDefSchema = z.object({
 });
 export type CharacterDef = z.infer<typeof CharacterDefSchema>;
 
+const PointSchema = z.tuple([z.number(), z.number()]);
+const SoliditySchema = z.enum(["solid", "glass", "teamA", "teamB"]);
+const shapeBase = {
+  id: z.string().min(1),
+  solidity: SoliditySchema,
+  tint: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional(),
+};
+
+// Geometry v2 (doc 06): shapes compile to collision segments in the sim.
+export const ShapeDefSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("rect"),
+    ...shapeBase,
+    pos: PointSchema, // center
+    size: z.tuple([z.number().positive(), z.number().positive()]),
+    rotation: z.number().optional(), // degrees
+  }),
+  z.object({ kind: z.literal("polygon"), ...shapeBase, points: z.array(PointSchema).min(3) }),
+  z.object({ kind: z.literal("polyline"), ...shapeBase, points: z.array(PointSchema).min(2) }),
+  z.object({
+    kind: z.literal("arc"),
+    ...shapeBase,
+    center: PointSchema,
+    radius: z.number().positive(),
+    startDeg: z.number(),
+    endDeg: z.number(),
+    steps: z.number().int().min(2).optional(),
+  }),
+]);
+
 export const MapDefSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -40,5 +73,6 @@ export const MapDefSchema = z.object({
     .refine((rows) => rows.every((row) => row.length === rows[0]?.length), {
       message: "all tile rows must have the same length",
     }),
+  shapes: z.array(ShapeDefSchema).optional(),
 });
 export type MapDef = z.infer<typeof MapDefSchema>;

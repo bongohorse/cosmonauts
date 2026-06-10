@@ -9,6 +9,7 @@ import { z } from "zod";
 
 export const PlayerInputSchema = z.object({
   moveX: z.union([z.literal(-1), z.literal(0), z.literal(1)]),
+  down: z.boolean(),
   jump: z.boolean(),
   jumpHeld: z.boolean(),
   shoot: z.boolean(),

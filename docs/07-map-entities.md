@@ -38,9 +38,9 @@ map creator can drop into a level beyond raw geometry.
     { "id": "btn1", "type": "activator", "pos": [40, 31],
       "params": { "mode": "once" }, "targets": ["container1"] },
     { "id": "tur1", "type": "turret", "pos": [60, 28],
-      "params": { "team": "B" }, "onDestroyed": ["barrier1"] }
-  ],
-  "spawns": { "teamA": [[x,y]], "teamB": [[x,y]] }
+      "params": { "team": "B" }, "onDestroyed": ["barrier1"] },
+    { "id": "spawnA", "type": "spawn", "pos": [4, 30], "params": { "team": "A" } }
+  ]
 }
 ```
 
@@ -61,7 +61,7 @@ rotate freely).
 | `fireField` | damage over time while inside | dps, tick interval |
 | `killZone` | instant kill + respawn; also the bottom-of-map catcher for fall-off maps | — |
 | `healField` | heal over time while inside | hps |
-| `hideZone` *(proposed)* | heroes inside are hidden from the enemy team until they act | — |
+| `hideZone` | heroes inside are hidden from the enemy team until they act | — |
 
 ### Solids — colliders with rules
 
@@ -82,8 +82,10 @@ special cases: it's two placeables and one wire.
 ### Actors — entities with per-tick behavior
 | Type | Behavior | Key params |
 |---|---|---|
-| `base` | team spawn + regeneration zone + **shop** (buy ability upgrades: movement shoes, fire rate…). One per team | team, hps |
+| `spawn` | team spawn point — **its own entity** (decided 2026-06-10), placeable anywhere, several allowed per team | team |
+| `base` | regeneration zone + **shop** (buy ability upgrades: movement shoes, fire rate…). One per team; usually contains a spawn, but doesn't have to | team, hps |
 | `turret` | targets enemies in range, shoots, destructible; fires `onDestroyed` wiring | team, range, dps, health, priority |
+| `dummy` | static practice target with health + respawn (already in the sim; exposed to the editor for training maps) | health, respawnTime |
 | `droidSpawner` | spawns droid waves per lane | droidType, interval, count, path |
 | `droidContainer` | holds droids (e.g. the flying-droid barrel); wired activator button releases them | droidType, count |
 | `creepDen` *(spawner for neutrals)* | spawns neutral creeps that respawn on a timer | creepType, respawnTime |
@@ -106,30 +108,31 @@ map hazard (zone-anchored, telegraphs, devours — doc 07 v1).
 |---|---|---|
 | `activator` | button/plate/lever: flips `enabled` on its targets when touched or damaged | mode: toggle\|momentary\|once, trigger: touch\|damage, cooldown |
 | `timer` | fires its targets on a fixed cycle (periodic traps, scheduled releases) | period, onDuration, startDelay |
+| `cameraBounds` | resizable rect limiting where the camera may look (distinct from where players may go); one per map | — |
 
 ## 4. Pickups & economy
 
-Currency working name: **Cosmium** (replaces Awesomenauts' "solar"; final name open —
-see decision log). Two denominations, both physical cubes in the world:
+The currency is **Flux** (final name, decided 2026-06-10; replaces Awesomenauts'
+"solar"). Two denominations, both physical cubes in the world:
 
-- **Silver cosmium cube = 1**, **golden cosmium cube = 5**.
+- **Silver flux cube = 1**, **golden flux cube = 5**.
 - **Drop rules:** when droids, creeps, or heroes die to a **non-hero** cause (turret,
-  trap, kill zone, worm), their cosmium drops on the ground as pickups. When the killer
-  is a **hero**, the cosmium **flies to that hero** automatically.
+  trap, kill zone, worm), their flux drops on the ground as pickups. When the killer
+  is a **hero**, the flux **flies to that hero** automatically.
 - **Placeable cubes:** designers drop cubes directly in maps; optional `respawnTime`
-  makes ambient cosmium that regenerates (jungle income routes).
+  makes ambient flux that regenerates (jungle income routes).
 - **Health pickups:** same pickup system, restores HP; dropped by creeps, also placeable.
 - Mirrored placement keeps economy symmetric (doc 08 §1, mirror mode).
 
 | Type | Effect | Key params |
 |---|---|---|
-| `cosmiumCube` | +1 (silver) or +5 (gold) on pickup | denomination, respawnTime? |
+| `fluxCube` | +1 (silver) or +5 (gold) on pickup | denomination, respawnTime? |
 | `healthPickup` | +HP on pickup | amount, respawnTime? |
 
 ## 5. Sim integration
 
 - `GameState` gains `mapEntities` (per-entity dynamic state: `enabled`, health, timers,
-  phase) and `pickups` (live cosmium/health drops, homing state). Static params stay in
+  phase) and `pickups` (live flux/health drops, homing state). Static params stay in
   content; snapshots stay small; determinism rules unchanged.
 - Step order: players → actors → droids/creeps → projectiles → trigger volumes → pickups
   (incl. homing) → wiring/events → respawn timers.

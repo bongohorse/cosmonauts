@@ -70,8 +70,8 @@ deferred to its own doc when M4 starts.
 - **Turrets:** high damage, target droids first; block lane progress until escorted droids
   tank them.
 - **Droids:** spawn in waves per lane, walk waypoints, melee attackers.
-- **Cosmium** (working name, ex-"solar"): the single currency, as physical cubes —
-  silver = 1, gold = 5. Killed by a hero → cosmium flies to the killer; killed by
+- **Flux** (ex-"solar"): the single currency, as physical cubes —
+  silver = 1, gold = 5. Killed by a hero → flux flies to the killer; killed by
   anything else → drops as pickups. Full economy rules: doc 07 §4.
 - **Shop:** at the team base (spawn + regeneration + shop in one zone, doc 07 §3); buy
   from a per-match loadout of upgrades (stat modifiers — doc 02 §7 / doc 05). Pre-match

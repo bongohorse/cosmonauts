@@ -10,7 +10,7 @@ Milestone 1 of the project is this documentation set. Read in order.
 | 04 | [MVP Game Design](04-game-design.md) — reference methodology, Nova's parameters, roster plan, MOBA loop scope | ✅ Written |
 | 05 | [Content Schemas](05-content-schemas.md) — zod schemas for characters, maps, upgrades, status effects | ✅ Written |
 | 06 | [Geometry & Collision v2](06-geometry-v2.md) — segment-based levels: rotation at any angle, curves, slopes, glass (drop-through) platforms, capsule movement | ✅ Written |
-| 07 | [Map Entities, Wiring & Economy](07-map-entities.md) — placeable objects (jumpers, fields, barriers, turrets, droids, creeps, sandworm…), the activator/event signal model, cosmium currency & pickups | ✅ Written |
+| 07 | [Map Entities, Wiring & Economy](07-map-entities.md) — placeable objects (jumpers, fields, barriers, turrets, droids, creeps, sandworm…), the activator/event signal model, flux currency & pickups | ✅ Written |
 | 08 | [Creation Tools](08-creation-tools.md) — in-game map editor, hero editor, JSON + localStorage persistence | ✅ Written |
 | 09 | [Bots: AI Heroes](09-bots.md) — bots as `(state) → PlayerInput`, community-programmable behavior trees, CI bot leagues | ✅ Written |
 

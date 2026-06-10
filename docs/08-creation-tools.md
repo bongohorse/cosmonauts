@@ -27,7 +27,7 @@ live-editing philosophy, which our sim/render split makes nearly free.
 - Every map has a **center point/axis**. With mirroring toggled on, placing, moving, or
   deleting anything applies the mirrored operation on the other side — with **team
   swap**: a red-team barrier placed on the left creates the blue-team barrier on the
-  right; a cosmium cube near red spawn creates its twin near blue spawn.
+  right; a flux cube near red spawn creates its twin near blue spawn.
 - Mirroring is a **tool, not a constraint**: toggle it off and build fully asymmetric
   maps. Most competitive maps will keep it on — symmetry is balance you don't have to
   guess at. Mirrored pairs stay linked (edit one, the twin follows) until explicitly
@@ -39,7 +39,7 @@ live-editing philosophy, which our sim/render split makes nearly free.
   New entity type in content = full editor support for free. The single
   highest-leverage implementation choice in the editor.
 - **Search box** over all entity types + a **quick bar** of the most common ones
-  (platform, glass platform, jumper, turret, spawner, cosmium cube…), customizable.
+  (platform, glass platform, jumper, turret, spawner, flux cube…), customizable.
 - **Wiring tool:** select an activator/turret, click targets; links render as curves.
   `onDestroyed` event wires use the same gesture from the source entity.
 - **Path tool:** draw droid lane paths and moving-platform routes as clickable waypoint

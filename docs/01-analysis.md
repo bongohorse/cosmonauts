@@ -25,7 +25,7 @@ Added 2026-06-10 (post-sandbox direction talk):
 | Map content | Data-driven placeable entity system with activator wiring (doc 07). |
 | Creation tools | In-game map editor (play/edit toggle); hero editor after the ability system; JSON download/upload + localStorage persistence, no backend (doc 08). |
 | Netcode timing | **Deferred** until the prototype is in good shape — creation tools and content systems come first. |
-| Currency | **Cosmium** (working name, replaces "solar"): silver cube = 1, gold cube = 5; hero kills pull cosmium to the killer, other deaths drop it (doc 07 §4). |
+| Currency | **Flux** (final, decided 2026-06-10 — short and easy to shout; replaces "solar"): silver cube = 1, gold cube = 5; hero kills pull flux to the killer, other deaths drop it (doc 07 §4). |
 
 The rationale for each decision is captured in the relevant sections below.
 
@@ -229,7 +229,7 @@ shape).
 | **M1 — Design docs** ✅ | Docs 01–08 | Shared understanding; contributors can orient |
 | **M2 — Game-feel sandbox** ✅ | One test map, one placeholder character, live tuning panel; auto-deployed to GitHub Pages | The feel — the project's core promise |
 | **M3 — Geometry v2** | Segment collision: rotated platforms, curves, slopes, capsule movement; glass (drop-through) + team platforms; tiles still compile in; ramp/curve test map (doc 06) | Creative-freedom geometry without losing the approved feel |
-| **M4 — Map entities** | Trigger volumes (jumper, force field, teleport, fire, kill zone, heal), activator + event wiring, team barriers, cosmium/health pickups, droid types, first actors (doc 07) | Maps can be *designed*, not just drawn |
+| **M4 — Map entities** | Trigger volumes (jumper, force field, teleport, fire, kill zone, heal), activator + event wiring, team barriers, flux/health pickups, droid types, first actors (doc 07) | Maps can be *designed*, not just drawn |
 | **M5 — Map editor** | In-game edit mode: geometry tools, schema-driven entity palette + inspector, undo, JSON + localStorage saves (doc 08) | Anyone can make a map |
 | **M6 — Abilities & heroes** | Ability template system, 2–3 distinct heroes, hero editor (docs 05 §4, 08 §2) | Combat depth; the content pipeline generalizes |
 | **M7 — Netcode** | Authoritative server, two browsers playing together with prediction + interpolation; network debug overlay (doc 03) | The biggest technical risk |

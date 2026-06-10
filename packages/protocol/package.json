@@ -1,0 +1,17 @@
+{
+  "name": "@cosmonauts/protocol",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Wire message schemas shared by client and server. Implementation target: Milestone 3.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cosmonauts/sim": "workspace:*",
+    "zod": "^4.4.3"
+  }
+}

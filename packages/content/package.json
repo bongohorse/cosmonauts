@@ -1,0 +1,17 @@
+{
+  "name": "@cosmonauts/content",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Game content (characters, maps) as zod-validated JSON, loaded into sim-typed data.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cosmonauts/sim": "workspace:*",
+    "zod": "^4.4.3"
+  }
+}

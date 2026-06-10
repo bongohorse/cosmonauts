@@ -1,0 +1,13 @@
+{
+  "name": "@cosmonauts/sim",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Deterministic game simulation core. Imports nothing — runs identically in browser and server.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

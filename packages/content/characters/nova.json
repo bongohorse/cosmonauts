@@ -1,0 +1,25 @@
+{
+  "id": "nova",
+  "name": "Nova",
+  "archetype": "shooter",
+  "color": "#4dd2ff",
+  "hitbox": { "w": 0.8, "h": 1.6 },
+  "stats": {
+    "maxHealth": 100,
+    "moveSpeed": 8,
+    "groundAccel": 60,
+    "airAccel": 35,
+    "gravity": 38,
+    "jumpVelocity": 14.5,
+    "maxJumps": 2,
+    "jumpCutFactor": 0.45,
+    "maxFallSpeed": 16
+  },
+  "attack": {
+    "damage": 10,
+    "cooldown": 0.25,
+    "projectileSpeed": 22,
+    "projectileRadius": 0.25,
+    "projectileLifetime": 0.9
+  }
+}

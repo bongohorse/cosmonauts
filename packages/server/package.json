@@ -1,0 +1,19 @@
+{
+  "name": "@cosmonauts/server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Authoritative game server (Milestone 3). Currently a headless sim smoke-run + benchmark.",
+  "scripts": {
+    "bench": "tsx src/bench.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cosmonauts/content": "workspace:*",
+    "@cosmonauts/sim": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24",
+    "tsx": "^4.22.4"
+  }
+}

@@ -30,6 +30,11 @@ export class InputSource {
 
     window.addEventListener("keydown", (e) => {
       if (e.code === "Space" || e.code.startsWith("Arrow")) e.preventDefault();
+      // Keyboard page zoom (ctrl/cmd +, -, 0) — blocked like ctrl+wheel.
+      // Browser-reserved shortcuts (ctrl+T/W/N) stay with the browser.
+      if ((e.ctrlKey || e.metaKey) && ["+", "=", "-", "_", "0"].includes(e.key)) {
+        e.preventDefault();
+      }
       if (!e.repeat) {
         if (this.isJumpKey(e.code)) this.jumpLatch = true;
         this.keys.add(e.code);

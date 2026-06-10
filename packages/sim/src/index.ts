@@ -26,7 +26,7 @@ export {
   type Solidity,
 } from "./geometry";
 export { NEUTRAL_INPUT, type PlayerInput } from "./input";
-export { buildMap } from "./map";
+export { buildMap, type ExplicitSpawns } from "./map";
 export { approach, clamp, dcos, dsin, rand, type Vec2 } from "./math";
 export {
   cloneState,

@@ -8,9 +8,15 @@ import {
   type ShapeDef,
 } from "./geometry";
 
+export interface ExplicitSpawns {
+  players?: { x: number; y: number }[];
+  dummies?: { x: number; y: number }[];
+}
+
 /**
  * Build a MapData from ASCII tile rows plus optional shapes (docs 05 §3, 06, 07 §2).
  * Tile legend: '#' solid, '.' empty, 'S' player spawn, 'D' dummy spawn.
+ * Explicit spawn lists (editor-authored) merge with tile markers.
  * Tiles and shapes both compile to the segment list the sim collides against.
  */
 export function buildMap(
@@ -18,6 +24,7 @@ export function buildMap(
   name: string,
   rows: string[],
   shapeDefs: ShapeDef[] = [],
+  spawns: ExplicitSpawns = {},
 ): MapData {
   const height = rows.length;
   const firstRow = rows[0];
@@ -53,7 +60,9 @@ export function buildMap(
     }
   }
 
-  if (playerSpawns.length === 0) throw new Error(`map "${id}": needs at least one 'S' spawn`);
+  for (const s of spawns.players ?? []) playerSpawns.push({ x: s.x, y: s.y });
+  for (const s of spawns.dummies ?? []) dummySpawns.push({ x: s.x, y: s.y });
+  if (playerSpawns.length === 0) throw new Error(`map "${id}": needs at least one player spawn`);
 
   const segments: SegmentData[] = [];
   const shapes: ShapeData[] = [];

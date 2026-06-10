@@ -11,9 +11,11 @@ is original. Geometric placeholder art is used until gameplay is proven.
 Design documents live in `docs/` (start with `docs/01-analysis.md`); they are the source
 of truth for architecture and are kept up to date as decisions change. M1 (docs), M2
 (sandbox, auto-deployed to GitHub Pages), and M3 (geometry v2: segment collision, slopes,
-curves, glass platforms, capsule movement — doc 06) are done. Next per the roadmap (doc
-01 §8): M4 in-game map editor MVP (doc 08; reordered before entities — it's the
-maintainer's testing tool) → M5 map entities (doc 07) → M6 abilities/heroes → M7 netcode.
+curves, glass platforms, capsule movement — doc 06) are done. M4 (in-game map editor MVP: Tab toggle,
+rect/polygon/spawn/dummy tools, undo, localStorage + JSON persistence —
+`packages/client/src/editor/`) is also done. Next per the roadmap (doc 01 §8): M5 map
+entities (doc 07; each type auto-appears in the editor palette via its schema) → M6
+abilities/heroes → M7 netcode.
 **Netcode is deliberately deferred** until the prototype is in good shape — don't start
 it unprompted.
 

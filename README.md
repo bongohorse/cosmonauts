@@ -4,10 +4,12 @@ An open-source, browser-based 2D action-platformer MOBA. The gameplay feel chase
 [Awesomenauts](https://en.wikipedia.org/wiki/Awesomenauts) (Ronimo Games, 2012);
 everything else — characters, world, art — is original.
 
-**Status: Milestone 3 complete (geometry v2).** A single character on a test map with
-slopes, curved surfaces, rotated platforms, and drop-through glass platforms — playable in
-the browser with placeholder art and a live tuning panel. Next up: placeable map entities,
-then the in-game map editor. Multiplayer comes after the creation tools.
+**Status: Milestone 4 complete (in-game map editor MVP).** Press **Tab** in the game to
+flip into edit mode: draw platforms (any rotation, glass, team-colored), place spawns and
+target dummies, then Tab back and play your map instantly. Work autosaves to the browser
+and exports/imports as JSON. Next up: placeable map entities (jumpers, teleporters,
+barriers, turrets…), which will appear in the editor palette automatically. Multiplayer
+comes after the creation tools.
 
 ## Play the sandbox
 

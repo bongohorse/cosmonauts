@@ -229,13 +229,32 @@ shape).
 | **M1 — Design docs** ✅ | Docs 01–08 | Shared understanding; contributors can orient |
 | **M2 — Game-feel sandbox** ✅ | One test map, one placeholder character, live tuning panel; auto-deployed to GitHub Pages | The feel — the project's core promise |
 | **M3 — Geometry v2** ✅ | Segment collision: rotated platforms, curves, slopes, capsule movement; glass (drop-through) + team platforms; tiles still compile in; ramp/curve test map (doc 06) | Creative-freedom geometry without losing the approved feel |
-| **M4 — Map editor MVP** | In-game edit/play toggle: rect + polygon tools with move/resize/rotate handles, solidity (incl. glass) + tint, snapping, undo/redo, spawn/dummy placement, localStorage autosave + JSON export/import (doc 08). Reordered ahead of entities 2026-06-10: the editor is the maintainer's testing instrument for everything after it. | Anyone can build and instantly play a map |
+| **M4 — Map editor MVP** ✅ | In-game edit/play toggle: rect + polygon tools with move/resize/rotate handles, solidity (incl. glass) + tint, snapping, undo/redo, spawn/dummy placement, localStorage autosave + JSON export/import (doc 08). Reordered ahead of entities 2026-06-10: the editor is the maintainer's testing instrument for everything after it. | Anyone can build and instantly play a map |
 | **M5 — Map entities** | Trigger volumes (jumper, force field, teleport, fire, kill zone, heal), activator + event wiring, team barriers, flux/health pickups, droid types, first actors (doc 07) — each type auto-appears in the editor palette via its schema | Maps can be *designed*, not just drawn |
 | **M6 — Abilities & heroes** | Ability template system, 2–3 distinct heroes, hero editor (docs 05 §4, 08 §2) | Combat depth; the content pipeline generalizes |
 | **M7 — Netcode** | Authoritative server, two browsers playing together with prediction + interpolation; network debug overlay (doc 03) | The biggest technical risk |
 | **M8 — MOBA vertical slice** | Lanes with droid waves, turrets, destructible core, solar + shop + upgrades, 3v3 with bot backfill (doc 09) | The complete MOBA loop is fun |
 | **M9 — Content breadth** | More heroes/maps via the pipeline; balance iteration; contributor guide | The content system scales |
 | **M10 — Identity & service** | Art direction replaces placeholders; lobby/matchmaking hardening; community server hosting (Docker) | A game people can actually play and share |
+
+### 8.1 Future systems backlog (maintainer-requested, not yet scheduled)
+
+Recorded 2026-06-10 so they shape architecture decisions now; each becomes a milestone
+when prioritized. The pattern for all of them: data-driven system first, editor on top.
+
+- **Particle system + editor** — placeholder-era effects (muzzle flashes, hits, worm
+  telegraphs) grow into a JSON-defined emitter system; the editor follows the
+  schema-driven pattern. Animation events (below) and ability definitions reference
+  emitters by id.
+- **Animation system + editor** — the sprite era (§4.3): atlas-based frame animation
+  with per-frame events (hitboxes on/off, sounds, particle emits) — our replacement for
+  Ronimo's After Effects pipeline. The editor layers gameplay data onto frames.
+- **Bot system + editor** — doc 09: behavior-tree bots as JSON content, then the visual
+  AI editor and community submission/league pipeline.
+- **Creep/droid pathfinding AI** — beyond waypoint-following: a walkability graph
+  derived from level geometry (platform edges, jump links) so droids and creeps can
+  navigate editor-made maps without hand-authored paths everywhere. Hand-drawn paths
+  (M5 path tool) come first; this generalizes them.
 
 ## 9. Open questions (to resolve in docs 02–05)
 

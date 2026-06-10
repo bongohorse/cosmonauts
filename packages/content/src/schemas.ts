@@ -74,5 +74,8 @@ export const MapDefSchema = z.object({
       message: "all tile rows must have the same length",
     }),
   shapes: z.array(ShapeDefSchema).optional(),
+  // Editor-authored spawn lists; merge with any tile markers (sim buildMap).
+  playerSpawns: z.array(PointSchema).optional(),
+  dummySpawns: z.array(PointSchema).optional(),
 });
 export type MapDef = z.infer<typeof MapDefSchema>;

@@ -59,6 +59,71 @@
         margin: 6px 0 2px;
         color: #ffd166;
       }
+      #editorbar {
+        position: fixed;
+        bottom: 8px;
+        left: 8px;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        color: #cfd8ff;
+        font: 12px/1.6 ui-monospace, monospace;
+        background: rgba(10, 14, 35, 0.9);
+        border: 1px solid #2c3354;
+        border-radius: 6px;
+        padding: 6px 10px;
+      }
+      #editorbar strong {
+        color: #ff2bd6;
+      }
+      #editorbar button,
+      #inspector button {
+        background: #181d3a;
+        color: #cfd8ff;
+        border: 1px solid #2c3354;
+        border-radius: 4px;
+        font: inherit;
+        cursor: pointer;
+        padding: 2px 8px;
+      }
+      #editorbar button.active {
+        border-color: #7df9ff;
+        color: #7df9ff;
+      }
+      #editorbar select,
+      #inspector select,
+      #inspector input {
+        background: #181d3a;
+        color: #cfd8ff;
+        border: 1px solid #2c3354;
+        border-radius: 4px;
+        font: inherit;
+      }
+      #editorstatus {
+        color: #9fb4ff;
+        opacity: 0.8;
+      }
+      #inspector {
+        position: fixed;
+        bottom: 8px;
+        right: 8px;
+        color: #cfd8ff;
+        font: 12px/1.8 ui-monospace, monospace;
+        background: rgba(10, 14, 35, 0.9);
+        border: 1px solid #2c3354;
+        border-radius: 6px;
+        padding: 6px 10px;
+        min-width: 180px;
+      }
+      #inspector h4 {
+        margin: 0 0 4px;
+        color: #7df9ff;
+      }
+      #inspector label {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
     </style>
   </head>
   <body>

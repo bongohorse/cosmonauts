@@ -7,7 +7,7 @@ import {
 } from "@cosmonauts/sim";
 import novaJson from "../characters/nova.json";
 import testingGroundsJson from "../maps/testing-grounds.json";
-import { type CharacterDef, CharacterDefSchema, MapDefSchema } from "./schemas";
+import { type CharacterDef, CharacterDefSchema, type MapDef, MapDefSchema } from "./schemas";
 
 const characterSources: unknown[] = [novaJson];
 const mapSources: unknown[] = [testingGroundsJson];
@@ -49,10 +49,23 @@ export function loadContent(): ContentIndex {
   for (const source of mapSources) {
     const def = MapDefSchema.parse(source);
     if (maps[def.id]) throw new Error(`duplicate map id "${def.id}"`);
-    maps[def.id] = buildMap(def.id, def.name, def.tiles, def.shapes ?? []);
+    maps[def.id] = buildMapFromDef(def);
   }
 
   return { characters, maps };
+}
+
+/** Compile a validated MapDef (e.g. an editor document) into sim MapData. */
+export function buildMapFromDef(def: MapDef): MapData {
+  return buildMap(def.id, def.name, def.tiles, def.shapes ?? [], {
+    players: (def.playerSpawns ?? []).map(([x, y]) => ({ x, y })),
+    dummies: (def.dummySpawns ?? []).map(([x, y]) => ({ x, y })),
+  });
+}
+
+/** Raw, validated map definitions — the editor loads these as documents. */
+export function loadMapDefs(): MapDef[] {
+  return mapSources.map((source) => MapDefSchema.parse(source));
 }
 
 export type { CharacterDef, MapDef } from "./schemas";

@@ -2,7 +2,7 @@ import type { ContentIndex, GameState, MapData, Vec2 } from "@cosmonauts/sim";
 import { DUMMY_HEIGHT, DUMMY_WIDTH, isSolid } from "@cosmonauts/sim";
 import { type Application, Container, Graphics } from "pixi.js";
 
-const TILE_PX = 40;
+export const TILE_PX = 40;
 
 const COLORS = {
   tile: 0x2c3354,
@@ -24,16 +24,36 @@ export class Renderer {
   private tileLayer = new Graphics();
   private entityLayer = new Graphics();
   private debugLayer = new Graphics();
+  /** Editor overlay: drawn above everything, cleared by its owner. */
+  readonly editorLayer = new Graphics();
   showHitboxes = false;
+  /** When set (edit mode), replaces the follow-camera. Scale applies to the world. */
+  cameraOverride: { x: number; y: number; scale: number } | null = null;
 
   constructor(
     private app: Application,
     private map: MapData,
     private content: ContentIndex,
   ) {
-    this.world.addChild(this.tileLayer, this.entityLayer, this.debugLayer);
+    this.world.addChild(this.tileLayer, this.entityLayer, this.debugLayer, this.editorLayer);
     app.stage.addChild(this.world);
     this.drawTiles();
+  }
+
+  get canvasElement(): HTMLCanvasElement {
+    return this.app.canvas;
+  }
+
+  /** Swap the static geometry (tiles + shapes) — used on every editor doc change. */
+  setMap(map: MapData): void {
+    this.map = map;
+    this.tileLayer.clear();
+    this.drawTiles();
+  }
+
+  clearEntities(): void {
+    this.entityLayer.clear();
+    this.debugLayer.clear();
   }
 
   private drawTiles(): void {
@@ -131,6 +151,7 @@ export class Renderer {
   }
 
   private updateCamera(curr: GameState, prev: GameState, alpha: number): void {
+    if (this.applyCameraOverride()) return;
     const player = curr.players[0];
     if (player === undefined) return;
     const before = prev.players.find((p) => p.id === player.id) ?? player;
@@ -148,9 +169,20 @@ export class Renderer {
     };
     this.world.x = clampAxis(px, screenW, mapW);
     this.world.y = clampAxis(py, screenH, mapH);
+    this.world.scale.set(1);
+  }
+
+  /** Applies the override transform if set; returns whether it was applied. */
+  applyCameraOverride(): boolean {
+    if (this.cameraOverride === null) return false;
+    this.world.x = this.cameraOverride.x;
+    this.world.y = this.cameraOverride.y;
+    this.world.scale.set(this.cameraOverride.scale);
+    return true;
   }
 
   screenToWorld(sx: number, sy: number): Vec2 {
-    return { x: (sx - this.world.x) / TILE_PX, y: (sy - this.world.y) / TILE_PX };
+    const scale = this.world.scale.x * TILE_PX;
+    return { x: (sx - this.world.x) / scale, y: (sy - this.world.y) / scale };
   }
 }

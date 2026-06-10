@@ -232,7 +232,7 @@ shape).
 | **M5 — Map editor** | In-game edit mode: geometry tools, schema-driven entity palette + inspector, undo, JSON + localStorage saves (doc 08) | Anyone can make a map |
 | **M6 — Abilities & heroes** | Ability template system, 2–3 distinct heroes, hero editor (docs 05 §4, 08 §2) | Combat depth; the content pipeline generalizes |
 | **M7 — Netcode** | Authoritative server, two browsers playing together with prediction + interpolation; network debug overlay (doc 03) | The biggest technical risk |
-| **M8 — MOBA vertical slice** | Lanes with bot waves, turrets, destructible core, solar + shop + upgrades, 3v3 with bot backfill | The complete MOBA loop is fun |
+| **M8 — MOBA vertical slice** | Lanes with droid waves, turrets, destructible core, solar + shop + upgrades, 3v3 with bot backfill (doc 09) | The complete MOBA loop is fun |
 | **M9 — Content breadth** | More heroes/maps via the pipeline; balance iteration; contributor guide | The content system scales |
 | **M10 — Identity & service** | Art direction replaces placeholders; lobby/matchmaking hardening; community server hosting (Docker) | A game people can actually play and share |
 

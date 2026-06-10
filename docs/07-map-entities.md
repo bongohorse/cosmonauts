@@ -67,8 +67,8 @@ Only colliders with runtime state live here:
 | Type | Behavior | Key params |
 |---|---|---|
 | `turret` | targets nearest enemy in range, shoots projectiles, destructible | team, range, dps, health, priority |
-| `bot` | walks a waypoint path, attacks on contact/range | team, statsRef, path, behavior: patrol\|lane |
-| `botSpawner` | spawns bots on an interval (MOBA waves later) | botType, interval, count |
+| `droid` | walks a waypoint path, attacks on contact/range | team, statsRef, path, behavior: patrol\|lane |
+| `droidSpawner` | spawns droids on an interval (MOBA waves later) | droidType, interval, count |
 | `core` | the destructible win objective | team, health, regen, shield rules (later) |
 | `scripted` | named bespoke behaviors coded in sim, parameterized in the map | behavior key + params |
 
@@ -96,10 +96,14 @@ arming, field switches, and timed challenges (a `timer` pseudo-activator can com
   health, cooldown timers, worm phase) — static params stay in content. Snapshot size
   stays small; determinism rules unchanged.
 - Step order: players → actors → projectiles → trigger volumes → wiring effects → dummies.
-- Team filtering reuses one `team` concept shared by players, turrets, bots, platforms.
+- Team filtering reuses one `team` concept shared by players, turrets, droids, platforms.
 
 ## 5. Out of scope here
 
 Hero abilities (doc 05 §4 grows in the abilities milestone), upgrade shop contents, and
 moving-platform rider physics (flagged v2.1 — the only catalog entry with real physics
 subtlety).
+
+Terminology, fixed 2026-06-10: **droids** are the dumb map/lane creeps above. **Bots** are
+AI-controlled *heroes* filling player slots — they are not map entities and live in
+doc 09.

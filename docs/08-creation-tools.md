@@ -36,7 +36,7 @@ runs).
 ### Staging
 1. **Editor MVP** (its own milestone): geometry tools + ~6 trigger/solid types + inspector
    + undo + save/load. Proves "anyone can make a map."
-2. **Editor v2:** wiring tool, actors (turret/bot/core), test-spawn marker, polish driven
+2. **Editor v2:** wiring tool, actors (turret/droid/core), test-spawn marker, polish driven
    by watching someone non-technical build a map.
 
 ## 2. Hero editor

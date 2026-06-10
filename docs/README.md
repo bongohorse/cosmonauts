@@ -12,5 +12,6 @@ Milestone 1 of the project is this documentation set. Read in order.
 | 06 | [Geometry & Collision v2](06-geometry-v2.md) — segment-based levels: rotation at any angle, curves, slopes, glass (drop-through) platforms, capsule movement | ✅ Written |
 | 07 | [Map Entities & Wiring](07-map-entities.md) — placeable objects (jumpers, fields, teleporters, turrets, sandworm…) and the activator signal model | ✅ Written |
 | 08 | [Creation Tools](08-creation-tools.md) — in-game map editor, hero editor, JSON + localStorage persistence | ✅ Written |
+| 09 | [Bots: AI Heroes](09-bots.md) — bots as `(state) → PlayerInput`, community-programmable behavior trees, CI bot leagues | ✅ Written |
 
 Decisions already made are recorded in [01-analysis.md §2](01-analysis.md#2-decisions-made-2026-06-10).

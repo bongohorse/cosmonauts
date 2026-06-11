@@ -8,12 +8,13 @@ import {
 import novaJson from "../characters/nova.json";
 import laneGloryJson from "../maps/lane-glory.json";
 import ribbitIvJson from "../maps/ribbit-iv.json";
+import starstormStationJson from "../maps/starstorm-station.json";
 import testingGroundsJson from "../maps/testing-grounds.json";
 import { toEntityData } from "./entities";
 import { type CharacterDef, CharacterDefSchema, type MapDef, MapDefSchema } from "./schemas";
 
 const characterSources: unknown[] = [novaJson];
-const mapSources: unknown[] = [testingGroundsJson, laneGloryJson, ribbitIvJson];
+const mapSources: unknown[] = [testingGroundsJson, laneGloryJson, ribbitIvJson, starstormStationJson];
 
 function secondsToTicks(seconds: number): number {
   return Math.max(1, Math.round(seconds * TICK_RATE));

@@ -72,6 +72,7 @@ await app.init({
   antialias: true,
   resolution: window.devicePixelRatio,
   autoDensity: true,
+  powerPreference: "high-performance",
 });
 document.body.appendChild(app.canvas);
 

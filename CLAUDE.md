@@ -8,8 +8,7 @@ Cosmonauts is an open-source, browser-based 2D action-platformer MOBA whose game
 recreates Awesomenauts (Ronimo Games, 2012). All IP — characters, world, art, music, maps —
 is original. Geometric placeholder art is used until gameplay is proven.
 
-Design documents live in `docs/` (start with `docs/01-analysis.md`); they are the source
-of truth for architecture and are kept up to date as decisions change. M1 (docs), M2
+Design documents live in `docs/`. **CRITICAL:** Whenever you start a new session, you must read these files to be up to date with the project architecture! Start with `docs/01-analysis.md` for the roadmap, and always read `docs/M6-RENDERER-UPGRADES.md` before touching the PixiJS renderer. They are the source of truth for architecture and are kept up to date as decisions change. M1 (docs), M2
 (sandbox, auto-deployed to GitHub Pages), and M3 (geometry v2: segment collision, slopes,
 curves, glass platforms, capsule movement — doc 06) are done. M4 (in-game map editor MVP: Tab toggle,
 rect/polygon/spawn/dummy tools, undo, localStorage + JSON persistence —

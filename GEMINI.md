@@ -57,4 +57,4 @@ All commands are run from the repo root:
 - **Surgical Edits**: Prefer minimal, precise changes to existing logic. Do not rewrite files unless absolutely necessary.
 - **Testing**: Whenever modifying `packages/sim`, add or update corresponding tests in `packages/sim/src/*.test.ts`.
 - **Editor Integration**: New map entities (defined in `packages/content/src/entities.ts`) must be equipped with Zod schemas so they automatically appear in the editor palette.
-- **Consult Docs**: Design documents live in `docs/`. Read them if you need deeper context (e.g., `docs/01-analysis.md` for roadmap, `docs/06-geometry-v2.md` for collision).
+- **Consult Docs**: Design documents live in `docs/`. **CRITICAL:** Whenever you start a new session, you must read these files to be up to date with the project architecture! For example, read `docs/01-analysis.md` for the roadmap, `docs/06-geometry-v2.md` for collision, and `docs/M6-RENDERER-UPGRADES.md` before doing any work on the PixiJS renderer or Milestone 6 UI/graphics.

@@ -81,19 +81,20 @@ export function blankDoc(width = 48, height = 18): MapDoc {
   };
 }
 
-const STORAGE_KEY = "cosmonauts.editor.mapdoc";
+const STORAGE_PREFIX = "cosmonauts.editor.mapdoc.";
 
 export function saveToStorage(doc: MapDoc): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(docToDef(doc)));
+    localStorage.setItem(`${STORAGE_PREFIX}${doc.id}`, JSON.stringify(docToDef(doc)));
+    localStorage.setItem("cosmonauts.editor.lastMapId", doc.id);
   } catch {
     // Storage full or unavailable — autosave is best-effort.
   }
 }
 
-export function loadFromStorage(): MapDoc | null {
+export function loadFromStorage(mapId: string): MapDoc | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(`${STORAGE_PREFIX}${mapId}`);
     if (raw === null) return null;
     return docFromDef(MapDefSchema.parse(JSON.parse(raw)));
   } catch {
@@ -101,9 +102,9 @@ export function loadFromStorage(): MapDoc | null {
   }
 }
 
-export function clearStorage(): void {
+export function clearStorage(mapId: string): void {
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(`${STORAGE_PREFIX}${mapId}`);
   } catch {
     // ignore
   }

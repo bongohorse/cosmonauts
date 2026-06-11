@@ -95,6 +95,8 @@ export class Editor {
   constructor(
     private renderer: Renderer,
     doc: MapDoc,
+    private availableMaps: { id: string; name: string }[] = [],
+    private onSwitchMap?: (mapId: string) => void,
   ) {
     this.doc = doc;
     this.buildUi();
@@ -1403,6 +1405,45 @@ export class Editor {
     topBar.className = "editor-panel";
     uiContainer.appendChild(topBar);
 
+    if (this.availableMaps.length > 0 && this.onSwitchMap) {
+      const mapSelectDiv = document.createElement("div");
+      mapSelectDiv.style.display = "flex";
+      mapSelectDiv.style.alignItems = "center";
+      mapSelectDiv.style.gap = "8px";
+      mapSelectDiv.style.marginRight = "16px";
+      mapSelectDiv.style.borderRight = "1px solid #2c3354";
+      mapSelectDiv.style.paddingRight = "16px";
+
+      const mapLabel = document.createElement("span");
+      mapLabel.textContent = "MAP:";
+      mapLabel.style.fontSize = "10px";
+      mapLabel.style.color = "#9fb4ff";
+      mapLabel.style.fontWeight = "bold";
+
+      const mapSelect = document.createElement("select");
+      mapSelect.style.background = "#10142a";
+      mapSelect.style.color = "#ffffff";
+      mapSelect.style.border = "1px solid #2c3354";
+      mapSelect.style.padding = "2px 4px";
+      mapSelect.style.borderRadius = "4px";
+
+      for (const m of this.availableMaps) {
+        const opt = document.createElement("option");
+        opt.value = m.id;
+        opt.textContent = m.name;
+        if (m.id === this.doc.id) opt.selected = true;
+        mapSelect.appendChild(opt);
+      }
+
+      mapSelect.addEventListener("change", () => {
+        if (this.onSwitchMap) this.onSwitchMap(mapSelect.value);
+      });
+
+      mapSelectDiv.appendChild(mapLabel);
+      mapSelectDiv.appendChild(mapSelect);
+      topBar.appendChild(mapSelectDiv);
+    }
+
     const leftDock = document.createElement("div");
     leftDock.id = "editor-tools";
     leftDock.className = "editor-panel";
@@ -2330,7 +2371,7 @@ export class Editor {
   private confirmNew(): void {
     if (!confirm("Start a new blank map? (current map stays in undo history)")) return;
     this.history.push(this.doc);
-    clearStorage();
+    clearStorage(this.doc.id);
     this.replaceDoc(blankDoc());
   }
 }

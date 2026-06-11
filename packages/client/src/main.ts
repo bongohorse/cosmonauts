@@ -16,20 +16,27 @@ import { Editor } from "./editor/editor";
 import { InputSource } from "./input";
 import { Renderer } from "./renderer";
 
-const MAP_ID = "testing-grounds";
 const CHARACTER_ID = "nova";
 const PLAYER_ID = 1;
 
 const content = loadContent();
 const character = content.characters[CHARACTER_ID];
-const shippedDef = loadMapDefs().find((d) => d.id === MAP_ID);
+const shippedDefs = loadMapDefs();
+
+let currentMapId = localStorage.getItem("cosmonauts.editor.lastMapId") || "testing-grounds";
+let shippedDef = shippedDefs.find((d) => d.id === currentMapId);
+if (!shippedDef) {
+  shippedDef = shippedDefs[0];
+  currentMapId = shippedDef?.id ?? "";
+}
+
 if (shippedDef === undefined || character === undefined) {
   throw new Error("missing shipped content — check packages/content");
 }
 
 // The editor document is the source of truth for the map: autosaved work in
 // progress wins over the shipped map.
-let doc = loadFromStorage() ?? docFromDef(shippedDef);
+let doc = loadFromStorage(currentMapId) ?? docFromDef(shippedDef);
 let map = compileDoc(doc);
 content.maps[map.id] = map;
 
@@ -66,7 +73,15 @@ document.body.appendChild(app.canvas);
 const renderer = new Renderer(app, map, content);
 const inputSource = new InputSource(app.canvas);
 const debugPanel = new DebugPanel(character);
-const editor = new Editor(renderer, doc);
+const editor = new Editor(
+  renderer,
+  doc,
+  shippedDefs.map((d) => ({ id: d.id, name: d.name })),
+  (mapId) => {
+    localStorage.setItem("cosmonauts.editor.lastMapId", mapId);
+    window.location.reload();
+  },
+);
 
 let mode: "play" | "edit" = "play";
 

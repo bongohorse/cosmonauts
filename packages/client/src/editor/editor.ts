@@ -25,6 +25,7 @@ type Drag =
   | { type: "pan"; sx: number; sy: number; camX: number; camY: number }
   | { type: "move"; last: Vec2 }
   | { type: "resize"; corner: number }
+  | { type: "move-vertex"; index: number }
   | { type: "rotate" }
   | { type: "draw-rect"; start: Vec2; current: Vec2 }
   | { type: "paint"; val: string }
@@ -417,6 +418,13 @@ export class Editor {
             this.drag = { type: "resize", corner: handle };
             return;
           }
+        } else if (shape !== null && (shape.kind === "polygon" || shape.kind === "polyline")) {
+          const handle = this.hitPolygonHandle(shape, w);
+          if (handle !== null) {
+            this.beginChange();
+            this.drag = { type: "move-vertex", index: handle };
+            return;
+          }
         }
         const entity = this.selectedEntity();
         if (entity !== null) {
@@ -607,6 +615,30 @@ export class Editor {
         this.changed();
         break;
       }
+      case "move-vertex": {
+        const s = this.selectedShape();
+        if (s !== null && (s.kind === "polygon" || s.kind === "polyline")) {
+          const snap = this.snapVal;
+          if (snap) {
+            w.x = Math.round(w.x / snap) * snap;
+            w.y = Math.round(w.y / snap) * snap;
+          }
+          s.points[drag.index] = [w.x, w.y];
+          if (this.mirrorMode && s.kind === "polygon") {
+            const mw = this.doc.tiles[0]?.length ?? 48;
+            const twin = this.doc.shapes.find(sh => 
+              sh.id !== s.id && sh.kind === "polygon" &&
+              sh.points.length === s.points.length &&
+              Math.abs(sh.points[0]![0] - (mw - s.points[0]![0])) < 0.1
+            );
+            if (twin && twin.kind === "polygon") {
+              twin.points[drag.index] = [mw - w.x, w.y];
+            }
+          }
+          this.changed();
+        }
+        break;
+      }
       case "resize": {
         const s = this.selectedShape();
         if (s !== null && s.kind === "rect") {
@@ -788,6 +820,15 @@ export class Editor {
         }
       }
     }
+  }
+
+  private hitPolygonHandle(s: Extract<ShapeDef, { kind: "polygon" | "polyline" }>, w: Vec2): number | null {
+    const grab = 0.35 / this.cam.scale;
+    for (let i = 0; i < s.points.length; i++) {
+      const p = s.points[i];
+      if (p && Math.hypot(w.x - p[0], w.y - p[1]) < grab) return i;
+    }
+    return null;
   }
 
   private hitRectHandle(s: Extract<ShapeDef, { kind: "rect" }>, w: Vec2): number | "rotate" | null {
@@ -1293,6 +1334,9 @@ export class Editor {
       for (const [x, y] of s.points.slice(1)) g.lineTo(px(x), px(y));
       if (s.kind === "polygon") g.lineTo(px(first[0]), px(first[1]));
       g.stroke({ color: SEL, width: lw(2) });
+      for (const [x, y] of s.points) {
+        g.rect(px(x) - lw(5), px(y) - lw(5), lw(10), lw(10)).fill(0xffffff);
+      }
     } else {
       g.circle(px(s.center[0]), px(s.center[1]), px(s.radius)).stroke({
         color: SEL,

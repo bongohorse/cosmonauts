@@ -109,7 +109,7 @@ export class Editor {
     const t = this.renderer.cameraOverride ?? { x: 0, y: 0, scale: 1 };
     this.cam = { ...t };
     this.renderer.cameraOverride = this.cam;
-    this.bar.style.display = "flex";
+    this.bar.style.display = "block";
     this.refreshInspector();
   }
 
@@ -1392,38 +1392,102 @@ export class Editor {
   // ---------- DOM UI ----------
 
   private buildUi(): void {
-    const bar = document.createElement("div");
-    bar.id = "editorbar";
-    bar.style.display = "none";
-    document.body.appendChild(bar);
-    this.bar = bar;
+    const uiContainer = document.createElement("div");
+    uiContainer.id = "editor-ui";
+    uiContainer.style.display = "none";
+    document.body.appendChild(uiContainer);
+    this.bar = uiContainer;
+
+    const topBar = document.createElement("div");
+    topBar.id = "editor-actions";
+    topBar.className = "editor-panel";
+    uiContainer.appendChild(topBar);
+
+    const leftDock = document.createElement("div");
+    leftDock.id = "editor-tools";
+    leftDock.className = "editor-panel";
+    uiContainer.appendChild(leftDock);
+
+    const bottomBar = document.createElement("div");
+    bottomBar.id = "editor-status-bar";
+    bottomBar.className = "editor-panel";
+    uiContainer.appendChild(bottomBar);
+
+    const entityPalette = document.createElement("div");
+    entityPalette.id = "editor-entities";
+    entityPalette.className = "editor-panel";
+    uiContainer.appendChild(entityPalette);
 
     const title = document.createElement("strong");
     title.textContent = "EDIT";
-    bar.appendChild(title);
+    topBar.appendChild(title);
 
-    const tools: [Tool, string][] = [
-      ["select", "Select (V)"],
-      ["brush", "Tile Brush (solid/none)"],
-      ["rect", "Rect"],
-      ["polygon", "Polygon (dblclick/Enter to close)"],
-      ["spawn", "Spawn"],
-      ["dummy", "Dummy"],
+    const createIcon = (d: string) => {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("viewBox", "0 0 24 24");
+      svg.setAttribute("width", "14");
+      svg.setAttribute("height", "14");
+      svg.setAttribute("fill", "none");
+      svg.setAttribute("stroke", "currentColor");
+      svg.setAttribute("stroke-width", "2");
+      svg.setAttribute("stroke-linecap", "round");
+      svg.setAttribute("stroke-linejoin", "round");
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", d);
+      svg.appendChild(path);
+      return svg;
+    };
+
+    const icons: Record<string, string> = {
+      select: "M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z",
+      brush: "M12 19l7-7 3 3-7 7-3-3z M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z M2 2l7.586 7.586",
+      rect: "M3 3h18v18H3z",
+      polygon: "M12 2l8.5 6-3 14h-11l-3-14z",
+      spawn: "M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6",
+      dummy: "M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z M12 14v8 M8 22h8 M8 10h8",
+      undo: "M3 7v6h6 M3 13l3-3a9 9 0 0 1 15 3",
+      redo: "M21 7v6h-6 M21 13l-3-3a9 9 0 0 0-15 3",
+      export: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M17 8l-5-5-5 5 M12 3v12",
+      import: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3",
+      new: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M12 18v-6 M9 15h6",
+    };
+
+    const tools: [Tool, string, string][] = [
+      ["select", "Select", "V"],
+      ["brush", "Tile Brush (solid/none)", ""],
+      ["rect", "Rect", ""],
+      ["polygon", "Polygon (dblclick/Enter to close)", ""],
+      ["spawn", "Spawn", ""],
+      ["dummy", "Dummy", ""],
     ];
-    for (const [tool, tip] of tools) {
+    for (const [tool, tip, hotkey] of tools) {
       const b = document.createElement("button");
-      b.textContent = tool;
       b.title = tip;
       b.dataset.tool = tool;
+      if (icons[tool]) b.appendChild(createIcon(icons[tool]));
+      const span = document.createElement("span");
+      span.textContent = tool.charAt(0).toUpperCase() + tool.slice(1);
+      b.appendChild(span);
+      if (hotkey) {
+        const kbd = document.createElement("kbd");
+        kbd.textContent = hotkey;
+        b.appendChild(kbd);
+      }
       b.addEventListener("click", () => {
         this.tool = tool;
         this.draft = [];
         this.syncToolButtons();
       });
-      bar.appendChild(b);
+      leftDock.appendChild(b);
     }
 
+    const solDiv = document.createElement("div");
+    solDiv.className = "editor-divider";
+    solDiv.dataset.id = "sol-divider";
+    leftDock.appendChild(solDiv);
+
     const sol = document.createElement("select");
+    sol.dataset.id = "sol-select";
     sol.title = "solidity for new shapes";
     for (const s of SOLIDITY_OPTIONS) {
       const o = document.createElement("option");
@@ -1434,13 +1498,12 @@ export class Editor {
     sol.addEventListener("change", () => {
       this.newSolidity = sol.value as Solidity;
     });
-    bar.appendChild(sol);
+    leftDock.appendChild(sol);
 
-    // Entity palette: generated from the registry — new types auto-appear
-    // (doc 07 §1). One click-to-place button per type, tinted to match.
-    const sep = document.createElement("span");
-    sep.textContent = "·";
-    bar.appendChild(sep);
+    const epTitle = document.createElement("strong");
+    epTitle.textContent = "Entities";
+    entityPalette.appendChild(epTitle);
+
     for (const spec of ENTITY_TYPES) {
       const b = document.createElement("button");
       b.textContent = spec.label;
@@ -1453,31 +1516,50 @@ export class Editor {
         this.draft = [];
         this.syncToolButtons();
       });
-      bar.appendChild(b);
+      entityPalette.appendChild(b);
     }
 
-    const actions: [string, () => void][] = [
-      [
-        "mirror (M)",
-        () => {
-          this.mirrorMode = !this.mirrorMode;
-          this.updateStatus();
-          this.syncToolButtons();
-        },
-      ],
-      ["undo", () => this.undo()],
-      ["redo", () => this.redo()],
-      ["export", () => this.exportJson()],
-      ["import", () => this.importJson()],
-      ["new", () => this.confirmNew()],
+    const topDiv = document.createElement("div");
+    topDiv.className = "editor-divider";
+    topBar.appendChild(topDiv);
+
+    const actions: [string, string, string, () => void][] = [
+      ["undo", "Undo", "", () => this.undo()],
+      ["redo", "Redo", "", () => this.redo()],
+      ["export", "Export", "", () => this.exportJson()],
+      ["import", "Import", "", () => this.importJson()],
+      ["new", "New", "", () => this.confirmNew()],
     ];
-    for (const [label, fn] of actions) {
+    for (const [id, label, hotkey, fn] of actions) {
       const b = document.createElement("button");
-      b.textContent = label;
-      if (label === "mirror (M)") b.dataset.action = "mirror";
+      b.title = label;
+      if (icons[id]) b.appendChild(createIcon(icons[id]));
+      const span = document.createElement("span");
+      span.textContent = label;
+      b.appendChild(span);
+      if (hotkey) {
+        const kbd = document.createElement("kbd");
+        kbd.textContent = hotkey;
+        b.appendChild(kbd);
+      }
       b.addEventListener("click", fn);
-      bar.appendChild(b);
+      topBar.appendChild(b);
     }
+
+    const btnMirror = document.createElement("button");
+    btnMirror.title = "Toggle Mirror Mode";
+    btnMirror.dataset.action = "mirror";
+    btnMirror.innerHTML = `<span>Mirror</span><kbd>M</kbd>`;
+    btnMirror.addEventListener("click", () => {
+      this.mirrorMode = !this.mirrorMode;
+      this.updateStatus();
+      this.syncToolButtons();
+    });
+    bottomBar.appendChild(btnMirror);
+
+    const botDiv = document.createElement("div");
+    botDiv.className = "editor-divider";
+    bottomBar.appendChild(botDiv);
 
     const snapSelect = document.createElement("select");
     snapSelect.title = "grid snap";
@@ -1492,11 +1574,11 @@ export class Editor {
       this.snapVal = parseFloat(snapSelect.value) || null;
       this.updateStatus();
     });
-    bar.appendChild(snapSelect);
+    bottomBar.appendChild(snapSelect);
 
     const status = document.createElement("span");
     status.id = "editorstatus";
-    bar.appendChild(status);
+    bottomBar.appendChild(status);
     this.statusEl = status;
 
     const warnings = document.createElement("span");
@@ -1504,7 +1586,7 @@ export class Editor {
     warnings.style.color = "#ffca28";
     warnings.style.marginLeft = "12px";
     warnings.style.fontWeight = "bold";
-    bar.appendChild(warnings);
+    bottomBar.appendChild(warnings);
     this.warningsEl = warnings;
 
     const inspector = document.createElement("div");
@@ -1518,18 +1600,25 @@ export class Editor {
 
   private syncToolButtons(): void {
     for (const b of this.bar.querySelectorAll("button[data-tool]")) {
-      b.classList.toggle("active", (b as HTMLButtonElement).dataset.tool === this.tool);
+      b.classList.toggle("active", (b as HTMLElement).dataset.tool === this.tool);
     }
     for (const b of this.bar.querySelectorAll("button[data-entity]")) {
       b.classList.toggle(
         "active",
-        this.tool === "entity" && (b as HTMLButtonElement).dataset.entity === this.newEntityType,
+        this.tool === "entity" && (b as HTMLElement).dataset.entity === this.newEntityType,
       );
     }
     const mirrorBtn = this.bar.querySelector("button[data-action='mirror']");
     if (mirrorBtn) {
       mirrorBtn.classList.toggle("active", this.mirrorMode);
-      mirrorBtn.textContent = `mirror ${this.mirrorMode ? "ON" : "OFF"}`;
+    }
+
+    const solSelect = this.bar.querySelector<HTMLElement>("select[data-id='sol-select']");
+    const solDivider = this.bar.querySelector<HTMLElement>("div[data-id='sol-divider']");
+    if (solSelect && solDivider) {
+      const showSol = ["brush", "rect", "polygon"].includes(this.tool);
+      solSelect.style.display = showSol ? "" : "none";
+      solDivider.style.display = showSol ? "" : "none";
     }
   }
 

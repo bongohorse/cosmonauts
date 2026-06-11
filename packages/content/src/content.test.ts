@@ -18,8 +18,8 @@ describe("content loading", () => {
 
   it("parses the testing grounds map markers", () => {
     const map = loadContent().maps["testing-grounds"];
-    expect(map?.width).toBe(60);
-    expect(map?.height).toBe(18);
+    expect(map?.width).toBe(200);
+    expect(map?.height).toBe(100);
     expect(map?.playerSpawns).toHaveLength(2);
     expect(map?.dummySpawns).toHaveLength(0);
   });

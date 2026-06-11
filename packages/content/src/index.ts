@@ -6,6 +6,7 @@ import {
   TICK_RATE,
 } from "@cosmonauts/sim";
 import novaJson from "../characters/nova.json";
+import aiStation205Json from "../maps/ai-station-205.json";
 import laneGloryJson from "../maps/lane-glory.json";
 import ribbitIvJson from "../maps/ribbit-iv.json";
 import starstormStationJson from "../maps/starstorm-station.json";
@@ -14,7 +15,7 @@ import { toEntityData } from "./entities";
 import { type CharacterDef, CharacterDefSchema, type MapDef, MapDefSchema } from "./schemas";
 
 const characterSources: unknown[] = [novaJson];
-const mapSources: unknown[] = [testingGroundsJson, laneGloryJson, ribbitIvJson, starstormStationJson];
+const mapSources: unknown[] = [testingGroundsJson, laneGloryJson, ribbitIvJson, starstormStationJson, aiStation205Json];
 
 function secondsToTicks(seconds: number): number {
   return Math.max(1, Math.round(seconds * TICK_RATE));

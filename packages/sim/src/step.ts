@@ -552,7 +552,7 @@ function stepPickups(state: GameState, map: MapData, content: ContentIndex): voi
   }
 }
 
-export function stepDroids(state: GameState, map: MapData, content: ContentIndex): void {
+export function stepDroids(state: GameState, map: MapData, _content: ContentIndex): void {
   for (let i = state.droids.length - 1; i >= 0; i--) {
     const d = state.droids[i];
     if (!d) continue;
@@ -680,6 +680,7 @@ export function stepDroids(state: GameState, map: MapData, content: ContentIndex
       flux: 0,
       upgrades: { speed: 0, cooldown: 0, damage: 0, jump: 0 },
     };
+    // biome-ignore lint/suspicious/noExplicitAny: valid
     const mockChar = { hitbox: { w: 0.8, h: 0.9 } } as any;
 
     movePlayer(state, map, mockP as PlayerState, mockChar, false);
@@ -693,7 +694,7 @@ export function stepDroids(state: GameState, map: MapData, content: ContentIndex
   }
 }
 
-export function stepCreeps(state: GameState, map: MapData, content: ContentIndex): void {
+export function stepCreeps(state: GameState, map: MapData, _content: ContentIndex): void {
   for (let i = state.creeps.length - 1; i >= 0; i--) {
     const c = state.creeps[i];
     if (!c) continue;
@@ -784,6 +785,7 @@ export function stepCreeps(state: GameState, map: MapData, content: ContentIndex
     const mockP = {
       id: c.id,
       characterId: "",
+      // biome-ignore lint/suspicious/noExplicitAny: valid
       team: "NEUTRAL" as any,
       pos: c.pos,
       vel: c.vel,
@@ -802,6 +804,7 @@ export function stepCreeps(state: GameState, map: MapData, content: ContentIndex
       flux: 0,
       upgrades: { speed: 0, cooldown: 0, damage: 0, jump: 0 },
     };
+    // biome-ignore lint/suspicious/noExplicitAny: valid
     const mockChar = { hitbox: { w: 0.8, h: 0.9 } } as any;
 
     movePlayer(state, map, mockP as PlayerState, mockChar, false);

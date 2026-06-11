@@ -190,14 +190,18 @@ export class Editor {
     const sel = this.selection[0];
     if (!sel) return null;
     if (sel === undefined || sel.kind !== "shape") return null;
-    return this.doc.shapes.find((s) => s.id === (sel as any).id) ?? null;
+    return (
+      this.doc.shapes.find((s) => s.id === (sel as Extract<Selection, { id: string }>).id) ?? null
+    );
   }
 
   private selectedEntity(): EntityDef | null {
     if (this.selection.length !== 1) return null;
     const sel = this.selection[0];
     if (sel === undefined || sel.kind !== "entity") return null;
-    return this.doc.entities.find((e) => e.id === (sel as any).id) ?? null;
+    return (
+      this.doc.entities.find((e) => e.id === (sel as Extract<Selection, { id: string }>).id) ?? null
+    );
   }
 
   private entityCorners(e: EntityDef): Vec2[] {
@@ -443,9 +447,13 @@ export class Editor {
         const hit = this.hitTest(w);
         if (e.shiftKey) {
           if (hit !== null) {
+            const hitId = (hit as Extract<Selection, { id: string }>).id;
+            const hitIndex = (hit as Extract<Selection, { index: number }>).index;
             const idx = this.selection.findIndex(
-              (s: any) =>
-                s.kind === hit.kind && s.id === (hit as any).id && s.index === (hit as any).index,
+              (s) =>
+                s.kind === hit.kind &&
+                (s as Extract<Selection, { id: string }>).id === hitId &&
+                (s as Extract<Selection, { index: number }>).index === hitIndex,
             );
             if (idx >= 0) this.selection.splice(idx, 1);
             else this.selection.push(hit);
@@ -455,10 +463,12 @@ export class Editor {
             this.selection = [];
             this.drag = { type: "box-select", start: w, current: w };
           } else {
-            const has = this.selection.some(
-              (s: any) =>
-                s.kind === hit.kind && s.id === (hit as any).id && s.index === (hit as any).index,
-            );
+            const has = this.selection.some((s) => {
+              if (s.kind !== hit.kind) return false;
+              if ("id" in s && "id" in hit) return s.id === hit.id;
+              if ("index" in s && "index" in hit) return s.index === hit.index;
+              return false;
+            });
             if (!has) this.selection = [hit];
             this.beginChange();
             this.drag = { type: "move", last: w };
@@ -526,7 +536,9 @@ export class Editor {
   }
 
   private mirrorEntityParams(
+    // biome-ignore lint/suspicious/noExplicitAny: valid
     params: Record<string, any> | undefined,
+    // biome-ignore lint/suspicious/noExplicitAny: valid
   ): Record<string, any> | undefined {
     if (!params) return params;
     const out = { ...params };
@@ -626,10 +638,12 @@ export class Editor {
           s.points[drag.index] = [w.x, w.y];
           if (this.mirrorMode && s.kind === "polygon") {
             const mw = this.doc.tiles[0]?.length ?? 48;
-            const twin = this.doc.shapes.find(sh => 
-              sh.id !== s.id && sh.kind === "polygon" &&
-              sh.points.length === s.points.length &&
-              Math.abs(sh.points[0]![0] - (mw - s.points[0]![0])) < 0.1
+            const twin = this.doc.shapes.find(
+              (sh) =>
+                sh.id !== s.id &&
+                sh.kind === "polygon" &&
+                sh.points.length === s.points.length &&
+                Math.abs(sh.points[0]?.[0] - (mw - s.points[0]?.[0])) < 0.1,
             );
             if (twin && twin.kind === "polygon") {
               twin.points[drag.index] = [mw - w.x, w.y];
@@ -749,9 +763,11 @@ export class Editor {
     const mw = this.doc.tiles[0]?.length ?? 48;
     for (const sel of this.selection) {
       if (sel.kind === "shape") {
-        const s = this.doc.shapes.find((sh) => sh.id === (sel as any).id);
+        const s = this.doc.shapes.find(
+          (sh) => sh.id === (sel as Extract<Selection, { id: string }>).id,
+        );
         if (s) {
-          let twin;
+          let twin: ShapeDef | undefined;
           if (this.mirrorMode && s.kind === "rect") {
             twin = this.doc.shapes.find(
               (sh) =>
@@ -762,13 +778,20 @@ export class Editor {
             );
           }
           this.translateShape(s, dx, dy);
-          if (twin && !this.selection.some((x: any) => x.id === twin.id))
+          if (
+            twin &&
+            !this.selection.some(
+              (x: Extract<Selection, { index: number } | { id: string }>) => x.id === twin.id,
+            )
+          )
             this.translateShape(twin, -dx, dy);
         }
       } else if (sel.kind === "entity") {
-        const e = this.doc.entities.find((en) => en.id === (sel as any).id);
+        const e = this.doc.entities.find(
+          (en) => en.id === (sel as Extract<Selection, { id: string }>).id,
+        );
         if (e) {
-          let twin;
+          let twin: EntityDef | undefined;
           if (this.mirrorMode) {
             twin = this.doc.entities.find(
               (en) =>
@@ -779,41 +802,63 @@ export class Editor {
             );
           }
           e.pos = [e.pos[0] + dx, e.pos[1] + dy];
-          if (twin && !this.selection.some((x: any) => x.id === twin.id))
+          if (
+            twin &&
+            !this.selection.some(
+              (x: Extract<Selection, { index: number } | { id: string }>) => x.id === twin.id,
+            )
+          )
             twin.pos = [twin.pos[0] - dx, twin.pos[1] + dy];
         }
       } else if (sel.kind === "spawn") {
-        const p = this.doc.playerSpawns[(sel as any).index];
+        const p = this.doc.playerSpawns[(sel as Extract<Selection, { index: number }>).index];
         if (p) {
           let twinIdx = -1;
           if (this.mirrorMode) {
             twinIdx = this.doc.playerSpawns.findIndex(
               (other, idx) =>
-                idx !== (sel as any).index &&
+                idx !== (sel as Extract<Selection, { index: number }>).index &&
                 Math.abs(other[0] - (mw - p[0])) < 0.1 &&
                 Math.abs(other[1] - p[1]) < 0.1,
             );
           }
-          this.doc.playerSpawns[(sel as any).index] = [p[0] + dx, p[1] + dy, p[2]];
-          if (twinIdx !== -1 && !this.selection.some((x: any) => x.index === twinIdx)) {
+          this.doc.playerSpawns[(sel as Extract<Selection, { index: number }>).index] = [
+            p[0] + dx,
+            p[1] + dy,
+            p[2],
+          ];
+          if (
+            twinIdx !== -1 &&
+            !this.selection.some(
+              (x: Extract<Selection, { index: number } | { id: string }>) => x.index === twinIdx,
+            )
+          ) {
             const twin = this.doc.playerSpawns[twinIdx];
             if (twin) this.doc.playerSpawns[twinIdx] = [twin[0] - dx, twin[1] + dy, twin[2]];
           }
         }
       } else {
-        const p = this.doc.dummySpawns[(sel as any).index];
+        const p = this.doc.dummySpawns[(sel as Extract<Selection, { index: number }>).index];
         if (p) {
           let twinIdx = -1;
           if (this.mirrorMode) {
             twinIdx = this.doc.dummySpawns.findIndex(
               (other, idx) =>
-                idx !== (sel as any).index &&
+                idx !== (sel as Extract<Selection, { index: number }>).index &&
                 Math.abs(other[0] - (mw - p[0])) < 0.1 &&
                 Math.abs(other[1] - p[1]) < 0.1,
             );
           }
-          this.doc.dummySpawns[(sel as any).index] = [p[0] + dx, p[1] + dy];
-          if (twinIdx !== -1 && !this.selection.some((x: any) => x.index === twinIdx)) {
+          this.doc.dummySpawns[(sel as Extract<Selection, { index: number }>).index] = [
+            p[0] + dx,
+            p[1] + dy,
+          ];
+          if (
+            twinIdx !== -1 &&
+            !this.selection.some(
+              (x: Extract<Selection, { index: number } | { id: string }>) => x.index === twinIdx,
+            )
+          ) {
             const twin = this.doc.dummySpawns[twinIdx];
             if (twin) this.doc.dummySpawns[twinIdx] = [twin[0] - dx, twin[1] + dy];
           }
@@ -822,7 +867,10 @@ export class Editor {
     }
   }
 
-  private hitPolygonHandle(s: Extract<ShapeDef, { kind: "polygon" | "polyline" }>, w: Vec2): number | null {
+  private hitPolygonHandle(
+    s: Extract<ShapeDef, { kind: "polygon" | "polyline" }>,
+    w: Vec2,
+  ): number | null {
     const grab = 0.35 / this.cam.scale;
     for (let i = 0; i < s.points.length; i++) {
       const p = s.points[i];
@@ -968,13 +1016,18 @@ export class Editor {
     this.beginChange();
     for (const sel of this.selection) {
       if (sel.kind === "shape") {
-        this.doc.shapes = this.doc.shapes.filter((s) => s.id !== (sel as any).id);
+        this.doc.shapes = this.doc.shapes.filter(
+          (s) => s.id !== (sel as Extract<Selection, { id: string }>).id,
+        );
       } else if (sel.kind === "entity") {
-        this.doc.entities = this.doc.entities.filter((e) => e.id !== (sel as any).id);
+        this.doc.entities = this.doc.entities.filter(
+          (e) => e.id !== (sel as Extract<Selection, { id: string }>).id,
+        );
       } else if (sel.kind === "spawn") {
-        if (this.doc.playerSpawns.length > 1) this.doc.playerSpawns.splice((sel as any).index, 1);
+        if (this.doc.playerSpawns.length > 1)
+          this.doc.playerSpawns.splice((sel as Extract<Selection, { index: number }>).index, 1);
       } else {
-        this.doc.dummySpawns.splice((sel as any).index, 1);
+        this.doc.dummySpawns.splice((sel as Extract<Selection, { index: number }>).index, 1);
       }
     }
     this.selection = [];
@@ -988,7 +1041,10 @@ export class Editor {
     const newSel: Selection[] = [];
     for (const sel of this.selection) {
       if (sel.kind === "shape") {
-        const s = this.doc.shapes.find((x: any) => x.id === (sel as any).id);
+        const s = this.doc.shapes.find(
+          (x: Extract<Selection, { index: number } | { id: string }>) =>
+            x.id === (sel as Extract<Selection, { id: string }>).id,
+        );
         if (s) {
           const copy = JSON.parse(JSON.stringify(s));
           copy.id = this.nextShapeId();
@@ -997,7 +1053,10 @@ export class Editor {
           newSel.push({ kind: "shape", id: copy.id } as Selection);
         }
       } else if (sel.kind === "entity") {
-        const e = this.doc.entities.find((x: any) => x.id === (sel as any).id);
+        const e = this.doc.entities.find(
+          (x: Extract<Selection, { index: number } | { id: string }>) =>
+            x.id === (sel as Extract<Selection, { id: string }>).id,
+        );
         if (e) {
           const copy = JSON.parse(JSON.stringify(e));
           copy.id = this.nextEntityId(e.type);
@@ -1007,13 +1066,13 @@ export class Editor {
           newSel.push({ kind: "entity", id: copy.id } as Selection);
         }
       } else if (sel.kind === "spawn") {
-        const p = this.doc.playerSpawns[(sel as any).index];
+        const p = this.doc.playerSpawns[(sel as Extract<Selection, { index: number }>).index];
         if (p) {
           this.doc.playerSpawns.push([p[0] + 0.5, p[1] + 0.5, p[2]]);
           newSel.push({ kind: "spawn", index: this.doc.playerSpawns.length - 1 } as Selection);
         }
       } else {
-        const d = this.doc.dummySpawns[(sel as any).index];
+        const d = this.doc.dummySpawns[(sel as Extract<Selection, { index: number }>).index];
         if (d) {
           this.doc.dummySpawns.push([d[0] + 0.5, d[1] + 0.5]);
           newSel.push({ kind: "dummy", index: this.doc.dummySpawns.length - 1 } as Selection);
@@ -1230,10 +1289,14 @@ export class Editor {
     // Selection.
     for (const sel of this.selection) {
       if (sel?.kind === "shape") {
-        const s = this.doc.shapes.find((sh) => sh.id === (sel as any).id);
+        const s = this.doc.shapes.find(
+          (sh) => sh.id === (sel as Extract<Selection, { id: string }>).id,
+        );
         if (s) this.drawShapeSelection(g, s, lw);
       } else if (sel?.kind === "entity") {
-        const e = this.doc.entities.find((en) => en.id === (sel as any).id);
+        const e = this.doc.entities.find(
+          (en) => en.id === (sel as Extract<Selection, { id: string }>).id,
+        );
         if (e) {
           const SEL = 0xff2bd6;
           const corners = this.entityCorners(e);
@@ -1288,10 +1351,10 @@ export class Editor {
           }
         }
       } else if (sel?.kind === "spawn") {
-        const p = this.doc.playerSpawns[(sel as any).index];
+        const p = this.doc.playerSpawns[(sel as Extract<Selection, { index: number }>).index];
         if (p) g.circle(px(p[0]), px(p[1]), px(0.5)).stroke({ color: 0xffffff, width: lw(2) });
       } else if (sel?.kind === "dummy") {
-        const p = this.doc.dummySpawns[(sel as any).index];
+        const p = this.doc.dummySpawns[(sel as Extract<Selection, { index: number }>).index];
         if (p)
           g.rect(px(p[0]) - px(0.4), px(p[1]) - px(0.55), px(0.8), px(1.1)).stroke({
             color: 0xffffff,
@@ -1512,8 +1575,8 @@ export class Editor {
     }
 
     const allIds = new Set<string>();
-    this.doc.shapes.forEach((s) => allIds.add(s.id));
-    this.doc.entities.forEach((e) => allIds.add(e.id));
+    for (const s of this.doc.shapes) allIds.add(s.id);
+    for (const e of this.doc.entities) allIds.add(e.id);
 
     for (const e of this.doc.entities) {
       const checkIds = (ids: string[] | undefined, name: string) => {
@@ -1585,7 +1648,9 @@ export class Editor {
     let targetSize = { w: 1, h: 1 };
 
     if (sel.kind === "shape") {
-      const s = this.doc.shapes.find((sh) => sh.id === (sel as any).id);
+      const s = this.doc.shapes.find(
+        (sh) => sh.id === (sel as Extract<Selection, { id: string }>).id,
+      );
       if (s) {
         if (s.kind === "rect") {
           targetPos = { x: s.pos[0], y: s.pos[1] };
@@ -1609,20 +1674,22 @@ export class Editor {
         }
       }
     } else if (sel.kind === "entity") {
-      const e = this.doc.entities.find((en) => en.id === (sel as any).id);
+      const e = this.doc.entities.find(
+        (en) => en.id === (sel as Extract<Selection, { id: string }>).id,
+      );
       if (e) {
         const [w, h] = this.entitySize(e);
         targetPos = { x: e.pos[0], y: e.pos[1] };
         targetSize = { w, h };
       }
     } else if (sel.kind === "spawn") {
-      const p = this.doc.playerSpawns[(sel as any).index];
+      const p = this.doc.playerSpawns[(sel as Extract<Selection, { index: number }>).index];
       if (p) {
         targetPos = { x: p[0], y: p[1] };
         targetSize = { w: 1, h: 1.6 };
       }
     } else if (sel.kind === "dummy") {
-      const p = this.doc.dummySpawns[(sel as any).index];
+      const p = this.doc.dummySpawns[(sel as Extract<Selection, { index: number }>).index];
       if (p) {
         targetPos = { x: p[0], y: p[1] };
         targetSize = { w: 1, h: 2 };
@@ -1668,7 +1735,8 @@ export class Editor {
     const datalist = document.createElement("datalist");
     datalist.id = "entity-ids-list";
     for (const other of this.doc.entities) {
-      if (sel.kind === "entity" && other.id === (sel as any).id) continue;
+      if (sel.kind === "entity" && other.id === (sel as Extract<Selection, { id: string }>).id)
+        continue;
       const opt = document.createElement("option");
       opt.value = other.id;
       datalist.appendChild(opt);
@@ -1692,7 +1760,9 @@ export class Editor {
     panel.appendChild(heading);
 
     if (sel.kind === "shape") {
-      const s = this.doc.shapes.find((sh) => sh.id === (sel as any).id);
+      const s = this.doc.shapes.find(
+        (sh) => sh.id === (sel as Extract<Selection, { id: string }>).id,
+      );
       if (!s) return;
       heading.textContent = `${s.kind} · ${s.id}`;
 
@@ -1770,7 +1840,9 @@ export class Editor {
         panel.appendChild(rotLabel);
       }
     } else if (sel.kind === "entity") {
-      const e = this.doc.entities.find((en) => en.id === (sel as any).id);
+      const e = this.doc.entities.find(
+        (en) => en.id === (sel as Extract<Selection, { id: string }>).id,
+      );
       if (!e) return;
       const spec = entityTypeSpec(e.type);
       heading.textContent = `${spec?.label ?? e.type} · ${e.id}`;
@@ -2017,7 +2089,7 @@ export class Editor {
     } else {
       heading.textContent = sel.kind === "spawn" ? "player spawn" : "dummy";
       if (sel.kind === "spawn") {
-        const p = this.doc.playerSpawns[(sel as any).index];
+        const p = this.doc.playerSpawns[(sel as Extract<Selection, { index: number }>).index];
         if (p) {
           const teamLabel = document.createElement("label");
           teamLabel.textContent = "team";

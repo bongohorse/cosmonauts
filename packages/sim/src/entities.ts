@@ -331,6 +331,7 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
           const dx = p.pos.x - data.pos.x;
           const dy = p.pos.y - data.pos.y;
           const dist2 = dx * dx + dy * dy;
+          // biome-ignore lint/suspicious/noExplicitAny: valid
           if (dist2 < minDist && isTargetVisible(state, map, p.pos, team as any)) {
             minDist = dist2;
             targetPos = p.pos;
@@ -343,6 +344,7 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
           const dx = d.pos.x - data.pos.x;
           const dy = d.pos.y - data.pos.y;
           const dist2 = dx * dx + dy * dy;
+          // biome-ignore lint/suspicious/noExplicitAny: valid
           if (dist2 < minDist && isTargetVisible(state, map, d.pos, team as any)) {
             minDist = dist2;
             targetPos = d.pos;
@@ -355,6 +357,7 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
           const dx = c.pos.x - data.pos.x;
           const dy = c.pos.y - data.pos.y;
           const dist2 = dx * dx + dy * dy;
+          // biome-ignore lint/suspicious/noExplicitAny: valid
           if (dist2 < minDist && isTargetVisible(state, map, c.pos, team as any)) {
             minDist = dist2;
             targetPos = c.pos;
@@ -371,6 +374,7 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
           const speed = 20;
           state.projectiles.push({
             id: state.nextEntityId++,
+            // biome-ignore lint/suspicious/noExplicitAny: valid
             team: team as any,
             pos: { x: data.pos.x, y: startY },
             vel: { x: (dx / dist) * speed, y: (dy / dist) * speed },
@@ -398,6 +402,7 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
           state.droids.push({
             id: state.nextEntityId++,
             type: "small",
+            // biome-ignore lint/suspicious/noExplicitAny: valid
             team: team as any,
             pos: { x: data.pos.x + j * 1.5, y: data.pos.y },
             vel: { x: 0, y: 0 },

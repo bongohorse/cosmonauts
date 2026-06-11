@@ -504,8 +504,6 @@ export class Renderer {
 
     const screenW = this.app.renderer.width;
     const screenH = this.app.renderer.height;
-    const mapW = this.map.width * TILE_PX;
-    const mapH = this.map.height * TILE_PX;
 
     const clampAxis = (target: number, screen: number): number => {
       return screen / 2 - target;

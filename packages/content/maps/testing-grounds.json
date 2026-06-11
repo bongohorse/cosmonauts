@@ -53,6 +53,7 @@
       "endDeg": 30
     }
   ],
+  "playerSpawns": [[42.5, 16.5, "BLU"]],
   "entities": [
     {
       "id": "jump-pad",

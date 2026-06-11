@@ -10,7 +10,7 @@ import {
 } from "./geometry";
 
 export interface ExplicitSpawns {
-  players?: { x: number; y: number }[];
+  players?: { x: number; y: number; team?: "RED" | "BLU" }[];
   dummies?: { x: number; y: number }[];
 }
 
@@ -50,7 +50,7 @@ export function buildMap(
         case ".":
           break;
         case "S":
-          playerSpawns.push({ x: x + 0.5, y: y + 0.5 });
+          playerSpawns.push({ x: x + 0.5, y: y + 0.5, team: "RED" });
           break;
         case "D":
           // Dummy bottom sits on the bottom edge of its marker tile.
@@ -62,7 +62,7 @@ export function buildMap(
     }
   }
 
-  for (const s of spawns.players ?? []) playerSpawns.push({ x: s.x, y: s.y });
+  for (const s of spawns.players ?? []) playerSpawns.push({ x: s.x, y: s.y, team: s.team ?? "RED" });
   for (const s of spawns.dummies ?? []) dummySpawns.push({ x: s.x, y: s.y });
   if (playerSpawns.length === 0) throw new Error(`map "${id}": needs at least one player spawn`);
 

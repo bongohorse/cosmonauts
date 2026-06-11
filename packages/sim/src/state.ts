@@ -98,8 +98,10 @@ export interface SpawnSpec {
 }
 
 /** Where the i-th player spawns: feet on the bottom edge of the spawn tile. */
-export function playerSpawnPos(map: MapData, index: number, hitboxH: number): Vec2 {
-  const spawn = map.playerSpawns[index % map.playerSpawns.length];
+export function playerSpawnPos(map: MapData, team: Team, index: number, hitboxH: number): Vec2 {
+  const teamSpawns = map.playerSpawns.filter(s => s.team === team);
+  const spawns = teamSpawns.length > 0 ? teamSpawns : map.playerSpawns;
+  const spawn = spawns[index % spawns.length];
   if (spawn === undefined) throw new Error(`map "${map.id}" has no player spawns`);
   return { x: spawn.x, y: spawn.y + 0.5 - hitboxH / 2 };
 }
@@ -133,7 +135,7 @@ export function createState(map: MapData, spawns: SpawnSpec[], content: ContentI
       id: spec.playerId,
       characterId: spec.characterId,
       team: spec.team ?? "RED",
-      pos: playerSpawnPos(map, i, char.hitbox.h),
+      pos: playerSpawnPos(map, spec.team ?? "RED", i, char.hitbox.h),
       vel: { x: 0, y: 0 },
       facing: 1,
       grounded: false,

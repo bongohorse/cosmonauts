@@ -445,7 +445,7 @@ export class Editor {
         break;
       case "spawn":
         this.beginChange();
-        this.doc.playerSpawns.push([this.snapPt(w.x), this.snapPt(w.y)]);
+        this.doc.playerSpawns.push([this.snapPt(w.x), this.snapPt(w.y), "RED"]);
         this.changed();
         break;
       case "dummy":
@@ -586,7 +586,7 @@ export class Editor {
       if (e) e.pos = [e.pos[0] + dx, e.pos[1] + dy];
     } else if (sel.kind === "spawn") {
       const p = this.doc.playerSpawns[sel.index];
-      if (p) this.doc.playerSpawns[sel.index] = [p[0] + dx, p[1] + dy];
+      if (p) this.doc.playerSpawns[sel.index] = [p[0] + dx, p[1] + dy, p[2]];
     } else {
       const p = this.doc.dummySpawns[sel.index];
       if (p) this.doc.dummySpawns[sel.index] = [p[0] + dx, p[1] + dy];
@@ -781,8 +781,9 @@ export class Editor {
     }
 
     // Markers.
-    for (const [x, y] of this.doc.playerSpawns) {
-      g.circle(px(x), px(y), px(0.35)).fill({ color: 0x66ff8c, alpha: 0.9 });
+    for (const [x, y, team] of this.doc.playerSpawns) {
+      const color = team === "RED" ? 0xff4444 : 0x4444ff;
+      g.circle(px(x), px(y), px(0.35)).fill({ color, alpha: 0.9 });
       g.circle(px(x), px(y), px(0.35)).stroke({ color: 0xffffff, width: lw(2) });
     }
     for (const [x, y] of this.doc.dummySpawns) {
@@ -1544,6 +1545,28 @@ export class Editor {
       }
     } else {
       heading.textContent = sel.kind === "spawn" ? "player spawn" : "dummy";
+      if (sel.kind === "spawn") {
+        const p = this.doc.playerSpawns[sel.index];
+        if (p) {
+          const teamLabel = document.createElement("label");
+          teamLabel.textContent = "team";
+          const teamSelect = document.createElement("select");
+          for (const t of ["RED", "BLU"]) {
+            const opt = document.createElement("option");
+            opt.value = t;
+            opt.textContent = t;
+            opt.selected = p[2] === t;
+            teamSelect.appendChild(opt);
+          }
+          teamSelect.addEventListener("change", () => {
+            this.beginChange();
+            p[2] = teamSelect.value as "RED" | "BLU";
+            this.changed();
+          });
+          teamLabel.appendChild(teamSelect);
+          panel.appendChild(teamLabel);
+        }
+      }
     }
 
     const del = document.createElement("button");

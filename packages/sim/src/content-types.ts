@@ -60,7 +60,7 @@ export interface MapData {
   segments: SegmentData[]; // the actual collision world (doc 06)
   shapes: ShapeData[]; // render-ready shape outlines
   entities: MapEntityData[]; // placed entities (doc 07)
-  playerSpawns: Vec2[];
+  playerSpawns: { x: number; y: number; team: "RED" | "BLU" }[];
   dummySpawns: Vec2[];
 }
 

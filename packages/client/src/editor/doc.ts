@@ -12,19 +12,19 @@ export interface MapDoc {
   tiles: string[];
   shapes: ShapeDef[];
   entities: EntityDef[];
-  playerSpawns: [number, number][];
+  playerSpawns: [number, number, "RED" | "BLU"][];
   dummySpawns: [number, number][];
 }
 
 export function docFromDef(def: MapDef): MapDoc {
-  const playerSpawns: [number, number][] = (def.playerSpawns ?? []).map(([x, y]) => [x, y]);
+  const playerSpawns: [number, number, "RED" | "BLU"][] = (def.playerSpawns ?? []).map(([x, y, team]) => [x, y, team]);
   const dummySpawns: [number, number][] = (def.dummySpawns ?? []).map(([x, y]) => [x, y]);
   const tiles = def.tiles.map((row, y) => {
     let out = "";
     for (let x = 0; x < row.length; x++) {
       const ch = row[x];
       if (ch === "S") {
-        playerSpawns.push([x + 0.5, y + 0.5]);
+        playerSpawns.push([x + 0.5, y + 0.5, "RED"]);
         out += ".";
       } else if (ch === "D") {
         dummySpawns.push([x + 0.5, y + 1 - DUMMY_HEIGHT / 2]);
@@ -74,7 +74,7 @@ export function blankDoc(width = 48, height = 18): MapDoc {
     tiles,
     shapes: [],
     entities: [],
-    playerSpawns: [[3.5, height - 1.5]],
+    playerSpawns: [[3.5, height - 1.5, "RED"]],
     dummySpawns: [],
   };
 }

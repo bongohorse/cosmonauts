@@ -19,7 +19,7 @@ describe("content loading", () => {
     const map = loadContent().maps["testing-grounds"];
     expect(map?.width).toBe(48);
     expect(map?.height).toBe(18);
-    expect(map?.playerSpawns).toHaveLength(1);
+    expect(map?.playerSpawns).toHaveLength(2);
     expect(map?.dummySpawns).toHaveLength(3);
   });
 

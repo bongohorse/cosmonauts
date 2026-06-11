@@ -32,6 +32,7 @@ export const CharacterDefSchema = z.object({
 export type CharacterDef = z.infer<typeof CharacterDefSchema>;
 
 const PointSchema = z.tuple([z.number(), z.number()]);
+const PlayerSpawnSchema = z.tuple([z.number(), z.number(), z.enum(["RED", "BLU"])]);
 const SoliditySchema = z.enum(["solid", "glass", "teamRED", "teamBLU"]);
 const shapeBase = {
   id: z.string().min(1),
@@ -83,7 +84,7 @@ export const MapDefSchema = z.object({
       message: "entity ids must be unique",
     }),
   // Editor-authored spawn lists; merge with any tile markers (sim buildMap).
-  playerSpawns: z.array(PointSchema).optional(),
+  playerSpawns: z.array(PlayerSpawnSchema).optional(),
   dummySpawns: z.array(PointSchema).optional(),
 });
 export type MapDef = z.infer<typeof MapDefSchema>;

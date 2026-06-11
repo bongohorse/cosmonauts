@@ -236,7 +236,7 @@ function respawnPlayer(
   maxHealth: number,
   hitboxH: number,
 ): void {
-  const pos = playerSpawnPos(map, index, hitboxH);
+  const pos = playerSpawnPos(map, p.team, index, hitboxH);
   p.pos.x = pos.x;
   p.pos.y = pos.y;
   p.vel.x = 0;

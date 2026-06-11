@@ -64,7 +64,7 @@ export function buildMapFromDef(def: MapDef): MapData {
     def.tiles,
     def.shapes ?? [],
     {
-      players: (def.playerSpawns ?? []).map(([x, y]) => ({ x, y })),
+      players: (def.playerSpawns ?? []).map(([x, y, team]) => ({ x, y, team })),
       dummies: (def.dummySpawns ?? []).map(([x, y]) => ({ x, y })),
     },
     (def.entities ?? []).map(toEntityData),

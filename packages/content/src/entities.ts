@@ -168,6 +168,39 @@ export const ENTITY_TYPES: EntityTypeSpec[] = [
       rotation: { kind: "angle", label: "rotation °", default: 0 },
     },
   },
+  {
+    type: "turret",
+    label: "Turret",
+    color: "#ff3333",
+    defaultSize: [2, 5],
+    params: {
+      team: { kind: "select", label: "team", default: "RED", options: ["RED", "BLU"] },
+      health: { kind: "number", label: "health", default: 1000, min: 100 },
+      range: { kind: "number", label: "range", default: 15, min: 1 },
+      dps: { kind: "number", label: "damage/s", default: 50, min: 0 },
+    },
+  },
+  {
+    type: "core",
+    label: "Core",
+    color: "#ffcc00",
+    defaultSize: [4, 6],
+    params: {
+      team: { kind: "select", label: "team", default: "RED", options: ["RED", "BLU"] },
+      health: { kind: "number", label: "health", default: 3000, min: 100 },
+    },
+  },
+  {
+    type: "droidSpawner",
+    label: "Droid Spawner",
+    color: "#aaaaaa",
+    defaultSize: [2, 2],
+    params: {
+      team: { kind: "select", label: "team", default: "RED", options: ["RED", "BLU"] },
+      interval: { kind: "duration", label: "interval s", default: 10 },
+      count: { kind: "number", label: "count", default: 2, min: 1, max: 10 },
+    },
+  },
 ];
 
 export function entityTypeSpec(type: string): EntityTypeSpec | undefined {

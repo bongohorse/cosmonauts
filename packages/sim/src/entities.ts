@@ -218,6 +218,93 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
     }
   }
 
+  // 4. Map Objectives (Turrets and Droid Spawners)
+  for (let i = 0; i < map.entities.length; i++) {
+    const data = map.entities[i];
+    const dyn = state.mapEntities[i];
+    if (!data || !dyn || dyn.dead) continue;
+
+    if (data.type === "turret") {
+      if (dyn.cooldown > 0) dyn.cooldown -= 1;
+      if (dyn.cooldown <= 0) {
+        const team = str(data.params, "team") || "RED";
+        const range = num(data.params, "range", 15);
+        const dps = num(data.params, "dps", 50);
+        
+        let targetPos: Vec2 | null = null;
+        let minDist = range * range;
+        
+        // Find closest enemy player
+        for (const p of state.players) {
+          if (p.health <= 0 || p.team === team) continue;
+          const dx = p.pos.x - data.pos.x;
+          const dy = p.pos.y - data.pos.y;
+          const dist2 = dx*dx + dy*dy;
+          if (dist2 < minDist) {
+            minDist = dist2;
+            targetPos = p.pos;
+          }
+        }
+        
+        // Find closest enemy droid
+        for (const d of state.droids) {
+          if (d.health <= 0 || d.team === team) continue;
+          const dx = d.pos.x - data.pos.x;
+          const dy = d.pos.y - data.pos.y;
+          const dist2 = dx*dx + dy*dy;
+          if (dist2 < minDist) {
+            minDist = dist2;
+            targetPos = d.pos;
+          }
+        }
+
+        if (targetPos) {
+          // Shoot!
+          const dx = targetPos.x - data.pos.x;
+          const dy = targetPos.y - data.pos.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          const speed = 20;
+          state.projectiles.push({
+            id: state.nextEntityId++,
+            team: team as any,
+            pos: { x: data.pos.x, y: data.pos.y + data.size.h / 2 }, // shoot from top
+            vel: { x: (dx/dist) * speed, y: (dy/dist) * speed },
+            radius: 0.3,
+            damage: dps * (30 / 60), // assume it shoots every 30 ticks (0.5s)
+            ticksLeft: 60
+          });
+          dyn.cooldown = 30; // 0.5s cooldown
+        }
+      }
+    }
+
+    if (data.type === "droidSpawner") {
+      if (dyn.cooldown > 0) dyn.cooldown -= 1;
+      if (dyn.cooldown <= 0) {
+        const intervalTicks = num(data.params, "intervalTicks", 600); // 10s default
+        dyn.cooldown = intervalTicks;
+
+        const team = str(data.params, "team") || "RED";
+        const count = num(data.params, "count", 2);
+
+        for (let j = 0; j < count; j++) {
+          state.droids.push({
+            id: state.nextEntityId++,
+            type: "small",
+            team: team as any,
+            pos: { x: data.pos.x + j * 1.5, y: data.pos.y },
+            vel: { x: 0, y: 0 },
+            health: 250,
+            maxHealth: 250,
+            facing: team === "RED" ? 1 : -1,
+            grounded: false,
+            groundShapeId: "",
+            attackCooldown: 0
+          });
+        }
+      }
+    }
+  }
   // Instant kill-and-respawn (doc 07 killZone), applied to every death cause
   // so 0-HP players never keep walking. A proper death timer comes with M6.
   for (let i = 0; i < state.players.length; i++) {

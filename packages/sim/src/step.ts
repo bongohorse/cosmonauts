@@ -19,7 +19,7 @@ import {
 } from "./entities";
 import { closestSegSeg } from "./geometry";
 import { NEUTRAL_INPUT, type PlayerInput } from "./input";
-import { approach } from "./math";
+import { approach, type Vec2 } from "./math";
 import type { GameState, PlayerState } from "./state";
 
 export type InputMap = Record<number, PlayerInput>;
@@ -50,6 +50,7 @@ export function step(state: GameState, inputs: InputMap, content: ContentIndex):
   stepMapEntities(state, map, content);
   stepPickups(state, map, content);
   stepDummies(state);
+  stepDroids(state, map, content);
 
   // Passive flux income: +1 flux every 2 seconds for living players.
   if (state.tick > 0 && state.tick % FLUX_INTERVAL_TICKS === 0) {
@@ -144,6 +145,7 @@ function stepPlayer(
     state.projectiles.push({
       id: state.nextEntityId++,
       ownerId: p.id,
+      team: p.team,
       pos: { x: p.pos.x, y: p.pos.y },
       vel: { x: dirX * attack.projectileSpeed, y: dirY * attack.projectileSpeed },
       radius: attack.projectileRadius,
@@ -273,8 +275,50 @@ function stepProjectiles(state: GameState, map: MapData): void {
     }
 
     if (!dead) {
+      for (const d of state.droids) {
+        if (d.health <= 0 || d.team === pr.team) continue;
+        const thw = 0.4;
+        const thh = 0.8;
+        if (aabbOverlap(pr.pos.x, pr.pos.y, pr.radius, pr.radius, d.pos.x, d.pos.y, thw, thh)) {
+          d.health -= pr.damage;
+          if (d.health <= 0) {
+            spawnDroppedPickups(state, d.pos, pr.ownerId);
+          }
+          dead = true;
+          break;
+        }
+      }
+    }
+
+    if (!dead) {
+      for (let j = 0; j < map.entities.length; j++) {
+        const entData = map.entities[j];
+        const entDyn = state.mapEntities[j];
+        if (!entData || !entDyn || entDyn.health === undefined || entDyn.health <= 0) continue;
+        const team = typeof entData.params.team === "string" ? entData.params.team : undefined;
+        if (team === pr.team) continue;
+
+        const hw = entData.size.w / 2;
+        const hh = entData.size.h / 2;
+        if (aabbOverlap(pr.pos.x, pr.pos.y, pr.radius, pr.radius, entData.pos.x, entData.pos.y, hw, hh)) {
+          entDyn.health -= pr.damage;
+          if (entDyn.health <= 0) {
+            entDyn.dead = true;
+            if (entData.type === "core") {
+              state.gameOver = { winner: pr.team, ticksLeft: 300 }; // 5 seconds at 60fps
+            }
+            if (entData.onDestroyed) triggerTargets(state, map, entData.onDestroyed);
+            spawnDroppedPickups(state, entData.pos, pr.ownerId);
+          }
+          dead = true;
+          break;
+        }
+      }
+    }
+
+    if (!dead) {
       for (const target of state.players) {
-        if (target.id === pr.ownerId || target.health <= 0) continue;
+        if (target.team === pr.team || target.health <= 0) continue;
         const thw = 0.4; // M2-era: shared hit size; per-character hitbox lookup comes with teams/M4
         const thh = 0.8;
         if (
@@ -479,5 +523,107 @@ function stepPickups(state: GameState, map: MapData, content: ContentIndex): voi
     if (destroyed) {
       state.pickups.splice(i, 1);
     }
+  }
+}
+
+export function stepDroids(state: GameState, map: MapData, content: ContentIndex): void {
+  for (let i = state.droids.length - 1; i >= 0; i--) {
+    const d = state.droids[i];
+    if (!d) continue;
+
+    if (d.health <= 0) {
+      state.droids.splice(i, 1);
+      continue;
+    }
+
+    if (d.attackCooldown > 0) d.attackCooldown -= 1;
+
+    // AI: find closest enemy target (player, turret, or core)
+    let targetPos: Vec2 | null = null;
+    let minDist = 15 * 15;
+
+    for (const p of state.players) {
+      if (p.health <= 0 || p.team === d.team) continue;
+      const dist2 = (p.pos.x - d.pos.x)**2 + (p.pos.y - d.pos.y)**2;
+      if (dist2 < minDist) { minDist = dist2; targetPos = p.pos; }
+    }
+
+    for (let j = 0; j < map.entities.length; j++) {
+      const data = map.entities[j];
+      const dyn = state.mapEntities[j];
+      if (!data || !dyn || dyn.dead || (data.type !== "turret" && data.type !== "core")) continue;
+      const team = typeof data.params.team === "string" ? data.params.team : undefined;
+      if (team === d.team) continue;
+      const dist2 = (data.pos.x - d.pos.x)**2 + (data.pos.y - d.pos.y)**2;
+      if (dist2 < minDist) { minDist = dist2; targetPos = data.pos; }
+    }
+
+    for (const otherD of state.droids) {
+      if (otherD.id === d.id || otherD.health <= 0 || otherD.team === d.team) continue;
+      const dist2 = (otherD.pos.x - d.pos.x)**2 + (otherD.pos.y - d.pos.y)**2;
+      if (dist2 < minDist) { minDist = dist2; targetPos = otherD.pos; }
+    }
+
+    // Walk forward if no target
+    const speed = 4;
+    let moveDir = 0;
+
+    if (targetPos) {
+      const dx = targetPos.x - d.pos.x;
+      const dist = Math.abs(dx);
+      if (dist > 3) {
+        moveDir = Math.sign(dx);
+      } else {
+        // Attack!
+        d.facing = Math.sign(dx) as 1 | -1 || d.facing;
+        if (d.attackCooldown === 0) {
+          const dy = targetPos.y - d.pos.y;
+          const distFull = Math.sqrt(dx*dx + dy*dy);
+          const pSpeed = 15;
+          state.projectiles.push({
+            id: state.nextEntityId++,
+            team: d.team,
+            pos: { x: d.pos.x, y: d.pos.y },
+            vel: { x: (dx/distFull) * pSpeed, y: (dy/distFull) * pSpeed },
+            radius: 0.2,
+            damage: 20,
+            ticksLeft: 30
+          });
+          d.attackCooldown = 60; // 1 second
+        }
+      }
+    } else {
+      // Just walk in facing direction
+      moveDir = d.facing;
+    }
+
+    if (moveDir !== 0) {
+      d.facing = moveDir as 1 | -1;
+      d.vel.x = approach(d.vel.x, moveDir * speed, 20 * DT);
+    } else {
+      d.vel.x = approach(d.vel.x, 0, 20 * DT);
+    }
+
+    // Move (very simplified)
+    d.vel.y += 30 * DT; // gravity
+    
+    // Use player move logic by creating mock player and char objects
+    const mockP = {
+      id: d.id, characterId: "", team: d.team, pos: d.pos, vel: d.vel,
+      facing: d.facing, grounded: d.grounded, groundNX: 0, groundNY: 0,
+      groundShapeId: d.groundShapeId, groundGlass: false, dropShapeId: "", dropTicks: 0,
+      jumpsUsed: 0, jumpCutApplied: false, attackCooldown: 0, health: d.health,
+      flux: 0, upgrades: { speed: 0, cooldown: 0, damage: 0, jump: 0 }
+    };
+    const mockChar = { hitbox: { w: 0.8, h: 1.8 } } as any;
+
+    movePlayer(state, map, mockP as PlayerState, mockChar, false);
+    
+    d.pos.x = mockP.pos.x;
+    d.pos.y = mockP.pos.y;
+    d.vel.x = mockP.vel.x;
+    d.vel.y = mockP.vel.y;
+    d.grounded = mockP.grounded;
+    d.groundShapeId = mockP.groundShapeId;
   }
 }

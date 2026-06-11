@@ -283,12 +283,37 @@ app.ticker.add((ticker) => {
 
   while (accumulator >= DT) {
     prev = cloneState(state);
-    const player = state.players[0];
-    const input = inputSource.sample(player?.pos ?? { x: 0, y: 0 }, (sx, sy) =>
-      renderer.screenToWorld(sx, sy),
-    );
-    step(state, { [PLAYER_ID]: input }, content);
+    
+    if (state.gameOver) {
+      // Step game over timer instead of running full simulation
+      state.gameOver.ticksLeft -= 1;
+      if (state.gameOver.ticksLeft <= 0) {
+        state = newGame();
+        prev = cloneState(state);
+      }
+    } else {
+      const player = state.players[0];
+      const input = inputSource.sample(player?.pos ?? { x: 0, y: 0 }, (sx, sy) =>
+        renderer.screenToWorld(sx, sy),
+      );
+      step(state, { [PLAYER_ID]: input }, content);
+    }
+    
     accumulator -= DT;
+  }
+  
+  const gameOverOverlay = document.getElementById("game-over");
+  if (state.gameOver && gameOverOverlay) {
+    gameOverOverlay.style.display = "flex";
+    const title = document.getElementById("game-over-title");
+    const timer = document.getElementById("game-over-timer");
+    if (title) {
+      title.innerText = `TEAM ${state.gameOver.winner} WON`;
+      title.style.color = state.gameOver.winner === "RED" ? "#ff3333" : "#3366ff";
+    }
+    if (timer) timer.innerText = `Restarting in ${Math.ceil(state.gameOver.ticksLeft / 60)}...`;
+  } else if (gameOverOverlay) {
+    gameOverOverlay.style.display = "none";
   }
 
   renderer.render(prev, state, accumulator / DT);

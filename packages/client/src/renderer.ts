@@ -131,6 +131,7 @@ export class Renderer {
     const prevPlayers = new Map(prev.players.map((p) => [p.id, p]));
     const prevProjectiles = new Map(prev.projectiles.map((p) => [p.id, p]));
     const prevPickups = new Map(prev.pickups.map((p) => [p.id, p]));
+    const prevDroids = new Map(prev.droids?.map((p) => [p.id, p]) ?? []);
 
     for (const d of curr.dummies) {
       const hw = (DUMMY_WIDTH / 2) * TILE_PX;
@@ -141,6 +142,22 @@ export class Renderer {
       g.rect(cx - hw, cy - hh, hw * 2, hh * 2).fill(alive ? COLORS.dummy : COLORS.dummyDead);
       if (alive) {
         this.drawHealthBar(cx, cy - hh - 8, DUMMY_WIDTH * TILE_PX, d.health / d.maxHealth);
+      }
+    }
+
+    if (curr.droids) {
+      for (const d of curr.droids) {
+        const before = prevDroids.get(d.id) ?? d;
+        const x = lerp(before.pos.x, d.pos.x) * TILE_PX;
+        const y = lerp(before.pos.y, d.pos.y) * TILE_PX;
+        const hw = 0.4 * TILE_PX;
+        const hh = 0.9 * TILE_PX;
+        const color = d.team === "RED" ? 0xff4444 : 0x4444ff;
+        g.rect(x - hw, y - hh, hw * 2, hh * 2).fill(color);
+        g.circle(x + d.facing * hw * 0.45, y - hh * 0.45, 3.5).fill(0x10142a);
+        if (d.health > 0) {
+          this.drawHealthBar(x, y - hh - 8, 0.8 * TILE_PX, d.health / d.maxHealth);
+        }
       }
     }
 
@@ -293,6 +310,12 @@ export class Renderer {
       if (teamVal === "RED" || teamVal === "BLU" || teamVal === "A" || teamVal === "B") {
         const teamColor = teamVal === "RED" || teamVal === "A" ? 0xff4d5e : 0x4d7dff;
         g.circle(x, y, 5).fill(teamColor).stroke({ color: 0xffffff, width: 1.5 });
+      }
+
+      // Draw health bar for destructible entities (turret, core)
+      if (dyn.health !== undefined && (data.type === "turret" || data.type === "core") && !dyn.dead) {
+        const maxHealth = typeof data.params.health === "number" ? data.params.health : 1000;
+        this.drawHealthBar(x, y - hh - 12, data.size.w * TILE_PX, dyn.health / maxHealth);
       }
 
       // Draw orientation arrows for jumper and forceField

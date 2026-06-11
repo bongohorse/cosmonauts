@@ -39,7 +39,8 @@ export interface PlayerState {
 
 export interface ProjectileState {
   id: number;
-  ownerId: number;
+  ownerId?: number; // optional, for assigning flux
+  team: Team;
   pos: Vec2;
   vel: Vec2;
   radius: number;
@@ -68,6 +69,8 @@ export interface MapEntityState {
   active?: boolean;
   triggered?: boolean;
   timerElapsed?: number;
+  health?: number;
+  dead?: boolean;
 }
 
 export interface DummyState {
@@ -76,6 +79,20 @@ export interface DummyState {
   health: number;
   maxHealth: number;
   respawnTicks: number;
+}
+
+export interface DroidState {
+  id: number;
+  type: string;
+  team: Team;
+  pos: Vec2;
+  vel: Vec2;
+  health: number;
+  maxHealth: number;
+  facing: 1 | -1;
+  grounded: boolean;
+  groundShapeId: string;
+  attackCooldown: number;
 }
 
 /** Plain JSON-compatible data, by design (doc 02 §1). No classes, no Maps. */
@@ -89,6 +106,8 @@ export interface GameState {
   dummies: DummyState[];
   mapEntities: MapEntityState[]; // index-aligned with map.entities
   pickups: LivePickupState[];
+  droids: DroidState[];
+  gameOver?: { winner: Team; ticksLeft: number };
 }
 
 export interface SpawnSpec {
@@ -115,15 +134,21 @@ export function createState(map: MapData, spawns: SpawnSpec[], content: ContentI
     players: [],
     projectiles: [],
     dummies: [],
-    mapEntities: map.entities.map((e) => ({
-      id: e.id,
-      enabled: e.enabled,
-      cooldown: 0,
-      active: false,
-      triggered: false,
-      timerElapsed: 0,
-    })),
+    mapEntities: map.entities.map((e) => {
+      let health: number | undefined;
+      if (e.type === "turret" || e.type === "core") {
+        health = typeof e.params.health === "number" ? e.params.health : 1000;
+      }
+      return {
+        id: e.id,
+        enabled: e.enabled,
+        cooldown: 0,
+        health,
+        dead: false,
+      };
+    }),
     pickups: [],
+    droids: [],
   };
 
   for (let i = 0; i < spawns.length; i++) {

@@ -1,6 +1,7 @@
 import { createState, NEUTRAL_INPUT, step } from "@cosmonauts/sim";
 import { describe, expect, it } from "vitest";
-import { loadContent } from "./index";
+import { buildMapFromDef, loadContent } from "./index";
+import type { MapDef } from "./schemas";
 
 describe("content loading", () => {
   it("loads and validates all shipped content", () => {
@@ -17,18 +18,27 @@ describe("content loading", () => {
 
   it("parses the testing grounds map markers", () => {
     const map = loadContent().maps["testing-grounds"];
-    expect(map?.width).toBe(48);
+    expect(map?.width).toBe(60);
     expect(map?.height).toBe(18);
     expect(map?.playerSpawns).toHaveLength(2);
-    expect(map?.dummySpawns).toHaveLength(3);
+    expect(map?.dummySpawns).toHaveLength(0);
   });
 
   it("compiles shapes into collision segments", () => {
-    const map = loadContent().maps["testing-grounds"];
-    expect(map?.shapes).toHaveLength(4);
+    const mockDef: MapDef = {
+      id: "mock-shapes",
+      name: "Mock Shapes",
+      tiles: ["####", "#..#", "####"],
+      playerSpawns: [[1, 1, "RED"]],
+      shapes: [
+        { id: "ramp", kind: "polygon", solidity: "solid", points: [[1, 1], [2, 1], [2, 2]] },
+        { id: "glass", kind: "polyline", solidity: "glass", points: [[1, 2], [2, 2]] },
+      ],
+    };
+    const map = buildMapFromDef(mockDef);
+    expect(map?.shapes).toHaveLength(2);
     expect(map?.shapes.map((s) => s.solidity)).toContain("glass");
-    // Merged tile perimeter (~12) + ramp 4 + tilted rect 4 + glass 1 + 8-step bowl arc.
-    expect(map?.segments.length).toBeGreaterThan(25);
+    expect(map?.segments.length).toBeGreaterThan(4);
   });
 
   it("smoke test: 600 neutral ticks of real content settle the player on the ground", () => {

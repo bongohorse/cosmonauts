@@ -273,6 +273,29 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
         }
       }
     }
+
+    for (const c of state.creeps) {
+      if (!dyn.enabled) break;
+      if (c.health <= 0) continue;
+      const inside = aabbOverlap(
+        data.pos.x,
+        data.pos.y,
+        data.size.w / 2,
+        data.size.h / 2,
+        c.pos.x,
+        c.pos.y,
+        0.4, // creep half-width
+        0.45, // creep half-height
+      );
+      if (inside && data.type !== "hideZone") {
+        const mockP = c as unknown as PlayerState;
+        const oldHealth = mockP.health;
+        applyEntity(state, map, data, dyn, mockP, c.maxHealth);
+        if (oldHealth > 0 && mockP.health <= 0) {
+          spawnCreepDrops(state, c.pos, undefined);
+        }
+      }
+    }
   }
 
   // 4. Map Objectives (Turrets and Droid Spawners)
@@ -312,6 +335,18 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
           if (dist2 < minDist && isTargetVisible(state, map, d.pos, team as any)) {
             minDist = dist2;
             targetPos = d.pos;
+          }
+        }
+
+        // Find closest creep (neutral, so anyone can target them)
+        for (const c of state.creeps) {
+          if (c.health <= 0) continue;
+          const dx = c.pos.x - data.pos.x;
+          const dy = c.pos.y - data.pos.y;
+          const dist2 = dx*dx + dy*dy;
+          if (dist2 < minDist && isTargetVisible(state, map, c.pos, team as any)) {
+            minDist = dist2;
+            targetPos = c.pos;
           }
         }
 

@@ -277,6 +277,19 @@ function stepProjectiles(state: GameState, map: MapData): void {
     }
 
     if (!dead) {
+      for (const c of state.creeps) {
+        if (c.health <= 0) continue;
+        const thw = 0.4;
+        const thh = 0.45;
+        if (aabbOverlap(pr.pos.x, pr.pos.y, pr.radius, pr.radius, c.pos.x, c.pos.y, thw, thh)) {
+          c.health -= pr.damage;
+          dead = true;
+          break;
+        }
+      }
+    }
+
+    if (!dead) {
       for (const d of state.droids) {
         if (d.health <= 0 || d.team === pr.team) continue;
         const thw = 0.4;
@@ -566,6 +579,12 @@ export function stepDroids(state: GameState, map: MapData, content: ContentIndex
       if (dist2 < minDist) { minDist = dist2; targetPos = otherD.pos; }
     }
 
+    for (const c of state.creeps) {
+      if (c.health <= 0) continue;
+      const dist2 = (c.pos.x - d.pos.x)**2 + (c.pos.y - d.pos.y)**2;
+      if (dist2 < minDist) { minDist = dist2; targetPos = c.pos; }
+    }
+
     // Walk forward if no target
     const speed = 2; // Slower
     let moveDir = 0;
@@ -661,7 +680,7 @@ export function stepCreeps(state: GameState, map: MapData, content: ContentIndex
 
     // AI: find closest enemy target (player or droid)
     let dangerDir = 0;
-    let minDist = 8 * 8; // detection radius 8 tiles
+    let minDist = 4 * 4; // reduced detection radius to 4 tiles
 
     for (const p of state.players) {
       if (p.health <= 0) continue;
@@ -684,18 +703,18 @@ export function stepCreeps(state: GameState, map: MapData, content: ContentIndex
 
     if (dangerDir !== 0) {
       // Flee from danger!
-      c.fleeTicks = 60; // Flee for 1 second
+      c.fleeTicks = 30; // Flee for 0.5 seconds (reduced spook duration)
       moveDir = -dangerDir;
-      speed = 3.5; // Quicker escape
+      speed = 2.5; // Quicker escape (reduced from 3.5)
     } else if (c.fleeTicks > 0) {
       // Keep fleeing in facing direction
       moveDir = c.facing;
-      speed = 3.5;
+      speed = 2.5;
     } else {
       // Just pace back and forth near origin
       moveDir = c.facing;
-      if (c.pos.x > c.origin.x + 3) moveDir = -1;
-      else if (c.pos.x < c.origin.x - 3) moveDir = 1;
+      if (c.pos.x > c.origin.x + 4) moveDir = -1; // Increased wander distance to 4
+      else if (c.pos.x < c.origin.x - 4) moveDir = 1;
     }
 
     if (moveDir !== 0) {

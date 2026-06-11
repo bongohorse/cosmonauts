@@ -31,8 +31,25 @@ describe("content loading", () => {
       tiles: ["####", "#..#", "####"],
       playerSpawns: [[1, 1, "RED"]],
       shapes: [
-        { id: "ramp", kind: "polygon", solidity: "solid", points: [[1, 1], [2, 1], [2, 2]] },
-        { id: "glass", kind: "polyline", solidity: "glass", points: [[1, 2], [2, 2]] },
+        {
+          id: "ramp",
+          kind: "polygon",
+          solidity: "solid",
+          points: [
+            [1, 1],
+            [2, 1],
+            [2, 2],
+          ],
+        },
+        {
+          id: "glass",
+          kind: "polyline",
+          solidity: "glass",
+          points: [
+            [1, 2],
+            [2, 2],
+          ],
+        },
       ],
     };
     const map = buildMapFromDef(mockDef);

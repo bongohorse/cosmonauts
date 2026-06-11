@@ -51,6 +51,12 @@ function getRotatedRectPoints(
 
 const SOLIDITY_OPTIONS: Solidity[] = ["solid", "glass", "teamA", "teamB"];
 
+function formatSolidity(s: Solidity): string {
+  if (s === "teamA") return "team RED";
+  if (s === "teamB") return "team BLU";
+  return s;
+}
+
 /**
  * In-game map editor MVP (doc 08 §1): geometry + spawn/dummy placement on the
  * running map. Tab (handled by main.ts) flips between editing and playing.
@@ -352,7 +358,7 @@ export class Editor {
     if (linking !== null) {
       if (e.button === 0) {
         const hit = this.hitTest(w);
-        if (hit !== null && hit.kind === "entity") {
+        if (hit !== null && hit.kind === "entity" && hit.id !== linking.entityId) {
           this.beginChange();
           const srcEntity = this.doc.entities.find((en) => en.id === linking.entityId);
           if (srcEntity) {
@@ -824,6 +830,26 @@ export class Editor {
           .stroke({ color: 0xffffff, width: lw(1.5) });
       }
 
+      // Draw orientation arrows for jumper and forceField
+      if (e.type === "jumper") {
+        const direction = typeof e.params?.direction === "number" ? e.params.direction : 90;
+        const rad = direction * (Math.PI / 180);
+        const vx = Math.cos(rad);
+        const vy = -Math.sin(rad);
+        const len = Math.min(w, h) * 0.45;
+        drawArrow(g, px(e.pos[0]), px(e.pos[1]), vx, vy, px(len), 0xffffff, lw(2));
+      } else if (e.type === "forceField") {
+        const fx = typeof e.params?.forceX === "number" ? e.params.forceX : 0;
+        const fy = typeof e.params?.forceY === "number" ? e.params.forceY : -50;
+        const flen = Math.hypot(fx, fy);
+        if (flen > 0.001) {
+          const vx = fx / flen;
+          const vy = fy / flen;
+          const len = Math.min(w, h) * 0.45;
+          drawArrow(g, px(e.pos[0]), px(e.pos[1]), vx, vy, px(len), 0xffffff, lw(2));
+        }
+      }
+
       // Draw linking mode highlight
       if (this.linkingField !== null && e.id !== this.linkingField.entityId) {
         if (rotation !== 0) {
@@ -1017,7 +1043,7 @@ export class Editor {
     for (const s of SOLIDITY_OPTIONS) {
       const o = document.createElement("option");
       o.value = s;
-      o.textContent = s;
+      o.textContent = formatSolidity(s);
       sol.appendChild(o);
     }
     sol.addEventListener("change", () => {
@@ -1195,6 +1221,7 @@ export class Editor {
     const datalist = document.createElement("datalist");
     datalist.id = "entity-ids-list";
     for (const other of this.doc.entities) {
+      if (sel.kind === "entity" && other.id === sel.id) continue;
       const opt = document.createElement("option");
       opt.value = other.id;
       datalist.appendChild(opt);
@@ -1228,7 +1255,7 @@ export class Editor {
       for (const opt of SOLIDITY_OPTIONS) {
         const o = document.createElement("option");
         o.value = opt;
-        o.textContent = opt;
+        o.textContent = formatSolidity(opt);
         o.selected = s.solidity === opt;
         sol.appendChild(o);
       }
@@ -1544,4 +1571,31 @@ function distToSeg(p: Vec2, a: [number, number], b: [number, number]): number {
   const t =
     len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a[0]) * dx + (p.y - a[1]) * dy) / len2));
   return Math.hypot(p.x - (a[0] + t * dx), p.y - (a[1] + t * dy));
+}
+
+function drawArrow(
+  g: import("pixi.js").Graphics,
+  cx: number,
+  cy: number,
+  vx: number,
+  vy: number,
+  length: number,
+  color: number,
+  width: number,
+): void {
+  const tx = cx + vx * length;
+  const ty = cy + vy * length;
+  g.moveTo(cx, cy).lineTo(tx, ty).stroke({ color, width });
+
+  // Draw arrow head
+  const angle = Math.atan2(vy, vx);
+  const headSize = Math.max(5, length * 0.25);
+  const leftX = tx - headSize * Math.cos(angle - Math.PI / 6);
+  const leftY = ty - headSize * Math.sin(angle - Math.PI / 6);
+  const rightX = tx - headSize * Math.cos(angle + Math.PI / 6);
+  const rightY = ty - headSize * Math.sin(angle + Math.PI / 6);
+
+  g.moveTo(tx, ty).lineTo(leftX, leftY);
+  g.moveTo(tx, ty).lineTo(rightX, rightY);
+  g.stroke({ color, width });
 }

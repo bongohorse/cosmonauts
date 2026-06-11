@@ -247,6 +247,26 @@ export class Renderer {
         const teamColor = teamVal === "RED" || teamVal === "A" ? 0xff4d5e : 0x4d7dff;
         g.circle(x, y, 5).fill(teamColor).stroke({ color: 0xffffff, width: 1.5 });
       }
+
+      // Draw orientation arrows for jumper and forceField
+      if (data.type === "jumper") {
+        const direction = typeof data.params.direction === "number" ? data.params.direction : 90;
+        const rad = direction * (Math.PI / 180);
+        const vx = Math.cos(rad);
+        const vy = -Math.sin(rad);
+        const len = Math.min(data.size.w, data.size.h) * 0.45 * TILE_PX;
+        drawArrow(g, x, y, vx, vy, len, 0xffffff, 2);
+      } else if (data.type === "forceField") {
+        const fx = typeof data.params.forceX === "number" ? data.params.forceX : 0;
+        const fy = typeof data.params.forceY === "number" ? data.params.forceY : -50;
+        const flen = Math.hypot(fx, fy);
+        if (flen > 0.001) {
+          const vx = fx / flen;
+          const vy = fy / flen;
+          const len = Math.min(data.size.w, data.size.h) * 0.45 * TILE_PX;
+          drawArrow(g, x, y, vx, vy, len, 0xffffff, 2);
+        }
+      }
     }
 
     this.updateCamera(curr, prev, alpha);
@@ -293,4 +313,31 @@ export class Renderer {
     const scale = this.world.scale.x * TILE_PX;
     return { x: (sx - this.world.x) / scale, y: (sy - this.world.y) / scale };
   }
+}
+
+function drawArrow(
+  g: Graphics,
+  cx: number,
+  cy: number,
+  vx: number,
+  vy: number,
+  length: number,
+  color: number,
+  width: number,
+): void {
+  const tx = cx + vx * length;
+  const ty = cy + vy * length;
+  g.moveTo(cx, cy).lineTo(tx, ty).stroke({ color, width });
+
+  // Draw arrow head
+  const angle = Math.atan2(vy, vx);
+  const headSize = Math.max(5, length * 0.25);
+  const leftX = tx - headSize * Math.cos(angle - Math.PI / 6);
+  const leftY = ty - headSize * Math.sin(angle - Math.PI / 6);
+  const rightX = tx - headSize * Math.cos(angle + Math.PI / 6);
+  const rightY = ty - headSize * Math.sin(angle + Math.PI / 6);
+
+  g.moveTo(tx, ty).lineTo(leftX, leftY);
+  g.moveTo(tx, ty).lineTo(rightX, rightY);
+  g.stroke({ color, width });
 }

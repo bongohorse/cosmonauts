@@ -108,7 +108,11 @@ export class Editor {
 
   enter(): void {
     this.active = true;
-    const t = this.renderer.cameraOverride ?? { x: 0, y: 0, scale: 1 };
+    const t = this.renderer.cameraOverride ?? {
+      x: this.renderer.world.x,
+      y: this.renderer.world.y,
+      scale: this.renderer.world.scale.x,
+    };
     this.cam = { ...t };
     this.renderer.cameraOverride = this.cam;
     this.bar.style.display = "block";

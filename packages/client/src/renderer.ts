@@ -40,7 +40,7 @@ const COLORS = {
  * the rectangle IS the hitbox). Never mutates sim state.
  */
 export class Renderer {
-  private world = new Container();
+  readonly world = new Container();
   private tileLayer = new Graphics();
   private entityLayer = new Graphics();
   private debugLayer = new Graphics();

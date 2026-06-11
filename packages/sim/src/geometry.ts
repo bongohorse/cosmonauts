@@ -3,7 +3,7 @@ import { DEG_TO_RAD, dcos, dsin } from "./math";
 // Level geometry v2 (doc 06): the sim collides against line segments only.
 // Tiles, rects, polygons, and arcs are authoring concepts compiled to segments.
 
-export type Solidity = "solid" | "glass" | "teamRED" | "teamBLU";
+export type Solidity = "solid" | "glass" | "teamRED" | "teamBLU" | "none";
 
 /** Authoring shapes (stored in map JSON, doc 07 §2). Angles in degrees. */
 export type ShapeDef =
@@ -141,7 +141,9 @@ export function compileShape(def: ShapeDef, out: SegmentData[], shapes: ShapeDat
     }
   }
 
-  emitChain(out, points, closed, def.solidity, def.id);
+  if (def.solidity !== "none") {
+    emitChain(out, points, closed, def.solidity, def.id);
+  }
   shapes.push({ id: def.id, solidity: def.solidity, tint: def.tint, points, closed });
 }
 

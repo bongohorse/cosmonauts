@@ -49,11 +49,12 @@ function getRotatedRectPoints(
   return [...corner(-hw, -hh), ...corner(hw, -hh), ...corner(hw, hh), ...corner(-hw, hh)];
 }
 
-const SOLIDITY_OPTIONS: Solidity[] = ["solid", "glass", "teamRED", "teamBLU"];
+const SOLIDITY_OPTIONS: Solidity[] = ["solid", "glass", "teamRED", "teamBLU", "none"];
 
 function formatSolidity(s: Solidity): string {
   if (s === "teamRED") return "team RED";
   if (s === "teamBLU") return "team BLU";
+  if (s === "none") return "none (decoration)";
   return s;
 }
 
@@ -73,6 +74,7 @@ export class Editor {
   private newSolidity: Solidity = "solid";
   private newEntityType = ENTITY_TYPES[0]?.type ?? "jumper";
   private snap = true;
+  private mirrorMode = false;
   private history = new History();
   private linkingField: {
     type: "targets" | "onDestroyed" | { kind: "param"; key: string };
@@ -85,6 +87,7 @@ export class Editor {
   private bar!: HTMLElement;
   private inspector!: HTMLElement;
   private statusEl!: HTMLElement;
+  private warningsEl!: HTMLElement;
 
   constructor(
     private renderer: Renderer,
@@ -446,11 +449,19 @@ export class Editor {
       case "spawn":
         this.beginChange();
         this.doc.playerSpawns.push([this.snapPt(w.x), this.snapPt(w.y), "RED"]);
+        if (this.mirrorMode) {
+          const mw = this.doc.tiles[0]?.length ?? 48;
+          this.doc.playerSpawns.push([mw - this.snapPt(w.x), this.snapPt(w.y), "BLU"]);
+        }
         this.changed();
         break;
       case "dummy":
         this.beginChange();
         this.doc.dummySpawns.push([this.snapPt(w.x), this.snapPt(w.y)]);
+        if (this.mirrorMode) {
+          const mw = this.doc.tiles[0]?.length ?? 48;
+          this.doc.dummySpawns.push([mw - this.snapPt(w.x), this.snapPt(w.y)]);
+        }
         this.changed();
         break;
       case "entity":
@@ -459,18 +470,54 @@ export class Editor {
     }
   }
 
+  private mirrorEntityParams(params: Record<string, any> | undefined): Record<string, any> | undefined {
+    if (!params) return params;
+    const out = { ...params };
+    if (typeof out.team === "string") {
+      if (out.team === "RED") out.team = "BLU";
+      else if (out.team === "BLU") out.team = "RED";
+      else if (out.team === "A") out.team = "B";
+      else if (out.team === "B") out.team = "A";
+    }
+    if (typeof out.rotation === "number") {
+      out.rotation = ((360 - out.rotation) % 360 + 360) % 360;
+    }
+    if (typeof out.direction === "number") {
+      out.direction = ((180 - out.direction) % 360 + 360) % 360;
+    }
+    if (typeof out.forceX === "number") {
+      out.forceX = -out.forceX;
+    }
+    return out;
+  }
+
   private placeEntity(w: Vec2): void {
     const spec = entityTypeSpec(this.newEntityType);
     if (spec === undefined) return;
     this.beginChange();
     const id = this.nextEntityId(spec.type);
+    const sx = this.snapPt(w.x);
+    const sy = this.snapPt(w.y);
     this.doc.entities.push({
       id,
       type: spec.type,
-      pos: [this.snapPt(w.x), this.snapPt(w.y)],
+      pos: [sx, sy],
       size: [...spec.defaultSize],
       params: defaultParams(spec),
     } as EntityDef);
+    
+    if (this.mirrorMode) {
+      const mw = this.doc.tiles[0]?.length ?? 48;
+      const twinId = this.nextEntityId(spec.type);
+      this.doc.entities.push({
+        id: twinId,
+        type: spec.type,
+        pos: [mw - sx, sy],
+        size: [...spec.defaultSize],
+        params: this.mirrorEntityParams(defaultParams(spec)),
+      } as EntityDef);
+    }
+    
     this.selection = { kind: "entity", id };
     this.tool = "select";
     this.syncToolButtons();
@@ -558,14 +605,32 @@ export class Editor {
       if (wdt >= 0.5 && hgt >= 0.25) {
         this.beginChange();
         const id = this.nextShapeId();
+        const cx = (x0 + x1) / 2;
+        const cy = (y0 + y1) / 2;
         this.doc.shapes.push({
           id,
           kind: "rect",
           solidity: this.newSolidity,
-          pos: [(x0 + x1) / 2, (y0 + y1) / 2],
+          pos: [cx, cy],
           size: [wdt, hgt],
           rotation: 0,
         });
+
+        if (this.mirrorMode) {
+          const mw = this.doc.tiles[0]?.length ?? 48;
+          let twinSolidity = this.newSolidity;
+          if (twinSolidity === "teamRED") twinSolidity = "teamBLU";
+          else if (twinSolidity === "teamBLU") twinSolidity = "teamRED";
+          this.doc.shapes.push({
+            id: this.nextShapeId(),
+            kind: "rect",
+            solidity: twinSolidity,
+            pos: [mw - cx, cy],
+            size: [wdt, hgt],
+            rotation: 0,
+          });
+        }
+
         this.selection = { kind: "shape", id };
         this.tool = "select";
         this.syncToolButtons();
@@ -578,18 +643,65 @@ export class Editor {
   private moveSelection(dx: number, dy: number): void {
     const sel = this.selection;
     if (sel === null) return;
+    const mw = this.doc.tiles[0]?.length ?? 48;
     if (sel.kind === "shape") {
       const s = this.doc.shapes.find((sh) => sh.id === sel.id);
-      if (s) this.translateShape(s, dx, dy);
+      if (s) {
+        let twin: ShapeDef | undefined;
+        if (this.mirrorMode && s.kind === "rect") {
+           twin = this.doc.shapes.find(sh => 
+              sh.id !== s.id && sh.kind === "rect" && 
+              Math.abs(sh.pos[0] - (mw - s.pos[0])) < 0.1 && 
+              Math.abs(sh.pos[1] - s.pos[1]) < 0.1
+           );
+        }
+        this.translateShape(s, dx, dy);
+        if (twin) this.translateShape(twin, -dx, dy);
+      }
     } else if (sel.kind === "entity") {
       const e = this.doc.entities.find((en) => en.id === sel.id);
-      if (e) e.pos = [e.pos[0] + dx, e.pos[1] + dy];
+      if (e) {
+        let twin: EntityDef | undefined;
+        if (this.mirrorMode) {
+           twin = this.doc.entities.find(en => 
+              en.id !== e.id && en.type === e.type && 
+              Math.abs(en.pos[0] - (mw - e.pos[0])) < 0.1 && 
+              Math.abs(en.pos[1] - e.pos[1]) < 0.1
+           );
+        }
+        e.pos = [e.pos[0] + dx, e.pos[1] + dy];
+        if (twin) twin.pos = [twin.pos[0] - dx, twin.pos[1] + dy];
+      }
     } else if (sel.kind === "spawn") {
       const p = this.doc.playerSpawns[sel.index];
-      if (p) this.doc.playerSpawns[sel.index] = [p[0] + dx, p[1] + dy, p[2]];
+      if (p) {
+        let twinIdx = -1;
+        if (this.mirrorMode) {
+          twinIdx = this.doc.playerSpawns.findIndex((other, idx) => 
+            idx !== sel.index && Math.abs(other[0] - (mw - p[0])) < 0.1 && Math.abs(other[1] - p[1]) < 0.1
+          );
+        }
+        this.doc.playerSpawns[sel.index] = [p[0] + dx, p[1] + dy, p[2]];
+        if (twinIdx !== -1) {
+          const twin = this.doc.playerSpawns[twinIdx];
+          if (twin) this.doc.playerSpawns[twinIdx] = [twin[0] - dx, twin[1] + dy, twin[2]];
+        }
+      }
     } else {
       const p = this.doc.dummySpawns[sel.index];
-      if (p) this.doc.dummySpawns[sel.index] = [p[0] + dx, p[1] + dy];
+      if (p) {
+        let twinIdx = -1;
+        if (this.mirrorMode) {
+          twinIdx = this.doc.dummySpawns.findIndex((other, idx) => 
+            idx !== sel.index && Math.abs(other[0] - (mw - p[0])) < 0.1 && Math.abs(other[1] - p[1]) < 0.1
+          );
+        }
+        this.doc.dummySpawns[sel.index] = [p[0] + dx, p[1] + dy];
+        if (twinIdx !== -1) {
+          const twin = this.doc.dummySpawns[twinIdx];
+          if (twin) this.doc.dummySpawns[twinIdx] = [twin[0] - dx, twin[1] + dy];
+        }
+      }
     }
   }
 
@@ -699,6 +811,18 @@ export class Editor {
       solidity: this.newSolidity,
       points: this.draft.map(([x, y]) => [x, y]),
     });
+    if (this.mirrorMode) {
+      const mw = this.doc.tiles[0]?.length ?? 48;
+      let twinSolidity = this.newSolidity;
+      if (twinSolidity === "teamRED") twinSolidity = "teamBLU";
+      else if (twinSolidity === "teamBLU") twinSolidity = "teamRED";
+      this.doc.shapes.push({
+        id: this.nextShapeId(),
+        kind: "polygon",
+        solidity: twinSolidity,
+        points: this.draft.map(([x, y]) => [mw - x, y]),
+      });
+    }
     this.draft = [];
     this.selection = { kind: "shape", id };
     this.tool = "select";
@@ -746,6 +870,10 @@ export class Editor {
       else if (e.code === "KeyG") {
         this.snap = !this.snap;
         this.updateStatus();
+      } else if (e.code === "KeyM") {
+        this.mirrorMode = !this.mirrorMode;
+        this.updateStatus();
+        this.syncToolButtons();
       } else if ((e.ctrlKey || e.metaKey) && e.code === "KeyZ" && !e.shiftKey) {
         e.preventDefault();
         this.undo();
@@ -1099,6 +1227,11 @@ export class Editor {
     }
 
     const actions: [string, () => void][] = [
+      ["mirror (M)", () => {
+        this.mirrorMode = !this.mirrorMode;
+        this.updateStatus();
+        this.syncToolButtons();
+      }],
       ["undo", () => this.undo()],
       ["redo", () => this.redo()],
       ["export", () => this.exportJson()],
@@ -1108,6 +1241,7 @@ export class Editor {
     for (const [label, fn] of actions) {
       const b = document.createElement("button");
       b.textContent = label;
+      if (label === "mirror (M)") b.dataset.action = "mirror";
       b.addEventListener("click", fn);
       bar.appendChild(b);
     }
@@ -1116,6 +1250,14 @@ export class Editor {
     status.id = "editorstatus";
     bar.appendChild(status);
     this.statusEl = status;
+
+    const warnings = document.createElement("span");
+    warnings.id = "editorwarnings";
+    warnings.style.color = "#ffca28";
+    warnings.style.marginLeft = "12px";
+    warnings.style.fontWeight = "bold";
+    bar.appendChild(warnings);
+    this.warningsEl = warnings;
 
     const inspector = document.createElement("div");
     inspector.id = "inspector";
@@ -1136,10 +1278,75 @@ export class Editor {
         this.tool === "entity" && (b as HTMLButtonElement).dataset.entity === this.newEntityType,
       );
     }
+    const mirrorBtn = this.bar.querySelector("button[data-action='mirror']");
+    if (mirrorBtn) {
+      mirrorBtn.classList.toggle("active", this.mirrorMode);
+      mirrorBtn.textContent = `mirror ${this.mirrorMode ? "ON" : "OFF"}`;
+    }
+  }
+
+  private validateMap(): string[] {
+    const warnings: string[] = [];
+    const redSpawns = this.doc.playerSpawns.filter(p => p[2] === "RED").length;
+    const bluSpawns = this.doc.playerSpawns.filter(p => p[2] === "BLU").length;
+    if (redSpawns === 0) warnings.push("Missing RED player spawn");
+    if (bluSpawns === 0) warnings.push("Missing BLU player spawn");
+
+    let hasRedCore = false;
+    let hasBluCore = false;
+    for (const e of this.doc.entities) {
+      if (e.type === "base") {
+        if (e.params?.team === "RED" || e.params?.team === "A") hasRedCore = true;
+        if (e.params?.team === "BLU" || e.params?.team === "B") hasBluCore = true;
+      }
+    }
+    // Only warn about base cores if it looks like a full map with entities
+    if (this.doc.entities.length > 5) {
+      if (!hasRedCore) warnings.push("Missing RED base core");
+      if (!hasBluCore) warnings.push("Missing BLU base core");
+    }
+
+    const allIds = new Set<string>();
+    this.doc.shapes.forEach(s => allIds.add(s.id));
+    this.doc.entities.forEach(e => allIds.add(e.id));
+
+    for (const e of this.doc.entities) {
+      const checkIds = (ids: string[] | undefined, name: string) => {
+        if (!ids) return;
+        for (const id of ids) {
+          if (id && !allIds.has(id)) warnings.push(`Broken ${name} link: '${id}'`);
+        }
+      };
+      checkIds(e.targets, "target");
+      checkIds(e.onDestroyed, "onDestroyed");
+      
+      const spec = entityTypeSpec(e.type);
+      if (spec && e.params) {
+        for (const [key, p] of Object.entries(spec.params)) {
+          if (p.kind === "entityId") {
+            const val = e.params[key];
+            if (typeof val === "string" && val !== "" && !allIds.has(val)) {
+              warnings.push(`Broken '${key}' link: '${val}'`);
+            }
+          }
+        }
+      }
+    }
+    return warnings;
   }
 
   private updateStatus(): void {
     this.statusEl.textContent = ` snap ${this.snap ? "on" : "off"} (G) · zoom ${this.cam.scale.toFixed(2)} · Tab to play`;
+    const warnings = this.validateMap();
+    if (warnings.length > 0) {
+      this.warningsEl.textContent = ` ⚠️ ${warnings.join(" · ")}`;
+    } else {
+      this.warningsEl.textContent = " ✔️ Map OK";
+      this.warningsEl.style.color = "#66ff8c";
+    }
+    if (warnings.length > 0) {
+      this.warningsEl.style.color = "#ffca28";
+    }
   }
 
   private refreshInspector(): void {

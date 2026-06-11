@@ -58,7 +58,7 @@ export type CharacterDef = z.infer<typeof CharacterDefSchema>;
 
 const PointSchema = z.tuple([z.number(), z.number()]);
 const PlayerSpawnSchema = z.tuple([z.number(), z.number(), z.enum(["RED", "BLU"])]);
-const SoliditySchema = z.enum(["solid", "glass", "teamRED", "teamBLU"]);
+const SoliditySchema = z.enum(["solid", "glass", "teamRED", "teamBLU", "none"]);
 const shapeBase = {
   id: z.string().min(1),
   solidity: SoliditySchema,

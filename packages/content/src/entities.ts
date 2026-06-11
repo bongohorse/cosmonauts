@@ -198,7 +198,18 @@ export const ENTITY_TYPES: EntityTypeSpec[] = [
     params: {
       team: { kind: "select", label: "team", default: "RED", options: ["RED", "BLU"] },
       interval: { kind: "duration", label: "interval s", default: 10 },
-      count: { kind: "number", label: "count", default: 2, min: 1, max: 10 },
+      count: { kind: "number", label: "count", default: 3, min: 1, max: 10 },
+      pathId: { kind: "entityId", label: "first path node" },
+    },
+  },
+  {
+    type: "pathNode",
+    label: "Path Node",
+    color: "#e040fb",
+    defaultSize: [0.8, 0.8],
+    params: {
+      nextId: { kind: "entityId", label: "next node" },
+      branchId: { kind: "entityId", label: "branch node (optional)" },
     },
   },
   {

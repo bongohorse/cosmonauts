@@ -75,6 +75,8 @@ function segmentCollidable(
       const faceTop = Math.min(seg.ay, seg.by);
       return prevBottom <= faceTop + GLASS_EPS; // approached from above
     }
+    case "none":
+      return false;
   }
 }
 

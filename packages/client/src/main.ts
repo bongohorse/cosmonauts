@@ -254,6 +254,10 @@ window.addEventListener("keydown", (e) => {
     e.preventDefault();
     renderer.showHitboxes = !renderer.showHitboxes;
   }
+  if (e.code === "F2") {
+    e.preventDefault();
+    renderer.showPaths = !renderer.showPaths;
+  }
   if (e.code === "KeyR") {
     state = newGame();
     prev = cloneState(state);

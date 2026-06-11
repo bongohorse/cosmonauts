@@ -47,6 +47,7 @@ export class Renderer {
   /** Editor overlay: drawn above everything, cleared by its owner. */
   readonly editorLayer = new Graphics();
   showHitboxes = false;
+  showPaths = false;
   /** When set (edit mode), replaces the follow-camera. Scale applies to the world. */
   cameraOverride: { x: number; y: number; scale: number } | null = null;
 
@@ -428,6 +429,58 @@ export class Renderer {
           const vy = fy / flen;
           const len = Math.min(data.size.w, data.size.h) * 0.45 * TILE_PX;
           drawArrow(g, x, y, vx, vy, len, 0xffffff, 2);
+        }
+      }
+    }
+
+    if (this.showPaths) {
+      // Draw all path node links
+      for (const data of this.map.entities) {
+        if (data.type === "droidSpawner" || data.type === "pathNode") {
+          const startX = data.pos.x * TILE_PX;
+          const startY = data.pos.y * TILE_PX;
+
+          const drawLinkTo = (targetId: unknown, color: number) => {
+            if (typeof targetId === "string" && targetId !== "") {
+              const target = this.map.entities.find((e) => e.id === targetId);
+              if (target) {
+                const tx = target.pos.x * TILE_PX;
+                const ty = target.pos.y * TILE_PX;
+                const dx = tx - startX;
+                const dy = ty - startY;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 0) {
+                  drawArrow(this.debugLayer, startX, startY, dx / dist, dy / dist, dist, color, 3);
+                }
+              }
+            }
+          };
+
+          if (data.type === "droidSpawner") {
+            drawLinkTo(data.params.pathId, 0xffff00);
+          } else {
+            drawLinkTo(data.params.nextId, 0x00ffff);
+            drawLinkTo(data.params.branchId, 0xff00ff);
+          }
+        }
+      }
+
+      // Draw lines from droids to their current path target
+      if (curr.droids) {
+        for (const d of curr.droids) {
+          if (d.pathTargetId) {
+            const target = this.map.entities.find((e) => e.id === d.pathTargetId);
+            if (target) {
+              const before = prevDroids.get(d.id) ?? d;
+              const dx = lerp(before.pos.x, d.pos.x) * TILE_PX;
+              const dy = lerp(before.pos.y, d.pos.y) * TILE_PX;
+              const tx = target.pos.x * TILE_PX;
+              const ty = target.pos.y * TILE_PX;
+
+              const color = d.team === "RED" ? 0xff4d5e : 0x4d7dff;
+              this.debugLayer.moveTo(dx, dy).lineTo(tx, ty).stroke({ color, width: 2, alpha: 0.5 });
+            }
+          }
         }
       }
     }

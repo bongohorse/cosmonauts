@@ -2012,7 +2012,6 @@ export class Editor {
           };
 
           this.doc.entities.push(newEntity);
-          this.doc.shapes = this.doc.shapes.filter((x) => x.id !== s.id);
           this.selection = [{ kind: "entity", id: newEntity.id }];
           this.changed();
         });

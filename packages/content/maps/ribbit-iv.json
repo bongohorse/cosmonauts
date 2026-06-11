@@ -112,122 +112,66 @@
     {
       "id": "glass-top-1",
       "kind": "rect",
-      "pos": [
-        60,
-        42.5
-      ],
-      "size": [
-        10,
-        1
-      ],
+      "pos": [60, 42.5],
+      "size": [10, 1],
       "rotation": 0,
       "solidity": "glass"
     },
     {
       "id": "glass-top-2",
       "kind": "rect",
-      "pos": [
-        100,
-        42.5
-      ],
-      "size": [
-        20,
-        1
-      ],
+      "pos": [100, 42.5],
+      "size": [20, 1],
       "rotation": 0,
       "solidity": "glass"
     },
     {
       "id": "glass-top-3",
       "kind": "rect",
-      "pos": [
-        140,
-        42.5
-      ],
-      "size": [
-        10,
-        1
-      ],
+      "pos": [140, 42.5],
+      "size": [10, 1],
       "rotation": 0,
       "solidity": "glass"
     },
     {
       "id": "glass-shaft-l",
       "kind": "rect",
-      "pos": [
-        40,
-        60
-      ],
-      "size": [
-        10,
-        1
-      ],
+      "pos": [40, 60],
+      "size": [10, 1],
       "rotation": 0,
       "solidity": "glass"
     },
     {
       "id": "glass-shaft-r",
       "kind": "rect",
-      "pos": [
-        160,
-        60
-      ],
-      "size": [
-        10,
-        1
-      ],
+      "pos": [160, 60],
+      "size": [10, 1],
       "rotation": 0,
       "solidity": "glass"
     },
     {
       "id": "gate-red",
       "kind": "rect",
-      "pos": [
-        18,
-        55
-      ],
-      "size": [
-        2,
-        10
-      ],
+      "pos": [18, 55],
+      "size": [2, 10],
       "rotation": 0,
       "solidity": "teamRED"
     },
     {
       "id": "gate-blu",
       "kind": "rect",
-      "pos": [
-        182,
-        55
-      ],
-      "size": [
-        2,
-        10
-      ],
+      "pos": [182, 55],
+      "size": [2, 10],
       "rotation": 0,
       "solidity": "teamBLU"
     }
   ],
-  "playerSpawns": [
-    [
-      10,
-      58,
-      "RED"
-    ],
-    [
-      190,
-      58,
-      "BLU"
-    ]
-  ],
+  "playerSpawns": [[10, 58, "RED"], [190, 58, "BLU"]],
   "entities": [
     {
       "id": "red-shop",
       "type": "shop",
-      "pos": [
-        10,
-        58
-      ],
+      "pos": [10, 58],
       "params": {
         "team": "RED",
         "hps": 50
@@ -236,10 +180,7 @@
     {
       "id": "blu-shop",
       "type": "shop",
-      "pos": [
-        190,
-        58
-      ],
+      "pos": [190, 58],
       "params": {
         "team": "BLU",
         "hps": 50
@@ -248,10 +189,7 @@
     {
       "id": "red-core",
       "type": "core",
-      "pos": [
-        12,
-        58
-      ],
+      "pos": [12, 58],
       "params": {
         "team": "RED",
         "health": 3000
@@ -260,10 +198,7 @@
     {
       "id": "blu-core",
       "type": "core",
-      "pos": [
-        188,
-        58
-      ],
+      "pos": [188, 58],
       "params": {
         "team": "BLU",
         "health": 3000
@@ -272,10 +207,7 @@
     {
       "id": "red-turret-top",
       "type": "turret",
-      "pos": [
-        30,
-        38
-      ],
+      "pos": [30, 38],
       "params": {
         "team": "RED",
         "health": 1500,
@@ -285,10 +217,7 @@
     {
       "id": "blu-turret-top",
       "type": "turret",
-      "pos": [
-        170,
-        38
-      ],
+      "pos": [170, 38],
       "params": {
         "team": "BLU",
         "health": 1500,
@@ -298,10 +227,7 @@
     {
       "id": "red-turret-bot",
       "type": "turret",
-      "pos": [
-        52,
-        73
-      ],
+      "pos": [52, 73],
       "params": {
         "team": "RED",
         "health": 1500,
@@ -311,10 +237,7 @@
     {
       "id": "blu-turret-bot",
       "type": "turret",
-      "pos": [
-        148,
-        73
-      ],
+      "pos": [148, 73],
       "params": {
         "team": "BLU",
         "health": 1500,
@@ -324,10 +247,7 @@
     {
       "id": "jumper-red-pit",
       "type": "jumper",
-      "pos": [
-        20,
-        100
-      ],
+      "pos": [20, 100],
       "params": {
         "direction": 90
       }
@@ -335,10 +255,7 @@
     {
       "id": "jumper-blu-pit",
       "type": "jumper",
-      "pos": [
-        180,
-        100
-      ],
+      "pos": [180, 100],
       "params": {
         "direction": 90
       }
@@ -346,10 +263,7 @@
     {
       "id": "jumper-red-base",
       "type": "jumper",
-      "pos": [
-        10,
-        90
-      ],
+      "pos": [10, 90],
       "params": {
         "direction": 90
       }
@@ -357,10 +271,7 @@
     {
       "id": "jumper-blu-base",
       "type": "jumper",
-      "pos": [
-        190,
-        90
-      ],
+      "pos": [190, 90],
       "params": {
         "direction": 90
       }
@@ -368,10 +279,7 @@
     {
       "id": "jumper-mid",
       "type": "jumper",
-      "pos": [
-        100,
-        93
-      ],
+      "pos": [100, 93],
       "params": {
         "direction": 90
       }
@@ -379,98 +287,56 @@
     {
       "id": "hide-top",
       "type": "hideZone",
-      "pos": [
-        100,
-        40
-      ],
-      "size": [
-        16,
-        8
-      ]
+      "pos": [100, 40],
+      "size": [16, 8]
     },
     {
       "id": "hide-bot",
       "type": "hideZone",
-      "pos": [
-        100,
-        93
-      ],
-      "size": [
-        20,
-        8
-      ]
+      "pos": [100, 93],
+      "size": [20, 8]
     },
     {
       "id": "hide-flank-l",
       "type": "hideZone",
-      "pos": [
-        70,
-        53
-      ],
-      "size": [
-        10,
-        6
-      ]
+      "pos": [70, 53],
+      "size": [10, 6]
     },
     {
       "id": "hide-flank-r",
       "type": "hideZone",
-      "pos": [
-        130,
-        53
-      ],
-      "size": [
-        10,
-        6
-      ]
+      "pos": [130, 53],
+      "size": [10, 6]
     },
     {
       "id": "boss-red",
       "type": "creepDen",
-      "pos": [
-        70,
-        93
-      ]
+      "pos": [70, 93]
     },
     {
       "id": "boss-blu",
       "type": "creepDen",
-      "pos": [
-        130,
-        93
-      ]
+      "pos": [130, 93]
     },
     {
       "id": "hp-top",
       "type": "healthPickup",
-      "pos": [
-        100,
-        45
-      ]
+      "pos": [100, 45]
     },
     {
       "id": "hp-red",
       "type": "healthPickup",
-      "pos": [
-        45,
-        75
-      ]
+      "pos": [45, 75]
     },
     {
       "id": "hp-blu",
       "type": "healthPickup",
-      "pos": [
-        155,
-        75
-      ]
+      "pos": [155, 75]
     },
     {
       "id": "flux-mid",
       "type": "fluxCube",
-      "pos": [
-        100,
-        75
-      ],
+      "pos": [100, 75],
       "params": {
         "denomination": "5"
       }
@@ -478,10 +344,7 @@
     {
       "id": "red-spawner-top",
       "type": "droidSpawner",
-      "pos": [
-        14,
-        58
-      ],
+      "pos": [14, 58],
       "params": {
         "team": "RED",
         "interval": 10,
@@ -492,10 +355,7 @@
     {
       "id": "path-rt1",
       "type": "pathNode",
-      "pos": [
-        30,
-        38
-      ],
+      "pos": [30, 38],
       "params": {
         "nextId": "path-rt2"
       }
@@ -503,10 +363,7 @@
     {
       "id": "path-rt2",
       "type": "pathNode",
-      "pos": [
-        100,
-        42
-      ],
+      "pos": [100, 42],
       "params": {
         "nextId": "path-rt3"
       }
@@ -514,10 +371,7 @@
     {
       "id": "path-rt3",
       "type": "pathNode",
-      "pos": [
-        170,
-        38
-      ],
+      "pos": [170, 38],
       "params": {
         "nextId": "blu-core"
       }
@@ -525,10 +379,7 @@
     {
       "id": "red-spawner-bot",
       "type": "droidSpawner",
-      "pos": [
-        14,
-        58
-      ],
+      "pos": [14, 58],
       "params": {
         "team": "RED",
         "interval": 10,
@@ -539,10 +390,7 @@
     {
       "id": "path-rb1",
       "type": "pathNode",
-      "pos": [
-        52,
-        73
-      ],
+      "pos": [52, 73],
       "params": {
         "nextId": "path-rb2"
       }
@@ -550,10 +398,7 @@
     {
       "id": "path-rb2",
       "type": "pathNode",
-      "pos": [
-        100,
-        93
-      ],
+      "pos": [100, 93],
       "params": {
         "nextId": "path-rb3"
       }
@@ -561,10 +406,7 @@
     {
       "id": "path-rb3",
       "type": "pathNode",
-      "pos": [
-        148,
-        73
-      ],
+      "pos": [148, 73],
       "params": {
         "nextId": "blu-core"
       }
@@ -572,10 +414,7 @@
     {
       "id": "blu-spawner-top",
       "type": "droidSpawner",
-      "pos": [
-        186,
-        58
-      ],
+      "pos": [186, 58],
       "params": {
         "team": "BLU",
         "interval": 10,
@@ -586,10 +425,7 @@
     {
       "id": "path-bt1",
       "type": "pathNode",
-      "pos": [
-        170,
-        38
-      ],
+      "pos": [170, 38],
       "params": {
         "nextId": "path-bt2"
       }
@@ -597,10 +433,7 @@
     {
       "id": "path-bt2",
       "type": "pathNode",
-      "pos": [
-        100,
-        42
-      ],
+      "pos": [100, 42],
       "params": {
         "nextId": "path-bt3"
       }
@@ -608,10 +441,7 @@
     {
       "id": "path-bt3",
       "type": "pathNode",
-      "pos": [
-        30,
-        38
-      ],
+      "pos": [30, 38],
       "params": {
         "nextId": "red-core"
       }
@@ -619,10 +449,7 @@
     {
       "id": "blu-spawner-bot",
       "type": "droidSpawner",
-      "pos": [
-        186,
-        58
-      ],
+      "pos": [186, 58],
       "params": {
         "team": "BLU",
         "interval": 10,
@@ -633,10 +460,7 @@
     {
       "id": "path-bb1",
       "type": "pathNode",
-      "pos": [
-        148,
-        73
-      ],
+      "pos": [148, 73],
       "params": {
         "nextId": "path-bb2"
       }
@@ -644,10 +468,7 @@
     {
       "id": "path-bb2",
       "type": "pathNode",
-      "pos": [
-        100,
-        93
-      ],
+      "pos": [100, 93],
       "params": {
         "nextId": "path-bb3"
       }
@@ -655,10 +476,7 @@
     {
       "id": "path-bb3",
       "type": "pathNode",
-      "pos": [
-        52,
-        73
-      ],
+      "pos": [52, 73],
       "params": {
         "nextId": "red-core"
       }

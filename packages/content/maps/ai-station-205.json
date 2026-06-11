@@ -112,150 +112,82 @@
     {
       "id": "glass-pit-l",
       "kind": "rect",
-      "pos": [
-        50,
-        75
-      ],
-      "size": [
-        10,
-        1
-      ],
+      "pos": [50, 75],
+      "size": [10, 1],
       "rotation": 0,
       "solidity": "glass"
     },
     {
       "id": "glass-pit-r",
       "kind": "rect",
-      "pos": [
-        150,
-        75
-      ],
-      "size": [
-        10,
-        1
-      ],
+      "pos": [150, 75],
+      "size": [10, 1],
       "rotation": 0,
       "solidity": "glass"
     },
     {
       "id": "glass-mid-1",
       "kind": "rect",
-      "pos": [
-        100,
-        75
-      ],
-      "size": [
-        10,
-        1
-      ],
+      "pos": [100, 75],
+      "size": [10, 1],
       "rotation": 0,
       "solidity": "glass"
     },
     {
       "id": "glass-mid-2",
       "kind": "rect",
-      "pos": [
-        90,
-        65
-      ],
-      "size": [
-        10,
-        1
-      ],
+      "pos": [90, 65],
+      "size": [10, 1],
       "rotation": 0,
       "solidity": "glass"
     },
     {
       "id": "glass-mid-3",
       "kind": "rect",
-      "pos": [
-        110,
-        65
-      ],
-      "size": [
-        10,
-        1
-      ],
+      "pos": [110, 65],
+      "size": [10, 1],
       "rotation": 0,
       "solidity": "glass"
     },
     {
       "id": "glass-mid-4",
       "kind": "rect",
-      "pos": [
-        100,
-        55
-      ],
-      "size": [
-        10,
-        1
-      ],
+      "pos": [100, 55],
+      "size": [10, 1],
       "rotation": 0,
       "solidity": "glass"
     },
     {
       "id": "glass-top-creep",
       "kind": "rect",
-      "pos": [
-        100,
-        25
-      ],
-      "size": [
-        20,
-        1
-      ],
+      "pos": [100, 25],
+      "size": [20, 1],
       "rotation": 0,
       "solidity": "glass"
     },
     {
       "id": "gate-red",
       "kind": "rect",
-      "pos": [
-        18,
-        60
-      ],
-      "size": [
-        2,
-        10
-      ],
+      "pos": [18, 60],
+      "size": [2, 10],
       "rotation": 0,
       "solidity": "teamRED"
     },
     {
       "id": "gate-blu",
       "kind": "rect",
-      "pos": [
-        182,
-        60
-      ],
-      "size": [
-        2,
-        10
-      ],
+      "pos": [182, 60],
+      "size": [2, 10],
       "rotation": 0,
       "solidity": "teamBLU"
     }
   ],
-  "playerSpawns": [
-    [
-      10,
-      63,
-      "RED"
-    ],
-    [
-      190,
-      63,
-      "BLU"
-    ]
-  ],
+  "playerSpawns": [[10, 63, "RED"], [190, 63, "BLU"]],
   "entities": [
     {
       "id": "red-shop",
       "type": "shop",
-      "pos": [
-        10,
-        63
-      ],
+      "pos": [10, 63],
       "params": {
         "team": "RED",
         "hps": 50
@@ -264,10 +196,7 @@
     {
       "id": "blu-shop",
       "type": "shop",
-      "pos": [
-        190,
-        63
-      ],
+      "pos": [190, 63],
       "params": {
         "team": "BLU",
         "hps": 50
@@ -276,10 +205,7 @@
     {
       "id": "red-core",
       "type": "core",
-      "pos": [
-        12,
-        63
-      ],
+      "pos": [12, 63],
       "params": {
         "team": "RED",
         "health": 3000
@@ -288,10 +214,7 @@
     {
       "id": "blu-core",
       "type": "core",
-      "pos": [
-        188,
-        63
-      ],
+      "pos": [188, 63],
       "params": {
         "team": "BLU",
         "health": 3000
@@ -300,10 +223,7 @@
     {
       "id": "red-turret-bot-in",
       "type": "turret",
-      "pos": [
-        35,
-        73
-      ],
+      "pos": [35, 73],
       "params": {
         "team": "RED",
         "health": 1500,
@@ -313,10 +233,7 @@
     {
       "id": "blu-turret-bot-in",
       "type": "turret",
-      "pos": [
-        165,
-        73
-      ],
+      "pos": [165, 73],
       "params": {
         "team": "BLU",
         "health": 1500,
@@ -326,10 +243,7 @@
     {
       "id": "red-turret-bot-out",
       "type": "turret",
-      "pos": [
-        65,
-        73
-      ],
+      "pos": [65, 73],
       "params": {
         "team": "RED",
         "health": 1500,
@@ -339,10 +253,7 @@
     {
       "id": "blu-turret-bot-out",
       "type": "turret",
-      "pos": [
-        135,
-        73
-      ],
+      "pos": [135, 73],
       "params": {
         "team": "BLU",
         "health": 1500,
@@ -352,10 +263,7 @@
     {
       "id": "red-turret-top",
       "type": "turret",
-      "pos": [
-        65,
-        43
-      ],
+      "pos": [65, 43],
       "params": {
         "team": "RED",
         "health": 1500,
@@ -365,10 +273,7 @@
     {
       "id": "blu-turret-top",
       "type": "turret",
-      "pos": [
-        135,
-        43
-      ],
+      "pos": [135, 43],
       "params": {
         "team": "BLU",
         "health": 1500,
@@ -378,34 +283,19 @@
     {
       "id": "hide-pit-l",
       "type": "hideZone",
-      "pos": [
-        50,
-        85
-      ],
-      "size": [
-        10,
-        6
-      ]
+      "pos": [50, 85],
+      "size": [10, 6]
     },
     {
       "id": "hide-pit-r",
       "type": "hideZone",
-      "pos": [
-        150,
-        85
-      ],
-      "size": [
-        10,
-        6
-      ]
+      "pos": [150, 85],
+      "size": [10, 6]
     },
     {
       "id": "jump-base-r",
       "type": "jumper",
-      "pos": [
-        16,
-        83
-      ],
+      "pos": [16, 83],
       "params": {
         "direction": 90
       }
@@ -413,10 +303,7 @@
     {
       "id": "jump-base-b",
       "type": "jumper",
-      "pos": [
-        184,
-        83
-      ],
+      "pos": [184, 83],
       "params": {
         "direction": 90
       }
@@ -424,10 +311,7 @@
     {
       "id": "jump-pit-l",
       "type": "jumper",
-      "pos": [
-        50,
-        93
-      ],
+      "pos": [50, 93],
       "params": {
         "direction": 90
       }
@@ -435,10 +319,7 @@
     {
       "id": "jump-pit-r",
       "type": "jumper",
-      "pos": [
-        150,
-        93
-      ],
+      "pos": [150, 93],
       "params": {
         "direction": 90
       }
@@ -446,30 +327,18 @@
     {
       "id": "hp-mid",
       "type": "healthPickup",
-      "pos": [
-        100,
-        52
-      ]
+      "pos": [100, 52]
     },
     {
       "id": "creep-top",
       "type": "creepDen",
-      "pos": [
-        100,
-        23
-      ]
+      "pos": [100, 23]
     },
     {
       "id": "inferno-mid",
       "type": "fireField",
-      "pos": [
-        100,
-        55
-      ],
-      "size": [
-        40,
-        20
-      ],
+      "pos": [100, 55],
+      "size": [40, 20],
       "params": {
         "dps": 400
       }
@@ -477,10 +346,7 @@
     {
       "id": "spawner-rt",
       "type": "droidSpawner",
-      "pos": [
-        60,
-        43
-      ],
+      "pos": [60, 43],
       "params": {
         "team": "RED",
         "interval": 15,
@@ -491,10 +357,7 @@
     {
       "id": "path-rt1",
       "type": "pathNode",
-      "pos": [
-        90,
-        65
-      ],
+      "pos": [90, 65],
       "params": {
         "nextId": "path-rt2"
       }
@@ -502,10 +365,7 @@
     {
       "id": "path-rt2",
       "type": "pathNode",
-      "pos": [
-        135,
-        73
-      ],
+      "pos": [135, 73],
       "params": {
         "nextId": "blu-core"
       }
@@ -513,10 +373,7 @@
     {
       "id": "spawner-bt",
       "type": "droidSpawner",
-      "pos": [
-        140,
-        43
-      ],
+      "pos": [140, 43],
       "params": {
         "team": "BLU",
         "interval": 15,
@@ -527,10 +384,7 @@
     {
       "id": "path-bt1",
       "type": "pathNode",
-      "pos": [
-        110,
-        65
-      ],
+      "pos": [110, 65],
       "params": {
         "nextId": "path-bt2"
       }
@@ -538,10 +392,7 @@
     {
       "id": "path-bt2",
       "type": "pathNode",
-      "pos": [
-        65,
-        73
-      ],
+      "pos": [65, 73],
       "params": {
         "nextId": "red-core"
       }
@@ -549,10 +400,7 @@
     {
       "id": "spawner-rb",
       "type": "droidSpawner",
-      "pos": [
-        14,
-        63
-      ],
+      "pos": [14, 63],
       "params": {
         "team": "RED",
         "interval": 10,
@@ -563,10 +411,7 @@
     {
       "id": "path-rb1",
       "type": "pathNode",
-      "pos": [
-        35,
-        73
-      ],
+      "pos": [35, 73],
       "params": {
         "nextId": "path-rb2"
       }
@@ -574,10 +419,7 @@
     {
       "id": "path-rb2",
       "type": "pathNode",
-      "pos": [
-        65,
-        73
-      ],
+      "pos": [65, 73],
       "params": {
         "nextId": "path-rb3"
       }
@@ -585,10 +427,7 @@
     {
       "id": "path-rb3",
       "type": "pathNode",
-      "pos": [
-        135,
-        73
-      ],
+      "pos": [135, 73],
       "params": {
         "nextId": "blu-core"
       }
@@ -596,10 +435,7 @@
     {
       "id": "spawner-bb",
       "type": "droidSpawner",
-      "pos": [
-        186,
-        63
-      ],
+      "pos": [186, 63],
       "params": {
         "team": "BLU",
         "interval": 10,
@@ -610,10 +446,7 @@
     {
       "id": "path-bb1",
       "type": "pathNode",
-      "pos": [
-        165,
-        73
-      ],
+      "pos": [165, 73],
       "params": {
         "nextId": "path-bb2"
       }
@@ -621,10 +454,7 @@
     {
       "id": "path-bb2",
       "type": "pathNode",
-      "pos": [
-        135,
-        73
-      ],
+      "pos": [135, 73],
       "params": {
         "nextId": "path-bb3"
       }
@@ -632,10 +462,7 @@
     {
       "id": "path-bb3",
       "type": "pathNode",
-      "pos": [
-        65,
-        73
-      ],
+      "pos": [65, 73],
       "params": {
         "nextId": "red-core"
       }

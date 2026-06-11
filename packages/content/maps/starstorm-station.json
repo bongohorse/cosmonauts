@@ -112,136 +112,74 @@
     {
       "id": "glass-top-m",
       "kind": "rect",
-      "pos": [
-        100,
-        44
-      ],
-      "size": [
-        20,
-        1
-      ],
+      "pos": [100, 44],
+      "size": [20, 1],
       "rotation": 0,
       "solidity": "glass"
     },
     {
       "id": "glass-upper-l",
       "kind": "rect",
-      "pos": [
-        85,
-        25
-      ],
-      "size": [
-        10,
-        1
-      ],
+      "pos": [85, 25],
+      "size": [10, 1],
       "rotation": 0,
       "solidity": "glass"
     },
     {
       "id": "glass-upper-r",
       "kind": "rect",
-      "pos": [
-        115,
-        25
-      ],
-      "size": [
-        10,
-        1
-      ],
+      "pos": [115, 25],
+      "size": [10, 1],
       "rotation": 0,
       "solidity": "glass"
     },
     {
       "id": "glass-lower-1",
       "kind": "rect",
-      "pos": [
-        100,
-        85
-      ],
-      "size": [
-        10,
-        1
-      ],
+      "pos": [100, 85],
+      "size": [10, 1],
       "rotation": 0,
       "solidity": "glass"
     },
     {
       "id": "glass-lower-2",
       "kind": "rect",
-      "pos": [
-        95,
-        90
-      ],
-      "size": [
-        10,
-        1
-      ],
+      "pos": [95, 90],
+      "size": [10, 1],
       "rotation": 0,
       "solidity": "glass"
     },
     {
       "id": "glass-lower-3",
       "kind": "rect",
-      "pos": [
-        105,
-        90
-      ],
-      "size": [
-        10,
-        1
-      ],
+      "pos": [105, 90],
+      "size": [10, 1],
       "rotation": 0,
       "solidity": "glass"
     },
     {
       "id": "gate-red",
       "kind": "rect",
-      "pos": [
-        18,
-        45
-      ],
-      "size": [
-        2,
-        10
-      ],
+      "pos": [18, 45],
+      "size": [2, 10],
       "rotation": 0,
       "solidity": "teamRED"
     },
     {
       "id": "gate-blu",
       "kind": "rect",
-      "pos": [
-        182,
-        45
-      ],
-      "size": [
-        2,
-        10
-      ],
+      "pos": [182, 45],
+      "size": [2, 10],
       "rotation": 0,
       "solidity": "teamBLU"
     }
   ],
-  "playerSpawns": [
-    [
-      10,
-      48,
-      "RED"
-    ],
-    [
-      190,
-      48,
-      "BLU"
-    ]
-  ],
+  "playerSpawns": [[10, 48, "RED"], [190, 48, "BLU"]],
   "entities": [
     {
       "id": "red-shop",
       "type": "shop",
-      "pos": [
-        10,
-        48
-      ],
+      "pos": [10, 48],
       "params": {
         "team": "RED",
         "hps": 50
@@ -250,10 +188,7 @@
     {
       "id": "blu-shop",
       "type": "shop",
-      "pos": [
-        190,
-        48
-      ],
+      "pos": [190, 48],
       "params": {
         "team": "BLU",
         "hps": 50
@@ -262,10 +197,7 @@
     {
       "id": "red-core",
       "type": "core",
-      "pos": [
-        12,
-        48
-      ],
+      "pos": [12, 48],
       "params": {
         "team": "RED",
         "health": 3000
@@ -274,10 +206,7 @@
     {
       "id": "blu-core",
       "type": "core",
-      "pos": [
-        188,
-        48
-      ],
+      "pos": [188, 48],
       "params": {
         "team": "BLU",
         "health": 3000
@@ -286,10 +215,7 @@
     {
       "id": "red-turret-top-out",
       "type": "turret",
-      "pos": [
-        75,
-        43
-      ],
+      "pos": [75, 43],
       "params": {
         "team": "RED",
         "health": 1500,
@@ -299,10 +225,7 @@
     {
       "id": "blu-turret-top-out",
       "type": "turret",
-      "pos": [
-        125,
-        43
-      ],
+      "pos": [125, 43],
       "params": {
         "team": "BLU",
         "health": 1500,
@@ -312,10 +235,7 @@
     {
       "id": "red-turret-bot-out",
       "type": "turret",
-      "pos": [
-        75,
-        73
-      ],
+      "pos": [75, 73],
       "params": {
         "team": "RED",
         "health": 1500,
@@ -325,10 +245,7 @@
     {
       "id": "blu-turret-bot-out",
       "type": "turret",
-      "pos": [
-        125,
-        73
-      ],
+      "pos": [125, 73],
       "params": {
         "team": "BLU",
         "health": 1500,
@@ -338,10 +255,7 @@
     {
       "id": "red-turret-top-in",
       "type": "turret",
-      "pos": [
-        40,
-        43
-      ],
+      "pos": [40, 43],
       "params": {
         "team": "RED",
         "health": 1500,
@@ -351,10 +265,7 @@
     {
       "id": "blu-turret-top-in",
       "type": "turret",
-      "pos": [
-        160,
-        43
-      ],
+      "pos": [160, 43],
       "params": {
         "team": "BLU",
         "health": 1500,
@@ -364,10 +275,7 @@
     {
       "id": "red-turret-bot-in",
       "type": "turret",
-      "pos": [
-        40,
-        73
-      ],
+      "pos": [40, 73],
       "params": {
         "team": "RED",
         "health": 1500,
@@ -377,10 +285,7 @@
     {
       "id": "blu-turret-bot-in",
       "type": "turret",
-      "pos": [
-        160,
-        73
-      ],
+      "pos": [160, 73],
       "params": {
         "team": "BLU",
         "health": 1500,
@@ -390,70 +295,37 @@
     {
       "id": "hide-bot-mid",
       "type": "hideZone",
-      "pos": [
-        100,
-        73
-      ],
-      "size": [
-        20,
-        8
-      ]
+      "pos": [100, 73],
+      "size": [20, 8]
     },
     {
       "id": "hide-bot-flank-l",
       "type": "hideZone",
-      "pos": [
-        40,
-        63
-      ],
-      "size": [
-        10,
-        6
-      ]
+      "pos": [40, 63],
+      "size": [10, 6]
     },
     {
       "id": "hide-bot-flank-r",
       "type": "hideZone",
-      "pos": [
-        160,
-        63
-      ],
-      "size": [
-        10,
-        6
-      ]
+      "pos": [160, 63],
+      "size": [10, 6]
     },
     {
       "id": "hide-top-edge-l",
       "type": "hideZone",
-      "pos": [
-        80,
-        43
-      ],
-      "size": [
-        10,
-        6
-      ]
+      "pos": [80, 43],
+      "size": [10, 6]
     },
     {
       "id": "hide-top-edge-r",
       "type": "hideZone",
-      "pos": [
-        120,
-        43
-      ],
-      "size": [
-        10,
-        6
-      ]
+      "pos": [120, 43],
+      "size": [10, 6]
     },
     {
       "id": "jump-base-r",
       "type": "jumper",
-      "pos": [
-        16,
-        73
-      ],
+      "pos": [16, 73],
       "params": {
         "direction": 90
       }
@@ -461,10 +333,7 @@
     {
       "id": "jump-base-b",
       "type": "jumper",
-      "pos": [
-        184,
-        73
-      ],
+      "pos": [184, 73],
       "params": {
         "direction": 90
       }
@@ -472,10 +341,7 @@
     {
       "id": "jump-island-l",
       "type": "jumper",
-      "pos": [
-        92,
-        93
-      ],
+      "pos": [92, 93],
       "params": {
         "direction": 90
       }
@@ -483,10 +349,7 @@
     {
       "id": "jump-island-r",
       "type": "jumper",
-      "pos": [
-        108,
-        93
-      ],
+      "pos": [108, 93],
       "params": {
         "direction": 90
       }
@@ -494,26 +357,17 @@
     {
       "id": "hp-red-in",
       "type": "healthPickup",
-      "pos": [
-        30,
-        43
-      ]
+      "pos": [30, 43]
     },
     {
       "id": "hp-blu-in",
       "type": "healthPickup",
-      "pos": [
-        170,
-        43
-      ]
+      "pos": [170, 43]
     },
     {
       "id": "flux-gold-bot",
       "type": "fluxCube",
-      "pos": [
-        100,
-        70
-      ],
+      "pos": [100, 70],
       "params": {
         "denomination": "5"
       }
@@ -521,10 +375,7 @@
     {
       "id": "flux-void-top",
       "type": "fluxCube",
-      "pos": [
-        100,
-        20
-      ],
+      "pos": [100, 20],
       "params": {
         "denomination": "1"
       }
@@ -532,10 +383,7 @@
     {
       "id": "flux-void-bot",
       "type": "fluxCube",
-      "pos": [
-        100,
-        93
-      ],
+      "pos": [100, 93],
       "params": {
         "denomination": "1"
       }
@@ -543,10 +391,7 @@
     {
       "id": "spawner-rt",
       "type": "droidSpawner",
-      "pos": [
-        14,
-        48
-      ],
+      "pos": [14, 48],
       "params": {
         "team": "RED",
         "interval": 10,
@@ -557,10 +402,7 @@
     {
       "id": "path-rt1",
       "type": "pathNode",
-      "pos": [
-        40,
-        43
-      ],
+      "pos": [40, 43],
       "params": {
         "nextId": "path-rt2"
       }
@@ -568,10 +410,7 @@
     {
       "id": "path-rt2",
       "type": "pathNode",
-      "pos": [
-        75,
-        43
-      ],
+      "pos": [75, 43],
       "params": {
         "nextId": "path-rt3"
       }
@@ -579,10 +418,7 @@
     {
       "id": "path-rt3",
       "type": "pathNode",
-      "pos": [
-        125,
-        43
-      ],
+      "pos": [125, 43],
       "params": {
         "nextId": "path-rt4"
       }
@@ -590,10 +426,7 @@
     {
       "id": "path-rt4",
       "type": "pathNode",
-      "pos": [
-        160,
-        43
-      ],
+      "pos": [160, 43],
       "params": {
         "nextId": "blu-core"
       }
@@ -601,10 +434,7 @@
     {
       "id": "spawner-rb",
       "type": "droidSpawner",
-      "pos": [
-        14,
-        48
-      ],
+      "pos": [14, 48],
       "params": {
         "team": "RED",
         "interval": 10,
@@ -615,10 +445,7 @@
     {
       "id": "path-rb1",
       "type": "pathNode",
-      "pos": [
-        40,
-        73
-      ],
+      "pos": [40, 73],
       "params": {
         "nextId": "path-rb2"
       }
@@ -626,10 +453,7 @@
     {
       "id": "path-rb2",
       "type": "pathNode",
-      "pos": [
-        75,
-        73
-      ],
+      "pos": [75, 73],
       "params": {
         "nextId": "path-rb3"
       }
@@ -637,10 +461,7 @@
     {
       "id": "path-rb3",
       "type": "pathNode",
-      "pos": [
-        125,
-        73
-      ],
+      "pos": [125, 73],
       "params": {
         "nextId": "path-rb4"
       }
@@ -648,10 +469,7 @@
     {
       "id": "path-rb4",
       "type": "pathNode",
-      "pos": [
-        160,
-        73
-      ],
+      "pos": [160, 73],
       "params": {
         "nextId": "blu-core"
       }
@@ -659,10 +477,7 @@
     {
       "id": "spawner-bt",
       "type": "droidSpawner",
-      "pos": [
-        186,
-        48
-      ],
+      "pos": [186, 48],
       "params": {
         "team": "BLU",
         "interval": 10,
@@ -673,10 +488,7 @@
     {
       "id": "path-bt1",
       "type": "pathNode",
-      "pos": [
-        160,
-        43
-      ],
+      "pos": [160, 43],
       "params": {
         "nextId": "path-bt2"
       }
@@ -684,10 +496,7 @@
     {
       "id": "path-bt2",
       "type": "pathNode",
-      "pos": [
-        125,
-        43
-      ],
+      "pos": [125, 43],
       "params": {
         "nextId": "path-bt3"
       }
@@ -695,10 +504,7 @@
     {
       "id": "path-bt3",
       "type": "pathNode",
-      "pos": [
-        75,
-        43
-      ],
+      "pos": [75, 43],
       "params": {
         "nextId": "path-bt4"
       }
@@ -706,10 +512,7 @@
     {
       "id": "path-bt4",
       "type": "pathNode",
-      "pos": [
-        40,
-        43
-      ],
+      "pos": [40, 43],
       "params": {
         "nextId": "red-core"
       }
@@ -717,10 +520,7 @@
     {
       "id": "spawner-bb",
       "type": "droidSpawner",
-      "pos": [
-        186,
-        48
-      ],
+      "pos": [186, 48],
       "params": {
         "team": "BLU",
         "interval": 10,
@@ -731,10 +531,7 @@
     {
       "id": "path-bb1",
       "type": "pathNode",
-      "pos": [
-        160,
-        73
-      ],
+      "pos": [160, 73],
       "params": {
         "nextId": "path-bb2"
       }
@@ -742,10 +539,7 @@
     {
       "id": "path-bb2",
       "type": "pathNode",
-      "pos": [
-        125,
-        73
-      ],
+      "pos": [125, 73],
       "params": {
         "nextId": "path-bb3"
       }
@@ -753,10 +547,7 @@
     {
       "id": "path-bb3",
       "type": "pathNode",
-      "pos": [
-        75,
-        73
-      ],
+      "pos": [75, 73],
       "params": {
         "nextId": "path-bb4"
       }
@@ -764,10 +555,7 @@
     {
       "id": "path-bb4",
       "type": "pathNode",
-      "pos": [
-        40,
-        73
-      ],
+      "pos": [40, 73],
       "params": {
         "nextId": "red-core"
       }

@@ -15,7 +15,13 @@ import { toEntityData } from "./entities";
 import { type CharacterDef, CharacterDefSchema, type MapDef, MapDefSchema } from "./schemas";
 
 const characterSources: unknown[] = [novaJson];
-const mapSources: unknown[] = [testingGroundsJson, laneGloryJson, ribbitIvJson, starstormStationJson, aiStation205Json];
+const mapSources: unknown[] = [
+  testingGroundsJson,
+  laneGloryJson,
+  ribbitIvJson,
+  starstormStationJson,
+  aiStation205Json,
+];
 
 function secondsToTicks(seconds: number): number {
   return Math.max(1, Math.round(seconds * TICK_RATE));

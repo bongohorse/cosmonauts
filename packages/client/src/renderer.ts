@@ -1,7 +1,7 @@
 import { entityTypeSpec } from "@cosmonauts/content";
 import type { ContentIndex, GameState, MapData, Vec2 } from "@cosmonauts/sim";
 import { DUMMY_HEIGHT, DUMMY_WIDTH, isSolid } from "@cosmonauts/sim";
-import { type Application, Container, Graphics, Color } from "pixi.js";
+import { type Application, Color, Container, Graphics } from "pixi.js";
 
 function getRotatedRectPoints(
   cx: number,
@@ -97,7 +97,8 @@ export class Renderer {
     for (const shape of this.map.shapes) {
       const flat = shape.points.flatMap(([x, y]) => [x * TILE_PX, y * TILE_PX]);
       if (flat.length < 4) continue;
-      const tint = shape.tint !== undefined ? Color.shared.setValue(shape.tint).toNumber() : undefined;
+      const tint =
+        shape.tint !== undefined ? Color.shared.setValue(shape.tint).toNumber() : undefined;
       const glass = shape.solidity === "glass";
       // Team color convention (doc 07 §5): Team A is red, Team B is blue.
       const base =

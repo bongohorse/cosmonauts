@@ -345,7 +345,7 @@ describe("map entities", () => {
           pos: { x: 3, y: 5.5 },
           size: { w: 1, h: 3 },
           enabled: true,
-          params: { team: "A", downgradeTo: "glass" },
+          params: { team: "RED", downgradeTo: "glass" },
         },
       ],
     );
@@ -361,7 +361,7 @@ describe("map entities", () => {
     player(world).pos.y = spawnY;
     player(world).vel.x = 0;
     player(world).vel.y = 0;
-    player(world).team = "B";
+    player(world).team = "BLU";
 
     // Team B player should be blocked by the Team A barrier.
     run(world, 20, input({ moveX: 1 }));

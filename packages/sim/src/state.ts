@@ -8,7 +8,7 @@ import type { Vec2 } from "./math";
 // pulling in DOM or Node lib types.
 declare function structuredClone<T>(value: T): T;
 
-export type Team = "A" | "B";
+export type Team = "RED" | "BLU";
 
 export interface PlayerState {
   id: number;
@@ -76,7 +76,7 @@ export interface GameState {
 export interface SpawnSpec {
   playerId: number;
   characterId: string;
-  team?: Team; // default "A"
+  team?: Team; // default "RED"
 }
 
 /** Where the i-th player spawns: feet on the bottom edge of the spawn tile. */
@@ -113,7 +113,7 @@ export function createState(map: MapData, spawns: SpawnSpec[], content: ContentI
     state.players.push({
       id: spec.playerId,
       characterId: spec.characterId,
-      team: spec.team ?? "A",
+      team: spec.team ?? "RED",
       pos: playerSpawnPos(map, i, char.hitbox.h),
       vel: { x: 0, y: 0 },
       facing: 1,

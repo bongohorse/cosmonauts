@@ -122,7 +122,7 @@ export const ENTITY_TYPES: EntityTypeSpec[] = [
     color: "#26a69a",
     defaultSize: [1, 3],
     params: {
-      team: { kind: "select", label: "team", default: "A", options: ["A", "B"] },
+      team: { kind: "select", label: "team", default: "RED", options: ["RED", "BLU"] },
       downgradeTo: {
         kind: "select",
         label: "downgrade to",

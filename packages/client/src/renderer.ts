@@ -187,10 +187,10 @@ export class Renderer {
       let strokeWidth = 1;
 
       if (data.type === "teamBarrier") {
-        const team = typeof data.params.team === "string" ? data.params.team : "A";
+        const team = typeof data.params.team === "string" ? data.params.team : "RED";
         if (dyn.enabled) {
-          // Team A is red, Team B is blue
-          finalColor = team === "A" ? 0xff4d5e : 0x4d7dff;
+          // RED is red, BLU is blue
+          finalColor = team === "RED" || team === "A" ? 0xff4d5e : 0x4d7dff;
         } else {
           const downgradeTo =
             typeof data.params.downgradeTo === "string" ? data.params.downgradeTo : "gone";
@@ -239,6 +239,13 @@ export class Renderer {
           width: strokeWidth,
           alpha: strokeAlpha,
         });
+      }
+
+      // Draw team color coding indicator if applicable (RED or BLU, also fallback to A/B)
+      const teamVal = data.params?.team;
+      if (teamVal === "RED" || teamVal === "BLU" || teamVal === "A" || teamVal === "B") {
+        const teamColor = teamVal === "RED" || teamVal === "A" ? 0xff4d5e : 0x4d7dff;
+        g.circle(x, y, 5).fill(teamColor).stroke({ color: 0xffffff, width: 1.5 });
       }
     }
 

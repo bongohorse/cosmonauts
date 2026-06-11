@@ -33,12 +33,12 @@ function segmentCollidable(
         return true;
       }
       if (data.type === "teamBarrier") {
-        const team = typeof data.params.team === "string" ? data.params.team : "A";
+        const team = typeof data.params.team === "string" ? data.params.team : "RED";
         const downgradeTo =
           typeof data.params.downgradeTo === "string" ? data.params.downgradeTo : "gone";
         if (dyn.enabled) {
           // Own team passes through (does NOT collide). Enemy team is blocked (collides).
-          return team === "A" ? p.team === "B" : p.team === "A";
+          return team === "RED" ? p.team === "BLU" : p.team === "RED";
         } else {
           if (downgradeTo === "gone") return false;
           if (downgradeTo === "glass") {
@@ -57,9 +57,9 @@ function segmentCollidable(
     case "solid":
       return true;
     case "teamA":
-      return p.team === "A";
+      return p.team === "RED";
     case "teamB":
-      return p.team === "B";
+      return p.team === "BLU";
     case "glass": {
       if (p.dropTicks > 0 && p.dropShapeId === seg.shapeId) return false;
       if (velY < 0) return false; // rising — pass through from below

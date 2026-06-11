@@ -179,6 +179,40 @@ export class Editor {
     return this.doc.shapes.find((s) => s.id === sel.id) ?? null;
   }
 
+  private selectedEntity(): EntityDef | null {
+    const sel = this.selection;
+    if (sel === null || sel.kind !== "entity") return null;
+    return this.doc.entities.find((e) => e.id === sel.id) ?? null;
+  }
+
+  private entityCorners(e: EntityDef): Vec2[] {
+    const rotation = typeof e.params?.rotation === "number" ? e.params.rotation : 0;
+    const r = rotation * DEG;
+    const c = Math.cos(r);
+    const n = Math.sin(r);
+    const [w, h] = this.entitySize(e);
+    const hw = w / 2;
+    const hh = h / 2;
+    const local: [number, number][] = [
+      [-hw, -hh],
+      [hw, -hh],
+      [hw, hh],
+      [-hw, hh],
+    ];
+    return local.map(([lx, ly]) => ({
+      x: e.pos[0] + lx * c - ly * n,
+      y: e.pos[1] + lx * n + ly * c,
+    }));
+  }
+
+  private entityRotateHandlePos(e: EntityDef): Vec2 {
+    const rotation = typeof e.params?.rotation === "number" ? e.params.rotation : 0;
+    const r = rotation * DEG;
+    const [_, h] = this.entitySize(e);
+    const d = h / 2 + 0.9;
+    return { x: e.pos[0] + Math.sin(r) * d, y: e.pos[1] - Math.cos(r) * d };
+  }
+
   private translateShape(s: ShapeDef, dx: number, dy: number): void {
     switch (s.kind) {
       case "rect":
@@ -370,6 +404,20 @@ export class Editor {
             return;
           }
         }
+        const entity = this.selectedEntity();
+        if (entity !== null) {
+          const handle = this.hitEntityHandle(entity, w);
+          if (handle === "rotate") {
+            this.beginChange();
+            this.drag = { type: "rotate" };
+            return;
+          }
+          if (handle !== null) {
+            this.beginChange();
+            this.drag = { type: "resize", corner: handle };
+            return;
+          }
+        }
         const hit = this.hitTest(w);
         this.selection = hit;
         this.refreshInspector();
@@ -458,6 +506,13 @@ export class Editor {
         if (s !== null && s.kind === "rect") {
           this.resizeRect(s, drag.corner, w);
           this.changed();
+        } else {
+          const e = this.selectedEntity();
+          if (e !== null) {
+            this.resizeEntity(e, drag.corner, w);
+            this.changed();
+            this.refreshInspector();
+          }
         }
         break;
       }
@@ -468,6 +523,16 @@ export class Editor {
           const snapped = e.altKey ? angle : Math.round(angle / 15) * 15;
           s.rotation = ((snapped % 360) + 360) % 360;
           this.changed();
+        } else {
+          const ent = this.selectedEntity();
+          if (ent !== null) {
+            const angle = Math.atan2(w.y - ent.pos[1], w.x - ent.pos[0]) / DEG + 90;
+            const snapped = e.altKey ? angle : Math.round(angle / 15) * 15;
+            if (!ent.params) ent.params = {};
+            ent.params.rotation = ((snapped % 360) + 360) % 360;
+            this.changed();
+            this.refreshInspector();
+          }
         }
         break;
       }
@@ -570,6 +635,52 @@ export class Editor {
     const nh = Math.max(0.25, Math.abs(ly - oy));
     s.pos = [s.pos[0] + ncx * c - ncy * n, s.pos[1] + ncx * n + ncy * c];
     s.size = [nw, nh];
+  }
+
+  private hitEntityHandle(e: EntityDef, w: Vec2): number | "rotate" | null {
+    const grab = 0.35 / this.cam.scale;
+    const corners = this.entityCorners(e);
+    for (let i = 0; i < corners.length; i++) {
+      const c = corners[i];
+      if (c && Math.hypot(w.x - c.x, w.y - c.y) < grab) return i;
+    }
+    const rh = this.entityRotateHandlePos(e);
+    if (Math.hypot(w.x - rh.x, w.y - rh.y) < grab) return "rotate";
+    return null;
+  }
+
+  private resizeEntity(e: EntityDef, corner: number, w: Vec2): void {
+    const rotation = typeof e.params?.rotation === "number" ? e.params.rotation : 0;
+    const r = rotation * DEG;
+    const c = Math.cos(r);
+    const n = Math.sin(r);
+    // Mouse in the local frame.
+    const dx = w.x - e.pos[0];
+    const dy = w.y - e.pos[1];
+    let lx = dx * c + dy * n;
+    let ly = -dx * n + dy * c;
+    if (this.snap) {
+      lx = Math.round(lx * 2) / 2;
+      ly = Math.round(ly * 2) / 2;
+    }
+    // Opposite corner stays fixed.
+    const signs: [number, number][] = [
+      [-1, -1],
+      [1, -1],
+      [1, 1],
+      [-1, 1],
+    ];
+    const sign = signs[corner];
+    if (!sign) return;
+    const [esw, esh] = this.entitySize(e);
+    const ox = -sign[0] * (esw / 2);
+    const oy = -sign[1] * (esh / 2);
+    const ncx = (lx + ox) / 2;
+    const ncy = (ly + oy) / 2;
+    const nw = Math.max(0.25, Math.abs(lx - ox));
+    const nh = Math.max(0.25, Math.abs(ly - oy));
+    e.pos = [e.pos[0] + ncx * c - ncy * n, e.pos[1] + ncx * n + ncy * c];
+    e.size = [nw, nh];
   }
 
   private finishDraft(): void {
@@ -703,6 +814,33 @@ export class Editor {
           alpha: 0.8,
         });
       }
+
+      // Draw team color coding indicator if applicable (RED or BLU, also fallback to A/B)
+      const teamVal = e.params?.team;
+      if (teamVal === "RED" || teamVal === "BLU" || teamVal === "A" || teamVal === "B") {
+        const teamColor = teamVal === "RED" || teamVal === "A" ? 0xff4d5e : 0x4d7dff;
+        g.circle(px(e.pos[0]), px(e.pos[1]), lw(5))
+          .fill(teamColor)
+          .stroke({ color: 0xffffff, width: lw(1.5) });
+      }
+
+      // Draw linking mode highlight
+      if (this.linkingField !== null && e.id !== this.linkingField.entityId) {
+        if (rotation !== 0) {
+          const pts = getRotatedRectPoints(px(e.pos[0]), px(e.pos[1]), px(w), px(h), rotation);
+          g.poly(pts).stroke({
+            color: 0x7df9ff,
+            width: lw(2.5),
+            alpha: 0.85,
+          });
+        } else {
+          g.rect(px(e.pos[0] - w / 2), px(e.pos[1] - h / 2), px(w), px(h)).stroke({
+            color: 0x7df9ff,
+            width: lw(2.5),
+            alpha: 0.85,
+          });
+        }
+      }
     }
 
     // Polygon draft.
@@ -734,19 +872,56 @@ export class Editor {
     } else if (sel?.kind === "entity") {
       const e = this.doc.entities.find((en) => en.id === sel.id);
       if (e) {
-        const [w, h] = this.entitySize(e);
-        const rotation = typeof e.params?.rotation === "number" ? e.params.rotation : 0;
-        if (rotation !== 0) {
-          const pts = getRotatedRectPoints(px(e.pos[0]), px(e.pos[1]), px(w), px(h), rotation);
-          g.poly(pts).stroke({
-            color: 0xff2bd6,
-            width: lw(2),
-          });
-        } else {
-          g.rect(px(e.pos[0] - w / 2), px(e.pos[1] - h / 2), px(w), px(h)).stroke({
-            color: 0xff2bd6,
-            width: lw(2),
-          });
+        const SEL = 0xff2bd6;
+        const corners = this.entityCorners(e);
+        const c0 = corners[0];
+        const c1 = corners[1];
+        if (c0 && c1) {
+          g.moveTo(px(c0.x), px(c0.y));
+          for (const c of corners.slice(1)) g.lineTo(px(c.x), px(c.y));
+          g.lineTo(px(c0.x), px(c0.y));
+          g.stroke({ color: SEL, width: lw(2) });
+          for (const c of corners) {
+            g.rect(px(c.x) - lw(5), px(c.y) - lw(5), lw(10), lw(10)).fill(0xffffff);
+          }
+          const rh = this.entityRotateHandlePos(e);
+          g.moveTo(px((c0.x + c1.x) / 2), px((c0.y + c1.y) / 2))
+            .lineTo(px(rh.x), px(rh.y))
+            .stroke({ color: SEL, width: lw(1) });
+          g.circle(px(rh.x), px(rh.y), lw(6)).fill(SEL);
+        }
+
+        // Draw connection lines to linked entities
+        const spec = entityTypeSpec(e.type);
+        const targetIds = new Set<string>();
+        if (e.targets) {
+          for (const t of e.targets) {
+            if (t) targetIds.add(t);
+          }
+        }
+        if (e.onDestroyed) {
+          for (const t of e.onDestroyed) {
+            if (t) targetIds.add(t);
+          }
+        }
+        if (spec) {
+          for (const [key, p] of Object.entries(spec.params)) {
+            if (p.kind === "entityId") {
+              const val = e.params?.[key];
+              if (typeof val === "string" && val) {
+                targetIds.add(val);
+              }
+            }
+          }
+        }
+        for (const tid of targetIds) {
+          const t = this.doc.entities.find((en) => en.id === tid);
+          if (t) {
+            g.moveTo(px(e.pos[0]), px(e.pos[1]))
+              .lineTo(px(t.pos[0]), px(t.pos[1]))
+              .stroke({ color: SEL, width: lw(2), alpha: 0.7 });
+            g.circle(px(t.pos[0]), px(t.pos[1]), px(0.15)).fill({ color: SEL, alpha: 0.9 });
+          }
         }
       }
     } else if (sel?.kind === "spawn") {

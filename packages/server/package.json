@@ -1,7 +1,7 @@
 {
   "name": "@cosmonauts/server",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Authoritative game server (Milestone 3). Currently a headless sim smoke-run + benchmark.",
   "scripts": {

@@ -1418,10 +1418,6 @@ export class Editor {
     entityPalette.className = "editor-panel";
     uiContainer.appendChild(entityPalette);
 
-    const title = document.createElement("strong");
-    title.textContent = "EDIT";
-    topBar.appendChild(title);
-
     const createIcon = (d: string) => {
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       svg.setAttribute("viewBox", "0 0 24 24");
@@ -1500,23 +1496,60 @@ export class Editor {
     });
     leftDock.appendChild(sol);
 
-    const epTitle = document.createElement("strong");
-    epTitle.textContent = "Entities";
-    entityPalette.appendChild(epTitle);
+    const groupDefinitions = [
+      {
+        name: "Mechanics",
+        types: [
+          "jumper",
+          "teleporter",
+          "activator",
+          "timer",
+          "door",
+          "teamBarrier",
+          "fluxCube",
+          "healthPickup",
+        ],
+      },
+      { name: "Fields", types: ["forceField", "fireField", "healField", "killZone", "hideZone"] },
+      { name: "Units", types: ["shop", "turret", "core", "droidSpawner", "pathNode", "creepDen"] },
+    ];
 
-    for (const spec of ENTITY_TYPES) {
-      const b = document.createElement("button");
-      b.textContent = spec.label;
-      b.title = `place a ${spec.label}`;
-      b.dataset.entity = spec.type;
-      b.style.borderBottom = `2px solid ${spec.color}`;
-      b.addEventListener("click", () => {
-        this.tool = "entity";
-        this.newEntityType = spec.type;
-        this.draft = [];
-        this.syncToolButtons();
-      });
-      entityPalette.appendChild(b);
+    for (const group of groupDefinitions) {
+      const groupDiv = document.createElement("div");
+      groupDiv.style.display = "flex";
+      groupDiv.style.alignItems = "center";
+      groupDiv.style.gap = "4px";
+      groupDiv.style.padding = "0 6px";
+      if (group !== groupDefinitions[0]) {
+        groupDiv.style.borderLeft = "1px solid #2c3354";
+      }
+
+      const label = document.createElement("span");
+      label.textContent = group.name;
+      label.style.color = "#9fb4ff";
+      label.style.marginRight = "4px";
+      label.style.fontSize = "10px";
+      label.style.textTransform = "uppercase";
+      label.style.letterSpacing = "0.5px";
+      groupDiv.appendChild(label);
+
+      for (const type of group.types) {
+        const spec = ENTITY_TYPES.find((s) => s.type === type);
+        if (!spec) continue;
+        const b = document.createElement("button");
+        b.textContent = spec.label;
+        b.title = `place a ${spec.label}`;
+        b.dataset.entity = spec.type;
+        b.style.borderBottom = `2px solid ${spec.color}`;
+        b.addEventListener("click", () => {
+          this.tool = "entity";
+          this.newEntityType = spec.type;
+          this.draft = [];
+          this.syncToolButtons();
+        });
+        groupDiv.appendChild(b);
+      }
+      entityPalette.appendChild(groupDiv);
     }
 
     const topDiv = document.createElement("div");
@@ -1907,6 +1940,84 @@ export class Editor {
         });
         rotLabel.appendChild(rot);
         panel.appendChild(rotLabel);
+      }
+
+      if (s.kind === "rect" || s.kind === "polygon") {
+        const convertDiv = document.createElement("div");
+        convertDiv.style.marginTop = "12px";
+        convertDiv.style.paddingTop = "8px";
+        convertDiv.style.borderTop = "1px solid #2c3354";
+        convertDiv.style.display = "flex";
+        convertDiv.style.flexDirection = "column";
+        convertDiv.style.gap = "4px";
+
+        const convertLabel = document.createElement("label");
+        convertLabel.textContent = "Convert to Entity:";
+        convertLabel.style.color = "#ffca28";
+        convertDiv.appendChild(convertLabel);
+
+        const convertSelect = document.createElement("select");
+        for (const spec of ENTITY_TYPES) {
+          const opt = document.createElement("option");
+          opt.value = spec.type;
+          opt.textContent = spec.label;
+          convertSelect.appendChild(opt);
+        }
+        convertDiv.appendChild(convertSelect);
+
+        const convertBtn = document.createElement("button");
+        convertBtn.textContent = "Convert";
+        convertBtn.style.marginTop = "4px";
+        convertBtn.addEventListener("click", () => {
+          this.beginChange();
+          let cx = 0,
+            cy = 0,
+            w = 1,
+            h = 1;
+          if (s.kind === "rect") {
+            cx = s.pos[0];
+            cy = s.pos[1];
+            w = s.size[0];
+            h = s.size[1];
+          } else if (s.kind === "polygon" && s.points) {
+            let minX = Infinity,
+              maxX = -Infinity,
+              minY = Infinity,
+              maxY = -Infinity;
+            for (const p of s.points) {
+              if (p[0] < minX) minX = p[0];
+              if (p[0] > maxX) maxX = p[0];
+              if (p[1] < minY) minY = p[1];
+              if (p[1] > maxY) maxY = p[1];
+            }
+            cx = (minX + maxX) / 2;
+            cy = (minY + maxY) / 2;
+            w = Math.max(0.1, maxX - minX);
+            h = Math.max(0.1, maxY - minY);
+          }
+
+          const spec = entityTypeSpec(convertSelect.value);
+          if (!spec) return;
+
+          const newEntity: EntityDef = {
+            id: `e_${Math.random().toString(36).slice(2, 8)}`,
+            // biome-ignore lint/suspicious/noExplicitAny: dynamic type
+            type: convertSelect.value as any,
+            pos: [cx, cy],
+            size: [w, h],
+            enabled: true,
+            tint: s.tint,
+            // biome-ignore lint/suspicious/noExplicitAny: dynamic type
+            params: defaultParams(spec) as any,
+          };
+
+          this.doc.entities.push(newEntity);
+          this.doc.shapes = this.doc.shapes.filter((x) => x.id !== s.id);
+          this.selection = [{ kind: "entity", id: newEntity.id }];
+          this.changed();
+        });
+        convertDiv.appendChild(convertBtn);
+        panel.appendChild(convertDiv);
       }
     } else if (sel.kind === "entity") {
       const e = this.doc.entities.find(

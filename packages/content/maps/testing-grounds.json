@@ -26,13 +26,13 @@
   "entities": [
     {
       "id": "red-base",
-      "type": "base",
+      "type": "shop",
       "pos": [4, 15],
       "params": { "team": "RED", "hps": 50 }
     },
     {
       "id": "blu-base",
-      "type": "base",
+      "type": "shop",
       "pos": [56, 15],
       "params": { "team": "BLU", "hps": 50 }
     },

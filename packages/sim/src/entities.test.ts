@@ -590,16 +590,16 @@ describe("map entities", () => {
       }
     });
 
-    it("base heals teammate inside it but not if they are at full health", () => {
+    it("shop heals teammate inside it but not if they are at full health", () => {
       // Base at x=3, y=5 (RED team, heals 50 hps)
-      const base = entity("base", 3, 5, { team: "RED", hps: 50 }, { size: { w: 4, h: 4 } });
-      const world = makeWorld(ARENA, [], [base]);
+      const shop = entity("shop", 3, 5, { team: "RED", hps: 50 }, { size: { w: 4, h: 4 } });
+      const world = makeWorld(ARENA, [], [shop]);
 
       const p = player(world);
       p.team = "RED";
       p.health = 40;
       p.pos.x = 3;
-      p.pos.y = 5; // inside base bounds
+      p.pos.y = 5; // inside shop bounds
 
       // Run 6 ticks (0.1 seconds at 60Hz)
       // healing: 50 hps * 0.1s = 5 health.
@@ -612,9 +612,9 @@ describe("map entities", () => {
       expect(p.health).toBe(100);
     });
 
-    it("base does not heal enemy team or players outside base bounds", () => {
-      const base = entity("base", 3, 5, { team: "RED", hps: 50 }, { size: { w: 4, h: 4 } });
-      const world = makeWorld(ARENA, [], [base]);
+    it("shop does not heal enemy team or players outside shop bounds", () => {
+      const shop = entity("shop", 3, 5, { team: "RED", hps: 50 }, { size: { w: 4, h: 4 } });
+      const world = makeWorld(ARENA, [], [shop]);
 
       const p = player(world);
       p.team = "BLU"; // enemy team
@@ -627,20 +627,20 @@ describe("map entities", () => {
 
       p.team = "RED"; // teammate again
       p.pos.x = 8;
-      p.pos.y = 5; // outside base bounds (base is x=3 w=4 => bounds [1, 5], player is at x=8)
+      p.pos.y = 5; // outside shop bounds (shop is x=3 w=4 => bounds [1, 5], player is at x=8)
 
       run(world, 6);
-      expect(p.health).toBe(40); // no healing outside base
+      expect(p.health).toBe(40); // no healing outside shop
     });
 
-    it("upgrade purchase works only inside team base with enough flux", () => {
-      const base = entity("base", 3, 5, { team: "RED", hps: 50 }, { size: { w: 4, h: 4 } });
-      const world = makeWorld(ARENA, [], [base]);
+    it("upgrade purchase works only inside team shop with enough flux", () => {
+      const shop = entity("shop", 3, 5, { team: "RED", hps: 50 }, { size: { w: 4, h: 4 } });
+      const world = makeWorld(ARENA, [], [shop]);
 
       const p = player(world);
       p.team = "RED";
       p.pos.x = 3;
-      p.pos.y = 5; // inside base
+      p.pos.y = 5; // inside shop
       p.flux = 4; // not enough for speed level 1 (costs 5)
 
       // Try to buy speed upgrade
@@ -654,10 +654,10 @@ describe("map entities", () => {
       expect(p.upgrades.speed).toBe(1);
       expect(p.flux).toBe(10); // cost 5 spent
 
-      // Move player out of base
+      // Move player out of shop
       p.pos.x = 8;
       run(world, 1, input({ buyUpgrade: "speed" }));
-      expect(p.upgrades.speed).toBe(1); // no change because outside base
+      expect(p.upgrades.speed).toBe(1); // no change because outside shop
       expect(p.flux).toBe(10);
     });
 

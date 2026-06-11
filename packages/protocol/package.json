@@ -1,7 +1,7 @@
 {
   "name": "@cosmonauts/protocol",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Wire message schemas shared by client and server. Implementation target: Milestone 3.",
   "exports": {

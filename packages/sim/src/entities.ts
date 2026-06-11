@@ -548,7 +548,7 @@ function applyEntity(
       }
       break;
     }
-    case "base": {
+    case "shop": {
       const baseTeam = str(data.params, "team") || "RED";
       if (p.team === baseTeam) {
         const hps = num(data.params, "hps", 50);
@@ -638,7 +638,7 @@ export function findActiveBaseForPlayer(
     const data = map.entities[i];
     const dyn = state.mapEntities[i];
     if (data === undefined || dyn === undefined || !dyn.enabled) continue;
-    if (data.type !== "base") continue;
+    if (data.type !== "shop") continue;
 
     const baseTeam = str(data.params, "team") || "RED";
     if (baseTeam !== p.team) continue;

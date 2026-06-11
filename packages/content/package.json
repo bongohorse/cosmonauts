@@ -1,7 +1,7 @@
 {
   "name": "@cosmonauts/content",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Game content (characters, maps) as zod-validated JSON, loaded into sim-typed data.",
   "exports": {

@@ -158,8 +158,8 @@ export const ENTITY_TYPES: EntityTypeSpec[] = [
     },
   },
   {
-    type: "base",
-    label: "Base",
+    type: "shop",
+    label: "Shop",
     color: "#2196f3",
     defaultSize: [4, 4],
     params: {

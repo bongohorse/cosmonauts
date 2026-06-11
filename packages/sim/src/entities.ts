@@ -328,6 +328,14 @@ function applyEntity(
       }
       break;
     }
+    case "base": {
+      const baseTeam = str(data.params, "team") || "RED";
+      if (p.team === baseTeam) {
+        const hps = num(data.params, "hps", 50);
+        p.health = Math.min(maxHealth, p.health + hps * DT);
+      }
+      break;
+    }
     default:
       break;
   }
@@ -374,4 +382,64 @@ export function spawnPlayerDrops(state: GameState, pos: Vec2, killerId?: number)
     homingPlayerId: killerId,
     ticksLeft: 600,
   });
+}
+
+export function findActiveBaseForPlayer(
+  state: GameState,
+  p: PlayerState,
+  map: MapData,
+  content: ContentIndex,
+): MapEntityData | null {
+  for (let i = 0; i < map.entities.length; i++) {
+    const data = map.entities[i];
+    const dyn = state.mapEntities[i];
+    if (data === undefined || dyn === undefined || !dyn.enabled) continue;
+    if (data.type !== "base") continue;
+
+    const baseTeam = str(data.params, "team") || "RED";
+    if (baseTeam !== p.team) continue;
+
+    const char = content.characters[p.characterId];
+    if (char === undefined) continue;
+
+    const inside = aabbOverlap(
+      data.pos.x,
+      data.pos.y,
+      data.size.w / 2,
+      data.size.h / 2,
+      p.pos.x,
+      p.pos.y,
+      char.hitbox.w / 2,
+      char.hitbox.h / 2,
+    );
+    if (inside) {
+      return data;
+    }
+  }
+  return null;
+}
+
+export function buyPlayerUpgrade(
+  p: PlayerState,
+  upgrade: "speed" | "cooldown" | "damage" | "jump",
+): void {
+  if (upgrade === "speed" || upgrade === "cooldown" || upgrade === "damage") {
+    const currentLvl = p.upgrades[upgrade];
+    if (currentLvl < 3) {
+      const cost = (currentLvl + 1) * 5;
+      if (p.flux >= cost) {
+        p.flux -= cost;
+        p.upgrades[upgrade] += 1;
+      }
+    }
+  } else if (upgrade === "jump") {
+    const currentLvl = p.upgrades.jump;
+    if (currentLvl < 1) {
+      const cost = 15;
+      if (p.flux >= cost) {
+        p.flux -= cost;
+        p.upgrades.jump += 1;
+      }
+    }
+  }
 }

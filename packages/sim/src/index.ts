@@ -19,7 +19,7 @@ export type {
   MapData,
   MapEntityData,
 } from "./content-types";
-export { stepMapEntities } from "./entities";
+export { findActiveBaseForPlayer, stepMapEntities } from "./entities";
 export {
   closestSegSeg,
   type SegmentData,

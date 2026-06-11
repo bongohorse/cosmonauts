@@ -204,6 +204,10 @@ export class Renderer {
       const color = Number.parseInt((data.tint ?? spec?.color ?? "#ffffff").slice(1), 16);
 
       let finalColor = color;
+      if (data.type === "base") {
+        const team = typeof data.params.team === "string" ? data.params.team : "RED";
+        finalColor = team === "RED" || team === "A" ? 0xff4d5e : 0x4d7dff;
+      }
       let alpha = dyn.enabled ? 0.4 : 0.15;
       let strokeAlpha = dyn.enabled ? 0.6 : 0.2;
       let strokeWidth = 1;

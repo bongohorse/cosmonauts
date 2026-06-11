@@ -137,14 +137,158 @@
         justify-content: space-between;
         gap: 8px;
       }
+      #shop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(10, 14, 35, 0.75);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+      #shop.open {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      #shop-content {
+        background: linear-gradient(135deg, rgba(20, 25, 60, 0.9), rgba(15, 20, 45, 0.95));
+        border: 2px solid #3d4985;
+        border-radius: 16px;
+        padding: 24px;
+        width: 480px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        color: #cfd8ff;
+        font-family: ui-monospace, monospace;
+      }
+      #shop-content h2 {
+        margin-top: 0;
+        color: #7df9ff;
+        text-align: center;
+        text-shadow: 0 0 10px rgba(125, 249, 255, 0.5);
+        font-size: 22px;
+        letter-spacing: 2px;
+      }
+      #shop-balance {
+        text-align: center;
+        font-size: 16px;
+        margin-bottom: 20px;
+        color: #ffd166;
+        font-weight: bold;
+      }
+      .upgrade-card {
+        background: rgba(30, 37, 75, 0.5);
+        border: 1px solid #2c3354;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: border-color 0.2s, background 0.2s;
+      }
+      .upgrade-card:hover {
+        border-color: #5865f2;
+        background: rgba(30, 37, 75, 0.7);
+      }
+      .upgrade-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .upgrade-name {
+        font-weight: bold;
+        color: #ffffff;
+      }
+      .upgrade-desc {
+        font-size: 10px;
+        color: #8fa0e6;
+      }
+      .upgrade-level {
+        font-size: 11px;
+        color: #7df9ff;
+      }
+      .upgrade-btn {
+        background: #252b54;
+        color: #cfd8ff;
+        border: 1px solid #3d4985;
+        border-radius: 6px;
+        padding: 8px 12px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.2s, border-color 0.2s, color 0.2s;
+      }
+      .upgrade-btn:hover:not(:disabled) {
+        background: #7df9ff;
+        color: #10142a;
+        border-color: #ffffff;
+      }
+      .upgrade-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: #141730;
+        border-color: #202440;
+        color: #555c80;
+      }
+      #close-shop {
+        width: 100%;
+        background: #e91e63;
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        padding: 10px;
+        margin-top: 16px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        transition: background 0.2s;
+      }
+      #close-shop:hover {
+        background: #ff4081;
+      }
+      #shop-hint {
+        position: fixed;
+        bottom: 70px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(10, 14, 35, 0.9);
+        border: 1.5px solid #7df9ff;
+        border-radius: 8px;
+        padding: 8px 16px;
+        color: #7df9ff;
+        font: bold 13px ui-monospace, monospace;
+        z-index: 999;
+        pointer-events: none;
+        box-shadow: 0 0 15px rgba(125, 249, 255, 0.4);
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+      #shop-hint.visible {
+        opacity: 1;
+      }
     </style>
   </head>
   <body>
     <div id="hud"></div>
-    <div id="version">v0.0.4</div>
+    <div id="version">v0.0.5</div>
     <details id="tuning" open>
       <summary>tuning</summary>
     </details>
+    <div id="shop">
+      <div id="shop-content">
+        <h2>BASE SHOP</h2>
+        <div id="shop-balance">Balance: 0 flux</div>
+        <div id="shop-upgrades"></div>
+        <button id="close-shop" type="button">CLOSE SHOP</button>
+      </div>
+    </div>
+    <div id="shop-hint">PRESS E TO OPEN SHOP</div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

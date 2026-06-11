@@ -29,6 +29,12 @@ export interface PlayerState {
   attackCooldown: number; // ticks remaining
   health: number;
   flux: number;
+  upgrades: {
+    speed: number;
+    cooldown: number;
+    damage: number;
+    jump: number;
+  };
 }
 
 export interface ProjectileState {
@@ -142,6 +148,12 @@ export function createState(map: MapData, spawns: SpawnSpec[], content: ContentI
       attackCooldown: 0,
       health: char.stats.maxHealth,
       flux: 0,
+      upgrades: {
+        speed: 0,
+        cooldown: 0,
+        damage: 0,
+        jump: 0,
+      },
     });
   }
 

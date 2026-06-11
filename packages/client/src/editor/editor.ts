@@ -796,7 +796,11 @@ export class Editor {
     for (const e of this.doc.entities) {
       const [w, h] = this.entitySize(e);
       const spec = entityTypeSpec(e.type);
-      const color = Number.parseInt((e.tint ?? spec?.color ?? "#ffffff").slice(1), 16);
+      let color = Number.parseInt((e.tint ?? spec?.color ?? "#ffffff").slice(1), 16);
+      if (e.type === "base") {
+        const team = typeof e.params?.team === "string" ? e.params.team : "RED";
+        color = team === "RED" || team === "A" ? 0xff4d5e : 0x4d7dff;
+      }
       const rotation = typeof e.params?.rotation === "number" ? e.params.rotation : 0;
       if (rotation !== 0) {
         const pts = getRotatedRectPoints(px(e.pos[0]), px(e.pos[1]), px(w), px(h), rotation);

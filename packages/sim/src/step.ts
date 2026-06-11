@@ -2,7 +2,14 @@ import { movePlayer } from "./capsule";
 import { aabbOverlap } from "./collision";
 import { DROP_IGNORE_TICKS, DT, DUMMY_HEIGHT, DUMMY_RESPAWN_TICKS, DUMMY_WIDTH } from "./constants";
 import type { CharacterData, ContentIndex, MapData } from "./content-types";
-import { spawnDroppedPickups, spawnPlayerDrops, stepMapEntities, triggerTargets } from "./entities";
+import {
+  buyPlayerUpgrade,
+  findActiveBaseForPlayer,
+  spawnDroppedPickups,
+  spawnPlayerDrops,
+  stepMapEntities,
+  triggerTargets,
+} from "./entities";
 import { closestSegSeg } from "./geometry";
 import { NEUTRAL_INPUT, type PlayerInput } from "./input";
 import { approach } from "./math";
@@ -29,7 +36,7 @@ export function step(state: GameState, inputs: InputMap, content: ContentIndex):
   for (const player of state.players) {
     const char = content.characters[player.characterId];
     if (char === undefined) throw new Error(`unknown character "${player.characterId}"`);
-    stepPlayer(state, player, inputs[player.id] ?? NEUTRAL_INPUT, char, map);
+    stepPlayer(state, player, inputs[player.id] ?? NEUTRAL_INPUT, char, map, content);
   }
 
   stepProjectiles(state, map);
@@ -46,8 +53,19 @@ function stepPlayer(
   input: PlayerInput,
   char: CharacterData,
   map: MapData,
+  content: ContentIndex,
 ): void {
   const { stats, attack } = char;
+
+  if (input.buyUpgrade) {
+    const activeBase = findActiveBaseForPlayer(state, p, map, content);
+    if (activeBase !== null) {
+      buyPlayerUpgrade(p, input.buyUpgrade);
+    }
+  }
+
+  const currentMoveSpeed = stats.moveSpeed + p.upgrades.speed * 1.5;
+  const maxJumps = stats.maxJumps + p.upgrades.jump;
 
   if (p.dropTicks > 0) {
     p.dropTicks -= 1;
@@ -62,7 +80,7 @@ function stepPlayer(
     p.dropTicks = DROP_IGNORE_TICKS;
     p.grounded = false;
     if (p.vel.y < 2) p.vel.y = 2; // exit the face this tick
-  } else if (input.jump && p.jumpsUsed < stats.maxJumps) {
+  } else if (input.jump && p.jumpsUsed < maxJumps) {
     p.vel.y = -stats.jumpVelocity;
     p.jumpsUsed += 1;
     p.jumpCutApplied = false;
@@ -85,11 +103,11 @@ function stepPlayer(
       ty = -ty;
     }
     const along = p.vel.x * tx + p.vel.y * ty;
-    const next = approach(along, input.moveX * stats.moveSpeed, stats.groundAccel * DT);
+    const next = approach(along, input.moveX * currentMoveSpeed, stats.groundAccel * DT);
     p.vel.x = tx * next;
     p.vel.y = ty * next;
   } else {
-    p.vel.x = approach(p.vel.x, input.moveX * stats.moveSpeed, stats.airAccel * DT);
+    p.vel.x = approach(p.vel.x, input.moveX * currentMoveSpeed, stats.airAccel * DT);
     p.vel.y = Math.min(p.vel.y + stats.gravity * DT, stats.maxFallSpeed);
   }
 
@@ -104,16 +122,21 @@ function stepPlayer(
     const len = Math.sqrt(input.aimX * input.aimX + input.aimY * input.aimY);
     const dirX = len > 0.001 ? input.aimX / len : p.facing;
     const dirY = len > 0.001 ? input.aimY / len : 0;
+
+    const currentDamage = attack.damage + p.upgrades.damage * 5;
+    const cooldownReduction = p.upgrades.cooldown * 0.15;
+    const currentCooldown = Math.max(1, Math.round(attack.cooldownTicks * (1 - cooldownReduction)));
+
     state.projectiles.push({
       id: state.nextEntityId++,
       ownerId: p.id,
       pos: { x: p.pos.x, y: p.pos.y },
       vel: { x: dirX * attack.projectileSpeed, y: dirY * attack.projectileSpeed },
       radius: attack.projectileRadius,
-      damage: attack.damage,
+      damage: currentDamage,
       ticksLeft: attack.lifetimeTicks,
     });
-    p.attackCooldown = attack.cooldownTicks;
+    p.attackCooldown = currentCooldown;
   }
 }
 

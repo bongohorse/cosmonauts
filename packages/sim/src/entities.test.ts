@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DT } from "./constants";
-import { ARENA, input, makeWorld, player, run } from "./test-helpers";
+import { ARENA, entity, input, makeWorld, player, run } from "./test-helpers";
 
 describe("map entities", () => {
   it("jumper launches the player", () => {
@@ -199,7 +199,8 @@ describe("map entities", () => {
     expect(player(world).pos.x).toBeLessThan(2.6);
 
     // Now disable the door
-    world.state.mapEntities[0]!.enabled = false;
+    const door = world.state.mapEntities[0];
+    if (door) door.enabled = false;
     run(world, 20, input({ moveX: 1 }));
     expect(player(world).pos.x).toBeGreaterThan(4);
   });
@@ -368,7 +369,8 @@ describe("map entities", () => {
     expect(player(world).pos.x).toBeLessThan(2.6);
 
     // Now disable the barrier. It should downgrade to glass.
-    world.state.mapEntities[0]!.enabled = false;
+    const barrier = world.state.mapEntities[0];
+    if (barrier) barrier.enabled = false;
 
     // Team B player should now be able to walk through the barrier since it's glass
     // (from the side it acts as glass, which has no side collision).
@@ -586,6 +588,77 @@ describe("map entities", () => {
         expect(pk.pos.y).toBeCloseTo(3.75, 1);
         expect(pk.vel.y).toBe(0);
       }
+    });
+
+    it("base heals teammate inside it but not if they are at full health", () => {
+      // Base at x=3, y=5 (RED team, heals 50 hps)
+      const base = entity("base", 3, 5, { team: "RED", hps: 50 }, { size: { w: 4, h: 4 } });
+      const world = makeWorld(ARENA, [], [base]);
+
+      const p = player(world);
+      p.team = "RED";
+      p.health = 40;
+      p.pos.x = 3;
+      p.pos.y = 5; // inside base bounds
+
+      // Run 6 ticks (0.1 seconds at 60Hz)
+      // healing: 50 hps * 0.1s = 5 health.
+      // So player health should become 45.
+      run(world, 6);
+      expect(p.health).toBeCloseTo(45, 1);
+
+      // Now run 100 ticks to heal fully (should cap at 100)
+      run(world, 100);
+      expect(p.health).toBe(100);
+    });
+
+    it("base does not heal enemy team or players outside base bounds", () => {
+      const base = entity("base", 3, 5, { team: "RED", hps: 50 }, { size: { w: 4, h: 4 } });
+      const world = makeWorld(ARENA, [], [base]);
+
+      const p = player(world);
+      p.team = "BLU"; // enemy team
+      p.health = 40;
+      p.pos.x = 3;
+      p.pos.y = 5;
+
+      run(world, 6);
+      expect(p.health).toBe(40); // no healing for enemy team
+
+      p.team = "RED"; // teammate again
+      p.pos.x = 8;
+      p.pos.y = 5; // outside base bounds (base is x=3 w=4 => bounds [1, 5], player is at x=8)
+
+      run(world, 6);
+      expect(p.health).toBe(40); // no healing outside base
+    });
+
+    it("upgrade purchase works only inside team base with enough flux", () => {
+      const base = entity("base", 3, 5, { team: "RED", hps: 50 }, { size: { w: 4, h: 4 } });
+      const world = makeWorld(ARENA, [], [base]);
+
+      const p = player(world);
+      p.team = "RED";
+      p.pos.x = 3;
+      p.pos.y = 5; // inside base
+      p.flux = 4; // not enough for speed level 1 (costs 5)
+
+      // Try to buy speed upgrade
+      run(world, 1, input({ buyUpgrade: "speed" }));
+      expect(p.upgrades.speed).toBe(0);
+      expect(p.flux).toBe(4);
+
+      // Add flux and try again
+      p.flux = 15;
+      run(world, 1, input({ buyUpgrade: "speed" }));
+      expect(p.upgrades.speed).toBe(1);
+      expect(p.flux).toBe(10); // cost 5 spent
+
+      // Move player out of base
+      p.pos.x = 8;
+      run(world, 1, input({ buyUpgrade: "speed" }));
+      expect(p.upgrades.speed).toBe(1); // no change because outside base
+      expect(p.flux).toBe(10);
     });
   });
 });

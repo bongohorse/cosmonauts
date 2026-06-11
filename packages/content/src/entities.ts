@@ -157,6 +157,17 @@ export const ENTITY_TYPES: EntityTypeSpec[] = [
       respawnTime: { kind: "duration", label: "respawn s", default: 10 },
     },
   },
+  {
+    type: "base",
+    label: "Base",
+    color: "#2196f3",
+    defaultSize: [4, 4],
+    params: {
+      team: { kind: "select", label: "team", default: "RED", options: ["RED", "BLU"] },
+      hps: { kind: "number", label: "heal/s", default: 50, min: 0, max: 500 },
+      rotation: { kind: "angle", label: "rotation °", default: 0 },
+    },
+  },
 ];
 
 export function entityTypeSpec(type: string): EntityTypeSpec | undefined {

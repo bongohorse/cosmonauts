@@ -11,6 +11,7 @@ export interface PlayerInput {
   shoot: boolean; // level; auto-fire is gated by the attack cooldown
   aimX: number;
   aimY: number;
+  buyUpgrade?: "speed" | "cooldown" | "damage" | "jump";
 }
 
 export const NEUTRAL_INPUT: PlayerInput = Object.freeze({
@@ -21,4 +22,5 @@ export const NEUTRAL_INPUT: PlayerInput = Object.freeze({
   shoot: false,
   aimX: 1,
   aimY: 0,
+  buyUpgrade: undefined,
 });

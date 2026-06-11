@@ -57,6 +57,8 @@ export class InputSource {
     });
   }
 
+  pendingBuyUpgrade?: "speed" | "cooldown" | "damage" | "jump";
+
   private isJumpKey(code: string): boolean {
     return code === "Space" || code === "KeyW" || code === "ArrowUp";
   }
@@ -66,6 +68,24 @@ export class InputSource {
   }
 
   sample(playerWorld: Vec2, screenToWorld: (sx: number, sy: number) => Vec2): PlayerInput {
+    const buyUpgrade = this.pendingBuyUpgrade;
+    this.pendingBuyUpgrade = undefined;
+
+    const shopOpen = document.getElementById("shop")?.classList.contains("open");
+    if (shopOpen) {
+      this.jumpLatch = false;
+      return {
+        moveX: 0,
+        down: false,
+        jump: false,
+        jumpHeld: false,
+        shoot: false,
+        aimX: 1,
+        aimY: 0,
+        buyUpgrade,
+      };
+    }
+
     const left = this.keys.has("KeyA") || this.keys.has("ArrowLeft");
     const right = this.keys.has("KeyD") || this.keys.has("ArrowRight");
     const down = this.keys.has("KeyS") || this.keys.has("ArrowDown");
@@ -94,6 +114,7 @@ export class InputSource {
       shoot: this.mouse.down,
       aimX,
       aimY,
+      buyUpgrade,
     };
   }
 }

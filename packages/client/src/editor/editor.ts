@@ -49,11 +49,11 @@ function getRotatedRectPoints(
   return [...corner(-hw, -hh), ...corner(hw, -hh), ...corner(hw, hh), ...corner(-hw, hh)];
 }
 
-const SOLIDITY_OPTIONS: Solidity[] = ["solid", "glass", "teamA", "teamB"];
+const SOLIDITY_OPTIONS: Solidity[] = ["solid", "glass", "teamRED", "teamBLU"];
 
 function formatSolidity(s: Solidity): string {
-  if (s === "teamA") return "team RED";
-  if (s === "teamB") return "team BLU";
+  if (s === "teamRED") return "team RED";
+  if (s === "teamBLU") return "team BLU";
   return s;
 }
 
@@ -810,15 +810,37 @@ export class Editor {
           alpha: 0.8,
         });
       } else {
-        g.rect(px(e.pos[0] - w / 2), px(e.pos[1] - h / 2), px(w), px(h)).fill({
-          color,
-          alpha: e.enabled === false ? 0.3 : 0.6,
-        });
-        g.rect(px(e.pos[0] - w / 2), px(e.pos[1] - h / 2), px(w), px(h)).stroke({
-          color,
-          width: lw(1),
-          alpha: 0.8,
-        });
+        if (e.type === "fluxCube") {
+          const denomStr = typeof e.params?.denomination === "string" ? e.params.denomination : "1";
+          const finalColor = denomStr === "5" ? 0xffca28 : 0xd1d5db;
+          const size = px(Math.min(w, h) * 0.35);
+          const x = px(e.pos[0]);
+          const y = px(e.pos[1]);
+          const alpha = e.enabled === false ? 0.3 : 0.6;
+          g.poly([x, y - size, x + size, y, x, y + size, x - size, y])
+            .fill({ color: finalColor, alpha })
+            .stroke({ color: 0xffffff, width: lw(1.5), alpha: 0.8 });
+        } else if (e.type === "healthPickup") {
+          const radius = px(Math.min(w, h) * 0.35);
+          const x = px(e.pos[0]);
+          const y = px(e.pos[1]);
+          const alpha = e.enabled === false ? 0.3 : 0.6;
+          g.circle(x, y, radius)
+            .fill({ color: 0x66ff8c, alpha })
+            .stroke({ color: 0xffffff, width: lw(1.5), alpha: 0.8 });
+          g.rect(x - lw(1), y - lw(3), lw(2), lw(6)).fill(0xffffff);
+          g.rect(x - lw(3), y - lw(1), lw(6), lw(2)).fill(0xffffff);
+        } else {
+          g.rect(px(e.pos[0] - w / 2), px(e.pos[1] - h / 2), px(w), px(h)).fill({
+            color,
+            alpha: e.enabled === false ? 0.3 : 0.6,
+          });
+          g.rect(px(e.pos[0] - w / 2), px(e.pos[1] - h / 2), px(w), px(h)).stroke({
+            color,
+            width: lw(1),
+            alpha: 0.8,
+          });
+        }
       }
 
       // Draw team color coding indicator if applicable (RED or BLU, also fallback to A/B)

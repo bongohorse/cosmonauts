@@ -32,7 +32,7 @@ export const CharacterDefSchema = z.object({
 export type CharacterDef = z.infer<typeof CharacterDefSchema>;
 
 const PointSchema = z.tuple([z.number(), z.number()]);
-const SoliditySchema = z.enum(["solid", "glass", "teamA", "teamB"]);
+const SoliditySchema = z.enum(["solid", "glass", "teamRED", "teamBLU"]);
 const shapeBase = {
   id: z.string().min(1),
   solidity: SoliditySchema,

@@ -132,6 +132,31 @@ export const ENTITY_TYPES: EntityTypeSpec[] = [
       rotation: { kind: "angle", label: "rotation °", default: 0 },
     },
   },
+  {
+    type: "fluxCube",
+    label: "Flux Cube",
+    color: "#ffd166",
+    defaultSize: [0.8, 0.8],
+    params: {
+      denomination: {
+        kind: "select",
+        label: "denomination",
+        default: "1",
+        options: ["1", "5"],
+      },
+      respawnTime: { kind: "duration", label: "respawn s", default: 10 },
+    },
+  },
+  {
+    type: "healthPickup",
+    label: "Health Pickup",
+    color: "#66ff8c",
+    defaultSize: [0.8, 0.8],
+    params: {
+      amount: { kind: "number", label: "amount", default: 20, min: 1, max: 200 },
+      respawnTime: { kind: "duration", label: "respawn s", default: 10 },
+    },
+  },
 ];
 
 export function entityTypeSpec(type: string): EntityTypeSpec | undefined {

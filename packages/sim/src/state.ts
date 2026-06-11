@@ -28,6 +28,7 @@ export interface PlayerState {
   jumpCutApplied: boolean;
   attackCooldown: number; // ticks remaining
   health: number;
+  flux: number;
 }
 
 export interface ProjectileState {
@@ -37,6 +38,16 @@ export interface ProjectileState {
   vel: Vec2;
   radius: number;
   damage: number;
+  ticksLeft: number;
+}
+
+export interface LivePickupState {
+  id: number;
+  kind: "flux" | "health";
+  pos: Vec2;
+  vel: Vec2;
+  amount: number;
+  homingPlayerId?: number;
   ticksLeft: number;
 }
 
@@ -71,6 +82,7 @@ export interface GameState {
   projectiles: ProjectileState[];
   dummies: DummyState[];
   mapEntities: MapEntityState[]; // index-aligned with map.entities
+  pickups: LivePickupState[];
 }
 
 export interface SpawnSpec {
@@ -103,6 +115,7 @@ export function createState(map: MapData, spawns: SpawnSpec[], content: ContentI
       triggered: false,
       timerElapsed: 0,
     })),
+    pickups: [],
   };
 
   for (let i = 0; i < spawns.length; i++) {
@@ -128,6 +141,7 @@ export function createState(map: MapData, spawns: SpawnSpec[], content: ContentI
       jumpCutApplied: false,
       attackCooldown: 0,
       health: char.stats.maxHealth,
+      flux: 0,
     });
   }
 

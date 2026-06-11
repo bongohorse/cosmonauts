@@ -77,7 +77,8 @@ export function buildMap(
     if (e.type === "door" || e.type === "teamBarrier") {
       const rotation = typeof e.params.rotation === "number" ? e.params.rotation : 0;
       const team = typeof e.params.team === "string" ? e.params.team : "RED";
-      const solidity: Solidity = e.type === "door" ? "solid" : team === "RED" ? "teamB" : "teamA";
+      const solidity: Solidity =
+        e.type === "door" ? "solid" : team === "RED" ? "teamBLU" : "teamRED";
       const def: ShapeDef = {
         id: e.id,
         kind: "rect",

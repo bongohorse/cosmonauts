@@ -419,4 +419,109 @@ describe("map entities", () => {
     expect(world.state.projectiles).toHaveLength(0);
     expect(world.state.mapEntities[1]?.enabled).toBe(false); // Door is open!
   });
+
+  describe("pickups & economy", () => {
+    it("ambient fluxCube and healthPickup can be collected and respawn", () => {
+      const world = makeWorld(
+        ARENA,
+        [],
+        [
+          {
+            id: "flux1",
+            type: "fluxCube",
+            pos: { x: 3, y: 5.5 },
+            size: { w: 1, h: 1 },
+            enabled: true,
+            params: { denomination: "5", respawnTimeTicks: 60 },
+          },
+          {
+            id: "hp1",
+            type: "healthPickup",
+            pos: { x: 4, y: 5.5 },
+            size: { w: 1, h: 1 },
+            enabled: true,
+            params: { amount: 30, respawnTimeTicks: 60 },
+          },
+        ],
+      );
+
+      // Reduce player health first
+      player(world).health = 50;
+      expect(player(world).flux).toBe(0);
+
+      // Walk through flux1 (at x=3)
+      run(world, 20, input({ moveX: 1 }));
+      expect(player(world).flux).toBe(5);
+      expect(world.state.mapEntities[0]?.enabled).toBe(false);
+      expect(world.state.mapEntities[0]?.cooldown).toBe(49);
+
+      // Walk through hp1 (at x=4)
+      run(world, 10, input({ moveX: 1 }));
+      expect(player(world).health).toBe(80);
+      expect(world.state.mapEntities[1]?.enabled).toBe(false);
+      expect(world.state.mapEntities[1]?.cooldown).toBe(46);
+
+      // Wait for respawn (50 ticks)
+      run(world, 50);
+      expect(world.state.mapEntities[0]?.enabled).toBe(true);
+      expect(world.state.mapEntities[1]?.enabled).toBe(true);
+    });
+
+    it("dropped pickups home towards the player and get collected", () => {
+      const world = makeWorld(ARENA, [], []);
+      world.state.pickups.push({
+        id: world.state.nextEntityId++,
+        kind: "flux",
+        pos: { x: 5, y: 3 },
+        vel: { x: 0, y: 0 },
+        amount: 1,
+        homingPlayerId: player(world).id,
+        ticksLeft: 100,
+      });
+
+      expect(world.state.pickups).toHaveLength(1);
+
+      // Run several ticks, pickup should fly to the player and get collected
+      run(world, 20);
+      expect(world.state.pickups).toHaveLength(0);
+      expect(player(world).flux).toBe(1);
+    });
+
+    it("dummy death drops pickups on hero projectile hit", () => {
+      const DUMMY_ARENA = [
+        "##########",
+        "#........#",
+        "#........#",
+        "#........#",
+        "#........#",
+        "#S....D..#",
+        "##########",
+      ];
+      const world = makeWorld(DUMMY_ARENA, [], []);
+      // Ensure a dummy is alive
+      expect(world.state.dummies).toHaveLength(1);
+      const dummy = world.state.dummies[0];
+      if (dummy === undefined) throw new Error("no dummy");
+      dummy.health = 5; // make it low health
+
+      // Shoot projectile at it (dummy is at x=5.5, y=5.5)
+      player(world).pos.x = 2;
+      player(world).pos.y = 5.5;
+      run(world, 1, input({ shoot: true, aimX: 1, aimY: 0 }));
+
+      // Run until hit
+      run(world, 20);
+      expect(dummy.health).toBeLessThanOrEqual(0);
+      // It should have dropped 2 flux cubes (homing to hero) and 1 health pickup (non-homing)
+      expect(world.state.pickups).toHaveLength(3);
+
+      const fluxCubes = world.state.pickups.filter((p) => p.kind === "flux");
+      const hpPickups = world.state.pickups.filter((p) => p.kind === "health");
+      expect(fluxCubes).toHaveLength(2);
+      expect(hpPickups).toHaveLength(1);
+
+      expect(fluxCubes[0]?.homingPlayerId).toBe(player(world).id);
+      expect(hpPickups[0]?.homingPlayerId).toBeUndefined();
+    });
+  });
 });

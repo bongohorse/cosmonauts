@@ -16,6 +16,7 @@ export class DebugPanel {
     if (p === undefined) return;
     this.hud.textContent = [
       `fps ${fps.toFixed(0)}  tick ${state.tick}`,
+      `health ${p.health.toFixed(0)}  flux ${p.flux}`,
       `pos ${p.pos.x.toFixed(2)}, ${p.pos.y.toFixed(2)}  vel ${p.vel.x.toFixed(1)}, ${p.vel.y.toFixed(1)}`,
       `grounded ${p.grounded}  jumps ${p.jumpsUsed}  projectiles ${state.projectiles.length}`,
       "",

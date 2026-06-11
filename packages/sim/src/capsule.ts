@@ -56,9 +56,9 @@ function segmentCollidable(
   switch (seg.solidity) {
     case "solid":
       return true;
-    case "teamA":
+    case "teamRED":
       return p.team === "RED";
-    case "teamB":
+    case "teamBLU":
       return p.team === "BLU";
     case "glass": {
       if (p.dropTicks > 0 && p.dropShapeId === seg.shapeId) return false;

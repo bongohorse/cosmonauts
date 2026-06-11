@@ -100,9 +100,9 @@ export class Renderer {
       const glass = shape.solidity === "glass";
       // Team color convention (doc 07 §5): Team A is red, Team B is blue.
       const base =
-        shape.solidity === "teamA"
+        shape.solidity === "teamRED"
           ? 0xff4d5e
-          : shape.solidity === "teamB"
+          : shape.solidity === "teamBLU"
             ? 0x4d7dff
             : glass
               ? 0x9fe8ff
@@ -130,6 +130,7 @@ export class Renderer {
     const lerp = (a: number, b: number) => a + (b - a) * alpha;
     const prevPlayers = new Map(prev.players.map((p) => [p.id, p]));
     const prevProjectiles = new Map(prev.projectiles.map((p) => [p.id, p]));
+    const prevPickups = new Map(prev.pickups.map((p) => [p.id, p]));
 
     for (const d of curr.dummies) {
       const hw = (DUMMY_WIDTH / 2) * TILE_PX;
@@ -170,6 +171,24 @@ export class Renderer {
       g.circle(x, y, pr.radius * TILE_PX).fill(COLORS.projectile);
     }
 
+    for (const pickup of curr.pickups) {
+      const before = prevPickups.get(pickup.id) ?? pickup;
+      const x = lerp(before.pos.x, pickup.pos.x) * TILE_PX;
+      const y = lerp(before.pos.y, pickup.pos.y) * TILE_PX;
+      const size = 0.25 * TILE_PX;
+      if (pickup.kind === "flux") {
+        const color = pickup.amount === 5 ? 0xffca28 : 0xd1d5db;
+        g.poly([x, y - size, x + size, y, x, y + size, x - size, y])
+          .fill(color)
+          .stroke({ color: 0xffffff, width: 1 });
+      } else {
+        const radius = 0.25 * TILE_PX;
+        g.circle(x, y, radius).fill(0x66ff8c).stroke({ color: 0xffffff, width: 1.5 });
+        g.rect(x - 1, y - 3, 2, 6).fill(0xffffff);
+        g.rect(x - 3, y - 1, 6, 2).fill(0xffffff);
+      }
+    }
+
     for (let i = 0; i < this.map.entities.length; i++) {
       const data = this.map.entities[i];
       const dyn = curr.mapEntities[i];
@@ -205,6 +224,27 @@ export class Renderer {
             strokeAlpha = 0.1;
           }
         }
+      }
+
+      if (data.type === "fluxCube") {
+        const denomStr =
+          typeof data.params.denomination === "string" ? data.params.denomination : "1";
+        const finalColor = denomStr === "5" ? 0xffca28 : 0xd1d5db;
+        const size = Math.min(data.size.w, data.size.h) * 0.35 * TILE_PX;
+        g.poly([x, y - size, x + size, y, x, y + size, x - size, y])
+          .fill({ color: finalColor, alpha: alpha + 0.2 })
+          .stroke({ color: 0xffffff, width: 1.5, alpha: strokeAlpha });
+        continue;
+      }
+
+      if (data.type === "healthPickup") {
+        const radius = Math.min(data.size.w, data.size.h) * 0.35 * TILE_PX;
+        g.circle(x, y, radius)
+          .fill({ color: 0x66ff8c, alpha: alpha + 0.2 })
+          .stroke({ color: 0xffffff, width: 1.5, alpha: strokeAlpha });
+        g.rect(x - 1, y - 3, 2, 6).fill({ color: 0xffffff, alpha: dyn.enabled ? 1.0 : 0.4 });
+        g.rect(x - 3, y - 1, 6, 2).fill({ color: 0xffffff, alpha: dyn.enabled ? 1.0 : 0.4 });
+        continue;
       }
 
       if (data.tint) {

@@ -2,7 +2,7 @@ import { movePlayer } from "./capsule";
 import { aabbOverlap } from "./collision";
 import { DROP_IGNORE_TICKS, DT, DUMMY_HEIGHT, DUMMY_RESPAWN_TICKS, DUMMY_WIDTH } from "./constants";
 import type { CharacterData, ContentIndex, MapData } from "./content-types";
-import { stepMapEntities, triggerTargets } from "./entities";
+import { spawnDroppedPickups, spawnPlayerDrops, stepMapEntities, triggerTargets } from "./entities";
 import { closestSegSeg } from "./geometry";
 import { NEUTRAL_INPUT, type PlayerInput } from "./input";
 import { approach } from "./math";
@@ -34,6 +34,7 @@ export function step(state: GameState, inputs: InputMap, content: ContentIndex):
 
   stepProjectiles(state, map);
   stepMapEntities(state, map, content);
+  stepPickups(state, map, content);
   stepDummies(state);
 
   state.tick += 1;
@@ -224,7 +225,10 @@ function stepProjectiles(state: GameState, map: MapData): void {
           aabbOverlap(pr.pos.x, pr.pos.y, pr.radius, pr.radius, d.pos.x, d.pos.y, dummyHw, dummyHh)
         ) {
           d.health -= pr.damage;
-          if (d.health <= 0) d.respawnTicks = DUMMY_RESPAWN_TICKS;
+          if (d.health <= 0) {
+            d.respawnTicks = DUMMY_RESPAWN_TICKS;
+            spawnDroppedPickups(state, d.pos, pr.ownerId);
+          }
           dead = true;
           break;
         }
@@ -248,7 +252,11 @@ function stepProjectiles(state: GameState, map: MapData): void {
             thh,
           )
         ) {
+          const oldHealth = target.health;
           target.health = Math.max(0, target.health - pr.damage);
+          if (oldHealth > 0 && target.health <= 0) {
+            spawnPlayerDrops(state, target.pos, pr.ownerId);
+          }
           dead = true;
           break;
         }
@@ -264,6 +272,105 @@ function stepDummies(state: GameState): void {
     if (d.health <= 0) {
       d.respawnTicks -= 1;
       if (d.respawnTicks <= 0) d.health = d.maxHealth;
+    }
+  }
+}
+
+function stepPickups(state: GameState, map: MapData, content: ContentIndex): void {
+  const isSolid = (x: number, y: number) => {
+    if (x < 0 || x >= map.width || y < 0 || y >= map.height) return true;
+    return map.solid[Math.floor(y) * map.width + Math.floor(x)] === true;
+  };
+
+  for (let i = state.pickups.length - 1; i >= 0; i--) {
+    const pickup = state.pickups[i];
+    if (pickup === undefined) continue;
+
+    pickup.ticksLeft -= 1;
+    let destroyed = pickup.ticksLeft <= 0 || pickup.pos.y > map.height + 5;
+
+    if (!destroyed) {
+      if (pickup.homingPlayerId !== undefined) {
+        const target = state.players.find((p) => p.id === pickup.homingPlayerId);
+        if (target && target.health > 0) {
+          const dx = target.pos.x - pickup.pos.x;
+          const dy = target.pos.y - pickup.pos.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 0.4) {
+            if (pickup.kind === "flux") {
+              target.flux += pickup.amount;
+            } else if (pickup.kind === "health") {
+              const char = content.characters[target.characterId];
+              const maxHp = char ? char.stats.maxHealth : 100;
+              target.health = Math.min(maxHp, target.health + pickup.amount);
+            }
+            destroyed = true;
+          } else {
+            const speed = 15;
+            pickup.vel.x = (dx / dist) * speed;
+            pickup.vel.y = (dy / dist) * speed;
+            pickup.pos.x += pickup.vel.x * DT;
+            pickup.pos.y += pickup.vel.y * DT;
+          }
+        } else {
+          pickup.homingPlayerId = undefined;
+          pickup.vel.x = 0;
+          pickup.vel.y = 0;
+        }
+      }
+
+      if (pickup.homingPlayerId === undefined) {
+        pickup.vel.y += 15 * DT;
+        const nextX = pickup.pos.x + pickup.vel.x * DT;
+        const nextY = pickup.pos.y + pickup.vel.y * DT;
+
+        if (isSolid(pickup.pos.x, nextY)) {
+          if (pickup.vel.y > 0) {
+            pickup.pos.y = Math.floor(nextY);
+          }
+          pickup.vel.y = 0;
+          pickup.vel.x = 0;
+        } else {
+          pickup.pos.y = nextY;
+        }
+
+        if (isSolid(nextX, pickup.pos.y)) {
+          pickup.vel.x = 0;
+        } else {
+          pickup.pos.x = nextX;
+        }
+
+        for (const p of state.players) {
+          if (p.health <= 0) continue;
+          const char = content.characters[p.characterId];
+          if (char === undefined) continue;
+          const hw = char.hitbox.w / 2;
+          const hh = char.hitbox.h / 2;
+          const inside = aabbOverlap(
+            pickup.pos.x,
+            pickup.pos.y,
+            0.3,
+            0.3,
+            p.pos.x,
+            p.pos.y,
+            hw,
+            hh,
+          );
+          if (inside) {
+            if (pickup.kind === "flux") {
+              p.flux += pickup.amount;
+            } else if (pickup.kind === "health") {
+              p.health = Math.min(char.stats.maxHealth, p.health + pickup.amount);
+            }
+            destroyed = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (destroyed) {
+      state.pickups.splice(i, 1);
     }
   }
 }

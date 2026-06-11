@@ -1,7 +1,7 @@
 import { aabbOverlap } from "./collision";
 import { DT } from "./constants";
 import type { ContentIndex, MapData, MapEntityData } from "./content-types";
-import { DEG_TO_RAD, dcos, dsin } from "./math";
+import { DEG_TO_RAD, dcos, dsin, type Vec2 } from "./math";
 import { type GameState, type MapEntityState, type PlayerState, playerSpawnPos } from "./state";
 
 type Params = MapEntityData["params"];
@@ -94,7 +94,12 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
     if (data === undefined || dyn === undefined) continue;
 
     // Cooldown ticks down for everyone
-    if (dyn.cooldown > 0) dyn.cooldown -= 1;
+    if (dyn.cooldown > 0) {
+      dyn.cooldown -= 1;
+      if (dyn.cooldown === 0 && (data.type === "fluxCube" || data.type === "healthPickup")) {
+        dyn.enabled = true;
+      }
+    }
 
     if (data.type === "timer") {
       if (!dyn.enabled) {
@@ -190,6 +195,7 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
     }
 
     for (const p of state.players) {
+      if (!dyn.enabled) break;
       const char = content.characters[p.characterId];
       if (char === undefined) continue;
       const inside = aabbOverlap(
@@ -203,7 +209,11 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
         char.hitbox.h / 2,
       );
       if (inside) {
+        const oldHealth = p.health;
         applyEntity(state, map, data, dyn, p, char.stats.maxHealth);
+        if (oldHealth > 0 && p.health <= 0) {
+          spawnPlayerDrops(state, p.pos, undefined);
+        }
       }
     }
   }
@@ -294,7 +304,71 @@ function applyEntity(
     case "killZone":
       p.health = 0;
       break;
+    case "fluxCube": {
+      const denomStr = str(data.params, "denomination") || "1";
+      const denom = denomStr === "5" ? 5 : 1;
+      p.flux += denom;
+      dyn.enabled = false;
+      const respawnTicks = num(data.params, "respawnTimeTicks", 0);
+      if (respawnTicks > 0) {
+        dyn.cooldown = respawnTicks;
+      }
+      break;
+    }
+    case "healthPickup": {
+      const amount = num(data.params, "amount", 20);
+      p.health = Math.min(maxHealth, p.health + amount);
+      dyn.enabled = false;
+      const respawnTicks = num(data.params, "respawnTimeTicks", 0);
+      if (respawnTicks > 0) {
+        dyn.cooldown = respawnTicks;
+      }
+      break;
+    }
     default:
       break;
   }
+}
+
+export function spawnDroppedPickups(state: GameState, pos: Vec2, killerId?: number): void {
+  state.pickups.push({
+    id: state.nextEntityId++,
+    kind: "flux",
+    pos: { x: pos.x, y: pos.y },
+    vel: killerId !== undefined ? { x: 0, y: 0 } : { x: -2, y: -4 },
+    amount: 1,
+    homingPlayerId: killerId,
+    ticksLeft: 600,
+  });
+
+  state.pickups.push({
+    id: state.nextEntityId++,
+    kind: "flux",
+    pos: { x: pos.x, y: pos.y },
+    vel: killerId !== undefined ? { x: 0, y: 0 } : { x: 2, y: -4 },
+    amount: 1,
+    homingPlayerId: killerId,
+    ticksLeft: 600,
+  });
+
+  state.pickups.push({
+    id: state.nextEntityId++,
+    kind: "health",
+    pos: { x: pos.x, y: pos.y },
+    vel: { x: 0, y: -5 },
+    amount: 20,
+    ticksLeft: 600,
+  });
+}
+
+export function spawnPlayerDrops(state: GameState, pos: Vec2, killerId?: number): void {
+  state.pickups.push({
+    id: state.nextEntityId++,
+    kind: "flux",
+    pos: { x: pos.x, y: pos.y },
+    vel: killerId !== undefined ? { x: 0, y: 0 } : { x: 0, y: -4 },
+    amount: 5,
+    homingPlayerId: killerId,
+    ticksLeft: 600,
+  });
 }

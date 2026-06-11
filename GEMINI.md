@@ -1,52 +1,60 @@
-# Cosmonauts — Project Guidelines
+# GEMINI.md
 
-An open-source, browser-based 2D action-platformer MOBA inspired by Awesomenauts.
+This file provides guidance and strict instructions to Gemini and other AI coding assistants when working with code in this repository.
 
 ## Project Overview
 
-Cosmonauts is built with a deterministic, fixed-timestep simulation core separated from its renderer. This architecture enables client-side prediction, replays, and authoritative server validation.
+Cosmonauts is an open-source, browser-based 2D action-platformer MOBA. Our goal is to build a high-performance modern browser game using cutting-edge web tools. The architecture relies on a deterministic, fixed-timestep simulation core separated from its renderer.
 
-- **Status:** Milestone 4 complete (In-game map editor MVP). Milestone 5 (Map Entities) is in progress.
-- **Tech Stack:** TypeScript (strict), Pixi.js v8, Vite, Vitest, Biome, pnpm.
-- **Architecture:** Monorepo with distinct packages for simulation, content, client, and server.
+- **Status:** Milestones 1 through 4 are complete (including an in-game map editor MVP). **Milestone 5 (Map Entities)** is currently in progress. The roadmap then proceeds to M6 (Abilities/Heroes) and M7 (Netcode).
+- **Hard Rule:** Netcode is deliberately deferred until the local prototype is highly polished. Do not attempt to implement networking or sockets unprompted.
 
-## Core Packages
+## Tech Stack & Modern Tooling
 
-- **`packages/sim`**: The deterministic 60Hz simulation. **Hard Rule:** This package must be pure TypeScript and import nothing from other packages. No DOM, Pixi, or Node APIs.
-- **`packages/client`**: Pixi.js renderer and user input handling. Interpolates between simulation states; never mutates them. Includes the in-game map editor.
+We embrace modern web development practices, moving away from heavy traditional game engines (like Phaser or Godot) in favor of a lean, custom tech stack:
+- **Language:** TypeScript (Strict mode enabled)
+- **Renderer:** Pixi.js v8 (Leveraging modern WebGL/WebGPU for performant 2D rendering)
+- **Build Tool:** Vite (For instant HMR and fast bundling)
+- **Testing:** Vitest (Fast, native TypeScript testing framework)
+- **Linting/Formatting:** Biome (Rust-based, incredibly fast toolchain)
+- **Package Manager:** pnpm v11 (For robust monorepo support)
+
+## Architecture & Core Packages
+
+The codebase is structured as a monorepo containing distinct packages:
+
+- **`packages/sim`**: The 60Hz simulation. **Crucial:** Must be pure TypeScript. No DOM, Pixi, or Node APIs. It runs identically in browser and server environments.
+- **`packages/client`**: Pixi.js renderer and user input handling. Interpolates between previous and current simulation states; it *never* mutates them. 
 - **`packages/content`**: Zod-validated JSON data for characters, maps, and entities.
-- **`packages/protocol`**: Wire message schemas for multiplayer (Milestone 3+).
-- **`packages/server`**: Headless authoritative game server (Benchmark status).
+- **`packages/protocol`**: Wire message schemas (for future multiplayer integration).
+- **`packages/server`**: Headless authoritative game server.
 
-## Development Workflow
+**Note:** Packages export raw TypeScript (`"exports": "./src/index.ts"`). There are no intermediate build steps; Vite, tsx, and Vitest consume the raw TS directly for maximum development speed.
 
-### Key Commands
+## Fundamental Design Decisions (Do Not Relitigate)
 
+1. **Physics:** Velocity-based, with no rigid-body physics engine (e.g., Matter.js or Box2D). Level geometry uses line segments with capsule-based world collision (see doc 06). Combat hitboxes use standard AABB.
+2. **Determinism:** `packages/sim` must remain cross-engine deterministic.
+   - **No `Math.random()`**: Use `rand()` from `math.ts` with PRNG state in `GameState.rng`.
+   - **No `Date` or timers**: Rely exclusively on integer ticks (60Hz) to drive duration.
+   - **No Non-Deterministic Math**: Avoid `Math.sin/cos/atan2`. Use pre-normalized inputs or `dsin/dcos` from `math.ts`. `Math.sqrt` and basic arithmetic are allowed.
+3. **State:** `GameState` is a plain JSON-safe object. Durations and timers are stored as integer ticks.
+4. **Editor:** The in-game editor (`packages/client/src/editor/`) relies on `localStorage` for map persistence. E2E tests and automated interactions should use the `window.__cosmo` hook rather than relying on CDP input latency.
+5. **Team Conventions:** Team RED is Team A, Team BLU is Team B everywhere in the application.
+
+## Development Commands
+
+All commands are run from the repo root:
 - `pnpm dev`: Start the client sandbox at `http://localhost:5173`.
-- `pnpm test`: Run all tests (Vitest).
+- `pnpm test`: Run all tests via Vitest. To run a single test: `pnpm exec vitest run packages/sim/src/movement.test.ts`.
 - `pnpm typecheck`: Run `tsc --noEmit` across all packages.
-- `pnpm lint`: Run Biome for linting and formatting.
-- `pnpm build`: Create a production build of the client.
+- `pnpm lint`: Run Biome checks.
+- `pnpm build`: Create the production client build.
 - `pnpm sim:bench`: Run the headless simulation benchmark.
 
-### Determinism Rules (in `packages/sim`)
+## AI Engineering Standards
 
-- **No `Math.random()`**: Use `rand()` from `math.ts` with the PRNG state in `GameState.rng`.
-- **No `Date` or timers**: The simulation is driven by integer ticks (60 Hz).
-- **No Non-Deterministic Math**: Avoid `Math.sin/cos/atan2` (not cross-engine deterministic). Use `dsin/dcos` from `math.ts` or pre-normalized inputs. `Math.sqrt` and basic arithmetic are permitted.
-- **JSON-Safe State**: `GameState` must remain a plain JSON-safe object for easy serialization and snapshots.
-
-### Engineering Standards
-
-- **Surgical Edits**: Prefer minimal, precise changes to existing logic.
-- **Testing**: Add or update tests in `packages/sim/src/*.test.ts` for any simulation changes.
-- **Editor Integration**: New map entities (defined in `packages/content/src/entities.ts`) should automatically appear in the editor palette via their Zod schemas.
-- **Sim Isolation**: Ensure `packages/sim` remains dependency-free. Check imports during any refactor.
-
-## Documentation
-
-Comprehensive design documents are located in `docs/`.
-- `docs/01-analysis.md`: Technical analysis, decision log, and roadmap.
-- `docs/02-simulation.md`: Detailed simulation and collision logic.
-- `docs/06-geometry-v2.md`: Segment-based collision and capsule movement.
-- `docs/07-map-entities.md`: Design for map objects and the event wiring system.
+- **Surgical Edits**: Prefer minimal, precise changes to existing logic. Do not rewrite files unless absolutely necessary.
+- **Testing**: Whenever modifying `packages/sim`, add or update corresponding tests in `packages/sim/src/*.test.ts`.
+- **Editor Integration**: New map entities (defined in `packages/content/src/entities.ts`) must be equipped with Zod schemas so they automatically appear in the editor palette.
+- **Consult Docs**: Design documents live in `docs/`. Read them if you need deeper context (e.g., `docs/01-analysis.md` for roadmap, `docs/06-geometry-v2.md` for collision).

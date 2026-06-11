@@ -507,12 +507,11 @@ export class Renderer {
     const mapW = this.map.width * TILE_PX;
     const mapH = this.map.height * TILE_PX;
 
-    const clampAxis = (target: number, screen: number, world: number): number => {
-      if (world <= screen) return (screen - world) / 2; // map smaller than screen: center it
-      return Math.min(0, Math.max(screen - world, screen / 2 - target));
+    const clampAxis = (target: number, screen: number): number => {
+      return screen / 2 - target;
     };
-    this.world.x = clampAxis(px, screenW, mapW);
-    this.world.y = clampAxis(py, screenH, mapH);
+    this.world.x = clampAxis(px, screenW);
+    this.world.y = clampAxis(py, screenH);
     this.world.scale.set(1);
   }
 

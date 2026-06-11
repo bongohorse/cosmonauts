@@ -734,7 +734,7 @@ export function stepCreeps(state: GameState, map: MapData, content: ContentIndex
     
     // Use player move logic by creating mock player
     const mockP = {
-      id: c.id, characterId: "", team: "RED" as any, pos: c.pos, vel: c.vel,
+      id: c.id, characterId: "", team: "NEUTRAL" as any, pos: c.pos, vel: c.vel,
       facing: c.facing, grounded: c.grounded, groundNX: 0, groundNY: 0,
       groundShapeId: c.groundShapeId, groundGlass: false, dropShapeId: "", dropTicks: 0,
       jumpsUsed: 0, jumpCutApplied: false, attackCooldown: 0, health: c.health,

@@ -107,8 +107,8 @@ export interface CreepState {
   grounded: boolean;
   groundShapeId: string;
   fleeTicks: number; // Ticks remaining in flee mode
-  origin: Vec2;      // Where the creep den is, to bound their pacing
-  denId: string;     // ID of the creepDen that spawned this creep
+  origin: Vec2; // Where the creep den is, to bound their pacing
+  denId: string; // ID of the creepDen that spawned this creep
 }
 
 /** Plain JSON-compatible data, by design (doc 02 §1). No classes, no Maps. */
@@ -135,7 +135,7 @@ export interface SpawnSpec {
 
 /** Where the i-th player spawns: feet on the bottom edge of the spawn tile. */
 export function playerSpawnPos(map: MapData, team: Team, index: number, hitboxH: number): Vec2 {
-  const teamSpawns = map.playerSpawns.filter(s => s.team === team);
+  const teamSpawns = map.playerSpawns.filter((s) => s.team === team);
   const spawns = teamSpawns.length > 0 ? teamSpawns : map.playerSpawns;
   const spawn = spawns[index % spawns.length];
   if (spawn === undefined) throw new Error(`map "${map.id}" has no player spawns`);

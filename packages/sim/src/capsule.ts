@@ -36,7 +36,7 @@ function segmentCollidable(
         if (dyn.dead) return false;
         // Alive turrets use default teamBarrier logic (solidity is teamRED/teamBLU)
         const team = typeof data.params.team === "string" ? data.params.team : "RED";
-        const effectiveTeam = (team === "RED" || team === "A") ? "RED" : "BLU";
+        const effectiveTeam = team === "RED" || team === "A" ? "RED" : "BLU";
         return p.team !== effectiveTeam;
       }
       if (data.type === "teamBarrier") {
@@ -45,7 +45,7 @@ function segmentCollidable(
           typeof data.params.downgradeTo === "string" ? data.params.downgradeTo : "gone";
         if (dyn.enabled) {
           // Own team passes through (does NOT collide). Enemy/neutral team is blocked (collides).
-          const effectiveTeam = (team === "RED" || team === "A") ? "RED" : "BLU";
+          const effectiveTeam = team === "RED" || team === "A" ? "RED" : "BLU";
           return p.team !== effectiveTeam;
         } else {
           if (downgradeTo === "gone") return false;

@@ -62,7 +62,8 @@ export function buildMap(
     }
   }
 
-  for (const s of spawns.players ?? []) playerSpawns.push({ x: s.x, y: s.y, team: s.team ?? "RED" });
+  for (const s of spawns.players ?? [])
+    playerSpawns.push({ x: s.x, y: s.y, team: s.team ?? "RED" });
   for (const s of spawns.dummies ?? []) dummySpawns.push({ x: s.x, y: s.y });
   if (playerSpawns.length === 0) throw new Error(`map "${id}": needs at least one player spawn`);
 
@@ -77,7 +78,7 @@ export function buildMap(
     if (e.type === "door" || e.type === "teamBarrier" || e.type === "turret") {
       const rotation = typeof e.params.rotation === "number" ? e.params.rotation : 0;
       const team = typeof e.params.team === "string" ? e.params.team : "RED";
-      
+
       let solidity: Solidity = "solid";
       if (e.type === "teamBarrier" || e.type === "turret") {
         solidity = team === "RED" ? "teamBLU" : "teamRED";

@@ -21,16 +21,24 @@ function toCharacterData(def: CharacterDef): CharacterData {
   return {
     id: def.id,
     name: def.name,
-    color: def.color,
-    hitbox: def.hitbox,
+    color: def.color ?? "#ffffff",
+    hitbox: def.hitbox ?? { w: 0.8, h: 0.9 },
     stats: def.stats,
-    attack: {
-      damage: def.attack.damage,
-      cooldownTicks: secondsToTicks(def.attack.cooldown),
-      projectileSpeed: def.attack.projectileSpeed,
-      projectileRadius: def.attack.projectileRadius,
-      lifetimeTicks: secondsToTicks(def.attack.projectileLifetime),
-    },
+    attack: def.attack
+      ? {
+          damage: def.attack.damage,
+          cooldownTicks: secondsToTicks(def.attack.cooldown),
+          projectileSpeed: def.attack.projectileSpeed,
+          projectileRadius: def.attack.projectileRadius,
+          lifetimeTicks: secondsToTicks(def.attack.projectileLifetime),
+        }
+      : {
+          damage: 10,
+          cooldownTicks: 30,
+          projectileSpeed: 10,
+          projectileRadius: 0.2,
+          lifetimeTicks: 60,
+        },
   };
 }
 
@@ -86,5 +94,6 @@ export {
   type ParamSpec,
   toEntityData,
 } from "./entities";
+export * from "./heroes";
 export type { CharacterDef, MapDef } from "./schemas";
 export { CharacterDefSchema, MapDefSchema } from "./schemas";

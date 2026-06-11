@@ -44,7 +44,11 @@ if (teamSelect) {
 }
 
 const newGame = (): GameState =>
-  createState(map, [{ playerId: PLAYER_ID, characterId: CHARACTER_ID, team: PLAYER_TEAM }], content);
+  createState(
+    map,
+    [{ playerId: PLAYER_ID, characterId: CHARACTER_ID, team: PLAYER_TEAM }],
+    content,
+  );
 
 let state = newGame();
 let prev = cloneState(state);
@@ -283,7 +287,7 @@ app.ticker.add((ticker) => {
 
   while (accumulator >= DT) {
     prev = cloneState(state);
-    
+
     if (state.gameOver) {
       // Step game over timer instead of running full simulation
       state.gameOver.ticksLeft -= 1;
@@ -298,10 +302,10 @@ app.ticker.add((ticker) => {
       );
       step(state, { [PLAYER_ID]: input }, content);
     }
-    
+
     accumulator -= DT;
   }
-  
+
   const gameOverOverlay = document.getElementById("game-over");
   if (state.gameOver && gameOverOverlay) {
     gameOverOverlay.style.display = "flex";

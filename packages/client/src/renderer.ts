@@ -186,7 +186,12 @@ export class Renderer {
       const y = lerp(before.pos.y, p.pos.y) * TILE_PX;
       const hw = (char.hitbox.w / 2) * TILE_PX;
       const hh = (char.hitbox.h / 2) * TILE_PX;
-      const color = p.team === "RED" ? 0xff4444 : p.team === "BLU" ? 0x4444ff : Number.parseInt(char.color.slice(1), 16);
+      const color =
+        p.team === "RED"
+          ? 0xff4444
+          : p.team === "BLU"
+            ? 0x4444ff
+            : Number.parseInt(char.color.slice(1), 16);
       g.rect(x - hw, y - hh, hw * 2, hh * 2).fill(color);
       // An "eye" marks facing — the placeholder's only anatomy.
       g.circle(x + p.facing * hw * 0.45, y - hh * 0.45, 3.5).fill(0x10142a);
@@ -358,35 +363,50 @@ export class Renderer {
         const range = typeof data.params.range === "number" ? data.params.range : 15;
         let targetPos = null;
         let minDist = range * range;
-        
+
         for (const p of curr.players) {
           if (p.health <= 0 || p.team === team) continue;
-          const dist2 = Math.pow(p.pos.x - data.pos.x, 2) + Math.pow(p.pos.y - data.pos.y, 2);
-          if (dist2 < minDist) { minDist = dist2; targetPos = p.pos; }
+          const dist2 = (p.pos.x - data.pos.x) ** 2 + (p.pos.y - data.pos.y) ** 2;
+          if (dist2 < minDist) {
+            minDist = dist2;
+            targetPos = p.pos;
+          }
         }
         if (curr.droids) {
           for (const d of curr.droids) {
             if (d.health <= 0 || d.team === team) continue;
-            const dist2 = Math.pow(d.pos.x - data.pos.x, 2) + Math.pow(d.pos.y - data.pos.y, 2);
-            if (dist2 < minDist) { minDist = dist2; targetPos = d.pos; }
+            const dist2 = (d.pos.x - data.pos.x) ** 2 + (d.pos.y - data.pos.y) ** 2;
+            if (dist2 < minDist) {
+              minDist = dist2;
+              targetPos = d.pos;
+            }
           }
         }
-        
+
         const startY = y - hh;
         let dx = team === "RED" ? 1 : -1;
         let dy = 0;
         if (targetPos) {
           dx = targetPos.x - data.pos.x;
           dy = targetPos.y - (data.pos.y - data.size.h / 2);
-          const dist = Math.sqrt(dx*dx + dy*dy);
-          if (dist > 0) { dx /= dist; dy /= dist; }
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist > 0) {
+            dx /= dist;
+            dy /= dist;
+          }
         }
-        g.moveTo(x, startY).lineTo(x + dx * 20, startY + dy * 20).stroke({ color: 0xa0a0a0, width: 6, cap: "round" });
+        g.moveTo(x, startY)
+          .lineTo(x + dx * 20, startY + dy * 20)
+          .stroke({ color: 0xa0a0a0, width: 6, cap: "round" });
         g.circle(x, startY, 6).fill(0x555555);
       }
 
       // Draw health bar for destructible entities (turret, core)
-      if (dyn.health !== undefined && (data.type === "turret" || data.type === "core") && !dyn.dead) {
+      if (
+        dyn.health !== undefined &&
+        (data.type === "turret" || data.type === "core") &&
+        !dyn.dead
+      ) {
         const maxHealth = typeof data.params.health === "number" ? data.params.health : 1000;
         this.drawHealthBar(x, y - hh - 12, data.size.w * TILE_PX, dyn.health / maxHealth);
       }

@@ -12,9 +12,9 @@ import type { CharacterData, ContentIndex, MapData } from "./content-types";
 import {
   buyPlayerUpgrade,
   findActiveBaseForPlayer,
+  spawnCreepDrops,
   spawnDroppedPickups,
   spawnPlayerDrops,
-  spawnCreepDrops,
   stepMapEntities,
   triggerTargets,
 } from "./entities";
@@ -315,7 +315,18 @@ function stepProjectiles(state: GameState, map: MapData): void {
 
         const hw = entData.size.w / 2;
         const hh = entData.size.h / 2;
-        if (aabbOverlap(pr.pos.x, pr.pos.y, pr.radius, pr.radius, entData.pos.x, entData.pos.y, hw, hh)) {
+        if (
+          aabbOverlap(
+            pr.pos.x,
+            pr.pos.y,
+            pr.radius,
+            pr.radius,
+            entData.pos.x,
+            entData.pos.y,
+            hw,
+            hh,
+          )
+        ) {
           entDyn.health -= pr.damage;
           if (entDyn.health <= 0) {
             entDyn.dead = true;
@@ -559,8 +570,11 @@ export function stepDroids(state: GameState, map: MapData, content: ContentIndex
 
     for (const p of state.players) {
       if (p.health <= 0 || p.team === d.team) continue;
-      const dist2 = (p.pos.x - d.pos.x)**2 + (p.pos.y - d.pos.y)**2;
-      if (dist2 < minDist) { minDist = dist2; targetPos = p.pos; }
+      const dist2 = (p.pos.x - d.pos.x) ** 2 + (p.pos.y - d.pos.y) ** 2;
+      if (dist2 < minDist) {
+        minDist = dist2;
+        targetPos = p.pos;
+      }
     }
 
     for (let j = 0; j < map.entities.length; j++) {
@@ -569,20 +583,29 @@ export function stepDroids(state: GameState, map: MapData, content: ContentIndex
       if (!data || !dyn || dyn.dead || (data.type !== "turret" && data.type !== "core")) continue;
       const team = typeof data.params.team === "string" ? data.params.team : undefined;
       if (team === d.team) continue;
-      const dist2 = (data.pos.x - d.pos.x)**2 + (data.pos.y - d.pos.y)**2;
-      if (dist2 < minDist) { minDist = dist2; targetPos = data.pos; }
+      const dist2 = (data.pos.x - d.pos.x) ** 2 + (data.pos.y - d.pos.y) ** 2;
+      if (dist2 < minDist) {
+        minDist = dist2;
+        targetPos = data.pos;
+      }
     }
 
     for (const otherD of state.droids) {
       if (otherD.id === d.id || otherD.health <= 0 || otherD.team === d.team) continue;
-      const dist2 = (otherD.pos.x - d.pos.x)**2 + (otherD.pos.y - d.pos.y)**2;
-      if (dist2 < minDist) { minDist = dist2; targetPos = otherD.pos; }
+      const dist2 = (otherD.pos.x - d.pos.x) ** 2 + (otherD.pos.y - d.pos.y) ** 2;
+      if (dist2 < minDist) {
+        minDist = dist2;
+        targetPos = otherD.pos;
+      }
     }
 
     for (const c of state.creeps) {
       if (c.health <= 0) continue;
-      const dist2 = (c.pos.x - d.pos.x)**2 + (c.pos.y - d.pos.y)**2;
-      if (dist2 < minDist) { minDist = dist2; targetPos = c.pos; }
+      const dist2 = (c.pos.x - d.pos.x) ** 2 + (c.pos.y - d.pos.y) ** 2;
+      if (dist2 < minDist) {
+        minDist = dist2;
+        targetPos = c.pos;
+      }
     }
 
     // Walk forward if no target
@@ -592,23 +615,24 @@ export function stepDroids(state: GameState, map: MapData, content: ContentIndex
     if (targetPos) {
       const dx = targetPos.x - d.pos.x;
       const dist = Math.abs(dx);
-      if (dist > 2) { // Shorter attack range
+      if (dist > 2) {
+        // Shorter attack range
         moveDir = Math.sign(dx);
       } else {
         // Attack!
-        d.facing = Math.sign(dx) as 1 | -1 || d.facing;
+        d.facing = (Math.sign(dx) as 1 | -1) || d.facing;
         if (d.attackCooldown === 0) {
           const dy = targetPos.y - d.pos.y;
-          const distFull = Math.sqrt(dx*dx + dy*dy);
+          const distFull = Math.sqrt(dx * dx + dy * dy);
           const pSpeed = 5; // Slow range attack
           state.projectiles.push({
             id: state.nextEntityId++,
             team: d.team,
             pos: { x: d.pos.x, y: d.pos.y },
-            vel: { x: (dx/distFull) * pSpeed, y: (dy/distFull) * pSpeed },
+            vel: { x: (dx / distFull) * pSpeed, y: (dy / distFull) * pSpeed },
             radius: 0.2,
             damage: 20,
-            ticksLeft: 30
+            ticksLeft: 30,
           });
           d.attackCooldown = 60; // 1 second
         }
@@ -621,7 +645,7 @@ export function stepDroids(state: GameState, map: MapData, content: ContentIndex
     if (moveDir !== 0) {
       d.facing = moveDir as 1 | -1;
       d.vel.x = approach(d.vel.x, moveDir * speed, 20 * DT);
-      
+
       // Jump if stuck
       if (d.grounded && Math.abs(d.vel.x) < 0.5) {
         d.vel.y = -12; // Jump force
@@ -633,19 +657,33 @@ export function stepDroids(state: GameState, map: MapData, content: ContentIndex
 
     // Move (very simplified)
     d.vel.y += 30 * DT; // gravity
-    
+
     // Use player move logic by creating mock player and char objects
     const mockP = {
-      id: d.id, characterId: "", team: d.team, pos: d.pos, vel: d.vel,
-      facing: d.facing, grounded: d.grounded, groundNX: 0, groundNY: 0,
-      groundShapeId: d.groundShapeId, groundGlass: false, dropShapeId: "", dropTicks: 0,
-      jumpsUsed: 0, jumpCutApplied: false, attackCooldown: 0, health: d.health,
-      flux: 0, upgrades: { speed: 0, cooldown: 0, damage: 0, jump: 0 }
+      id: d.id,
+      characterId: "",
+      team: d.team,
+      pos: d.pos,
+      vel: d.vel,
+      facing: d.facing,
+      grounded: d.grounded,
+      groundNX: 0,
+      groundNY: 0,
+      groundShapeId: d.groundShapeId,
+      groundGlass: false,
+      dropShapeId: "",
+      dropTicks: 0,
+      jumpsUsed: 0,
+      jumpCutApplied: false,
+      attackCooldown: 0,
+      health: d.health,
+      flux: 0,
+      upgrades: { speed: 0, cooldown: 0, damage: 0, jump: 0 },
     };
     const mockChar = { hitbox: { w: 0.8, h: 0.9 } } as any;
 
     movePlayer(state, map, mockP as PlayerState, mockChar, false);
-    
+
     d.pos.x = mockP.pos.x;
     d.pos.y = mockP.pos.y;
     d.vel.x = mockP.vel.x;
@@ -662,15 +700,18 @@ export function stepCreeps(state: GameState, map: MapData, content: ContentIndex
 
     if (c.health <= 0) {
       // Find the den and start its cooldown
-      const denIdx = map.entities.findIndex(e => e.id === c.denId);
+      const denIdx = map.entities.findIndex((e) => e.id === c.denId);
       if (denIdx !== -1) {
         const denDyn = state.mapEntities[denIdx];
         const denData = map.entities[denIdx];
         if (denDyn && denData) {
-          denDyn.cooldown = typeof denData.params.respawnTimeTicks === "number" ? denData.params.respawnTimeTicks : 1200;
+          denDyn.cooldown =
+            typeof denData.params.respawnTimeTicks === "number"
+              ? denData.params.respawnTimeTicks
+              : 1200;
         }
       }
-      
+
       spawnCreepDrops(state, c.pos);
       state.creeps.splice(i, 1);
       continue;
@@ -686,16 +727,22 @@ export function stepCreeps(state: GameState, map: MapData, content: ContentIndex
       if (p.health <= 0) continue;
       const dx = p.pos.x - c.pos.x;
       const dy = p.pos.y - c.pos.y;
-      const dist2 = dx*dx + dy*dy;
-      if (dist2 < minDist) { minDist = dist2; dangerDir = Math.sign(dx); }
+      const dist2 = dx * dx + dy * dy;
+      if (dist2 < minDist) {
+        minDist = dist2;
+        dangerDir = Math.sign(dx);
+      }
     }
 
     for (const d of state.droids) {
       if (d.health <= 0) continue;
       const dx = d.pos.x - c.pos.x;
       const dy = d.pos.y - c.pos.y;
-      const dist2 = dx*dx + dy*dy;
-      if (dist2 < minDist) { minDist = dist2; dangerDir = Math.sign(dx); }
+      const dist2 = dx * dx + dy * dy;
+      if (dist2 < minDist) {
+        minDist = dist2;
+        dangerDir = Math.sign(dx);
+      }
     }
 
     let speed = 1.0; // Slow walk
@@ -713,14 +760,15 @@ export function stepCreeps(state: GameState, map: MapData, content: ContentIndex
     } else {
       // Just pace back and forth near origin
       moveDir = c.facing;
-      if (c.pos.x > c.origin.x + 4) moveDir = -1; // Increased wander distance to 4
+      if (c.pos.x > c.origin.x + 4)
+        moveDir = -1; // Increased wander distance to 4
       else if (c.pos.x < c.origin.x - 4) moveDir = 1;
     }
 
     if (moveDir !== 0) {
       c.facing = moveDir as 1 | -1;
       c.vel.x = approach(c.vel.x, moveDir * speed, 20 * DT);
-      
+
       // Jump if stuck (same as droids)
       if (c.grounded && Math.abs(c.vel.x) < 0.5 && moveDir === c.facing) {
         c.vel.y = -12; // Jump force
@@ -731,19 +779,33 @@ export function stepCreeps(state: GameState, map: MapData, content: ContentIndex
     }
 
     c.vel.y += 30 * DT; // gravity
-    
+
     // Use player move logic by creating mock player
     const mockP = {
-      id: c.id, characterId: "", team: "NEUTRAL" as any, pos: c.pos, vel: c.vel,
-      facing: c.facing, grounded: c.grounded, groundNX: 0, groundNY: 0,
-      groundShapeId: c.groundShapeId, groundGlass: false, dropShapeId: "", dropTicks: 0,
-      jumpsUsed: 0, jumpCutApplied: false, attackCooldown: 0, health: c.health,
-      flux: 0, upgrades: { speed: 0, cooldown: 0, damage: 0, jump: 0 }
+      id: c.id,
+      characterId: "",
+      team: "NEUTRAL" as any,
+      pos: c.pos,
+      vel: c.vel,
+      facing: c.facing,
+      grounded: c.grounded,
+      groundNX: 0,
+      groundNY: 0,
+      groundShapeId: c.groundShapeId,
+      groundGlass: false,
+      dropShapeId: "",
+      dropTicks: 0,
+      jumpsUsed: 0,
+      jumpCutApplied: false,
+      attackCooldown: 0,
+      health: c.health,
+      flux: 0,
+      upgrades: { speed: 0, cooldown: 0, damage: 0, jump: 0 },
     };
     const mockChar = { hitbox: { w: 0.8, h: 0.9 } } as any;
 
     movePlayer(state, map, mockP as PlayerState, mockChar, false);
-    
+
     c.pos.x = mockP.pos.x;
     c.pos.y = mockP.pos.y;
     c.vel.x = mockP.vel.x;

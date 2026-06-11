@@ -80,13 +80,24 @@ export function triggerOnDestroyed(state: GameState, map: MapData, entityId: str
   }
 }
 
-export function isTargetVisible(state: GameState, map: MapData, targetPos: Vec2, observerTeam: "RED" | "BLU"): boolean {
+export function isTargetVisible(
+  state: GameState,
+  map: MapData,
+  targetPos: Vec2,
+  observerTeam: "RED" | "BLU",
+): boolean {
   for (let i = 0; i < map.entities.length; i++) {
     const data = map.entities[i];
     if (data && data.type === "hideZone" && data.size) {
       const inside = aabbOverlap(
-        data.pos.x, data.pos.y, data.size.w / 2, data.size.h / 2,
-        targetPos.x, targetPos.y, 0.1, 0.1
+        data.pos.x,
+        data.pos.y,
+        data.size.w / 2,
+        data.size.h / 2,
+        targetPos.x,
+        targetPos.y,
+        0.1,
+        0.1,
       );
       if (inside) {
         const dyn = state.mapEntities[i];
@@ -310,28 +321,28 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
         const team = str(data.params, "team") || "RED";
         const range = num(data.params, "range", 15);
         const dps = num(data.params, "dps", 50);
-        
+
         let targetPos: Vec2 | null = null;
         let minDist = range * range;
-        
+
         // Find closest enemy player
         for (const p of state.players) {
           if (p.health <= 0 || p.team === team) continue;
           const dx = p.pos.x - data.pos.x;
           const dy = p.pos.y - data.pos.y;
-          const dist2 = dx*dx + dy*dy;
+          const dist2 = dx * dx + dy * dy;
           if (dist2 < minDist && isTargetVisible(state, map, p.pos, team as any)) {
             minDist = dist2;
             targetPos = p.pos;
           }
         }
-        
+
         // Find closest enemy droid
         for (const d of state.droids) {
           if (d.health <= 0 || d.team === team) continue;
           const dx = d.pos.x - data.pos.x;
           const dy = d.pos.y - data.pos.y;
-          const dist2 = dx*dx + dy*dy;
+          const dist2 = dx * dx + dy * dy;
           if (dist2 < minDist && isTargetVisible(state, map, d.pos, team as any)) {
             minDist = dist2;
             targetPos = d.pos;
@@ -343,7 +354,7 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
           if (c.health <= 0) continue;
           const dx = c.pos.x - data.pos.x;
           const dy = c.pos.y - data.pos.y;
-          const dist2 = dx*dx + dy*dy;
+          const dist2 = dx * dx + dy * dy;
           if (dist2 < minDist && isTargetVisible(state, map, c.pos, team as any)) {
             minDist = dist2;
             targetPos = c.pos;
@@ -356,16 +367,16 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
           // Shoot from the top of the turret (Y axis points down, so subtract half height)
           const startY = data.pos.y - data.size.h / 2;
           const dy = targetPos.y - startY;
-          const dist = Math.sqrt(dx*dx + dy*dy);
+          const dist = Math.sqrt(dx * dx + dy * dy);
           const speed = 20;
           state.projectiles.push({
             id: state.nextEntityId++,
             team: team as any,
             pos: { x: data.pos.x, y: startY },
-            vel: { x: (dx/dist) * speed, y: (dy/dist) * speed },
+            vel: { x: (dx / dist) * speed, y: (dy / dist) * speed },
             radius: 0.3,
             damage: dps * (30 / 60), // assume it shoots every 30 ticks (0.5s)
-            ticksLeft: 60
+            ticksLeft: 60,
           });
           dyn.cooldown = 30; // 0.5s cooldown
         }
@@ -395,7 +406,7 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
             facing: team === "RED" ? 1 : -1,
             grounded: false,
             groundShapeId: "",
-            attackCooldown: 0
+            attackCooldown: 0,
           });
         }
       }
@@ -403,8 +414,8 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
 
     if (data.type === "creepDen") {
       if (dyn.cooldown > 0) dyn.cooldown -= 1;
-      
-      const hasAliveCreep = state.creeps.some(c => c.denId === data.id);
+
+      const hasAliveCreep = state.creeps.some((c) => c.denId === data.id);
       if (!hasAliveCreep && dyn.cooldown <= 0) {
         state.creeps.push({
           id: state.nextEntityId++,
@@ -417,7 +428,7 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
           groundShapeId: "",
           fleeTicks: 0,
           origin: { x: data.pos.x, y: data.pos.y },
-          denId: data.id
+          denId: data.id,
         });
       }
     }

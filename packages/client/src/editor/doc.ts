@@ -17,7 +17,9 @@ export interface MapDoc {
 }
 
 export function docFromDef(def: MapDef): MapDoc {
-  const playerSpawns: [number, number, "RED" | "BLU"][] = (def.playerSpawns ?? []).map(([x, y, team]) => [x, y, team]);
+  const playerSpawns: [number, number, "RED" | "BLU"][] = (def.playerSpawns ?? []).map(
+    ([x, y, team]) => [x, y, team],
+  );
   const dummySpawns: [number, number][] = (def.dummySpawns ?? []).map(([x, y]) => [x, y]);
   const tiles = def.tiles.map((row, y) => {
     let out = "";

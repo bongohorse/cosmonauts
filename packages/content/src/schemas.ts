@@ -4,12 +4,34 @@ import { EntityDefSchema } from "./entities";
 // Authoring units are human-friendly: seconds and tiles (doc 05 §1).
 // The loader converts durations to ticks before the sim ever sees them.
 
+export const UpgradeDefSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  flavor: z.string().optional(),
+  image: z.string().optional(),
+});
+
+export const AbilityDefSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  image: z.string().optional(),
+  stats: z.record(z.string(), z.string()).optional(),
+  upgrades: z.array(UpgradeDefSchema).optional(),
+});
+
 export const CharacterDefSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
-  archetype: z.enum(["shooter", "assassin", "support"]),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-  hitbox: z.object({ w: z.number().positive(), h: z.number().positive() }),
+  lore: z.string().optional(),
+  role: z.string().optional(),
+  archetype: z.enum(["shooter", "assassin", "support"]).optional(),
+  color: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional(),
+  hitbox: z.object({ w: z.number().positive(), h: z.number().positive() }).optional(),
   stats: z.object({
     maxHealth: z.number().positive(),
     moveSpeed: z.number().positive(),
@@ -21,13 +43,16 @@ export const CharacterDefSchema = z.object({
     jumpCutFactor: z.number().min(0).max(1),
     maxFallSpeed: z.number().positive(),
   }),
-  attack: z.object({
-    damage: z.number().positive(),
-    cooldown: z.number().positive(), // seconds
-    projectileSpeed: z.number().positive(),
-    projectileRadius: z.number().positive(),
-    projectileLifetime: z.number().positive(), // seconds
-  }),
+  attack: z
+    .object({
+      damage: z.number().positive(),
+      cooldown: z.number().positive(), // seconds
+      projectileSpeed: z.number().positive(),
+      projectileRadius: z.number().positive(),
+      projectileLifetime: z.number().positive(), // seconds
+    })
+    .optional(),
+  abilities: z.array(AbilityDefSchema).optional(),
 });
 export type CharacterDef = z.infer<typeof CharacterDefSchema>;
 

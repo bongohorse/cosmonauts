@@ -1,7 +1,7 @@
 import { entityTypeSpec } from "@cosmonauts/content";
 import type { ContentIndex, GameState, MapData, Vec2 } from "@cosmonauts/sim";
 import { DUMMY_HEIGHT, DUMMY_WIDTH, isSolid } from "@cosmonauts/sim";
-import { type Application, Container, Graphics } from "pixi.js";
+import { type Application, Container, Graphics, Color } from "pixi.js";
 
 function getRotatedRectPoints(
   cx: number,
@@ -97,7 +97,7 @@ export class Renderer {
     for (const shape of this.map.shapes) {
       const flat = shape.points.flatMap(([x, y]) => [x * TILE_PX, y * TILE_PX]);
       if (flat.length < 4) continue;
-      const tint = shape.tint !== undefined ? Number.parseInt(shape.tint.slice(1), 16) : undefined;
+      const tint = shape.tint !== undefined ? Color.shared.setValue(shape.tint).toNumber() : undefined;
       const glass = shape.solidity === "glass";
       // Team color convention (doc 07 §5): Team A is red, Team B is blue.
       const base =
@@ -192,7 +192,7 @@ export class Renderer {
           ? 0xff4444
           : p.team === "BLU"
             ? 0x4444ff
-            : Number.parseInt(char.color.slice(1), 16);
+            : Color.shared.setValue(char.color).toNumber();
       g.rect(x - hw, y - hh, hw * 2, hh * 2).fill(color);
       // An "eye" marks facing — the placeholder's only anatomy.
       g.circle(x + p.facing * hw * 0.45, y - hh * 0.45, 3.5).fill(0x10142a);
@@ -203,7 +203,7 @@ export class Renderer {
       if (this.showHitboxes) {
         this.debugLayer
           .rect(x - hw, y - hh, hw * 2, hh * 2)
-          .stroke({ color: COLORS.hitbox, width: 1 });
+          .stroke({ color: COLORS.hitbox, width: 1, pixelLine: true });
       }
     }
 
@@ -241,7 +241,7 @@ export class Renderer {
       const hw = (data.size.w / 2) * TILE_PX;
       const hh = (data.size.h / 2) * TILE_PX;
       const spec = entityTypeSpec(data.type);
-      const color = Number.parseInt((data.tint ?? spec?.color ?? "#ffffff").slice(1), 16);
+      const color = Color.shared.setValue(data.tint ?? spec?.color ?? "#ffffff").toNumber();
 
       let finalColor = color;
       if (data.type === "base") {
@@ -306,7 +306,7 @@ export class Renderer {
       }
 
       if (data.tint) {
-        finalColor = Number.parseInt(data.tint.slice(1), 16);
+        finalColor = Color.shared.setValue(data.tint).toNumber();
       }
 
       const rotation = typeof data.params.rotation === "number" ? data.params.rotation : 0;

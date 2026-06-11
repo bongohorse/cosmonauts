@@ -1,5 +1,6 @@
 import { defaultParams, ENTITY_TYPES, type EntityDef, entityTypeSpec } from "@cosmonauts/content";
 import type { ShapeDef, Solidity, Vec2 } from "@cosmonauts/sim";
+import { Color } from "pixi.js";
 import type { Renderer } from "../renderer";
 import { TILE_PX } from "../renderer";
 import {
@@ -1143,7 +1144,7 @@ export class Editor {
     for (const e of this.doc.entities) {
       const [w, h] = this.entitySize(e);
       const spec = entityTypeSpec(e.type);
-      let color = Number.parseInt((e.tint ?? spec?.color ?? "#ffffff").slice(1), 16);
+      let color = Color.shared.setValue(e.tint ?? spec?.color ?? "#ffffff").toNumber();
       if (e.type === "base") {
         const team = typeof e.params?.team === "string" ? e.params.team : "RED";
         color = team === "RED" || team === "A" ? 0xff4d5e : 0x4d7dff;

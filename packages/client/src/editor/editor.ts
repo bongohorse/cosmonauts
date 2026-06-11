@@ -13,7 +13,7 @@ import {
 } from "./doc";
 import { History } from "./history";
 
-type Tool = "select" | "rect" | "polygon" | "spawn" | "dummy" | "entity";
+type Tool = "select" | "rect" | "polygon" | "spawn" | "dummy" | "entity" | "brush";
 
 type Selection =
   | { kind: "shape"; id: string }
@@ -26,7 +26,9 @@ type Drag =
   | { type: "move"; last: Vec2 }
   | { type: "resize"; corner: number }
   | { type: "rotate" }
-  | { type: "draw-rect"; start: Vec2; current: Vec2 };
+  | { type: "draw-rect"; start: Vec2; current: Vec2 }
+  | { type: "paint"; val: string }
+  | { type: "box-select"; start: Vec2; current: Vec2 };
 
 const DEG = Math.PI / 180;
 
@@ -66,14 +68,14 @@ export class Editor {
   doc: MapDoc;
   active = false;
   private tool: Tool = "select";
-  private selection: Selection | null = null;
+  private selection: Selection[] = [];
   private cam = { x: 0, y: 0, scale: 1 };
   private drag: Drag | null = null;
   private draft: [number, number][] = [];
   private mouseWorld: Vec2 = { x: 0, y: 0 };
   private newSolidity: Solidity = "solid";
   private newEntityType = ENTITY_TYPES[0]?.type ?? "jumper";
-  private snap = true;
+  private snapVal: number | null = 0.5;
   private mirrorMode = false;
   private history = new History();
   private linkingField: {
@@ -134,7 +136,7 @@ export class Editor {
 
   private replaceDoc(doc: MapDoc): void {
     this.doc = doc;
-    this.selection = null;
+    this.selection = [];
     this.draft = [];
     this.changed();
     this.refreshInspector();
@@ -144,7 +146,7 @@ export class Editor {
     const prev = this.history.undo(this.doc);
     if (prev !== null) {
       this.doc = prev;
-      this.selection = null;
+      this.selection = [];
       this.changed();
       this.refreshInspector();
     }
@@ -154,7 +156,7 @@ export class Editor {
     const next = this.history.redo(this.doc);
     if (next !== null) {
       this.doc = next;
-      this.selection = null;
+      this.selection = [];
       this.changed();
       this.refreshInspector();
     }
@@ -177,21 +179,24 @@ export class Editor {
   }
 
   private snapPt(v: number): number {
-    return this.snap ? Math.round(v * 2) / 2 : v;
+    return this.snapVal ? Math.round(v / this.snapVal) * this.snapVal : v;
   }
 
   // ---------- selection helpers ----------
 
   private selectedShape(): ShapeDef | null {
-    const sel = this.selection;
-    if (sel === null || sel.kind !== "shape") return null;
-    return this.doc.shapes.find((s) => s.id === sel.id) ?? null;
+    if (this.selection.length !== 1) return null;
+    const sel = this.selection[0];
+    if (!sel) return null;
+    if (sel === undefined || sel.kind !== "shape") return null;
+    return this.doc.shapes.find((s) => s.id === (sel as any).id) ?? null;
   }
 
   private selectedEntity(): EntityDef | null {
-    const sel = this.selection;
-    if (sel === null || sel.kind !== "entity") return null;
-    return this.doc.entities.find((e) => e.id === sel.id) ?? null;
+    if (this.selection.length !== 1) return null;
+    const sel = this.selection[0];
+    if (sel === undefined || sel.kind !== "entity") return null;
+    return this.doc.entities.find((e) => e.id === (sel as any).id) ?? null;
   }
 
   private entityCorners(e: EntityDef): Vec2[] {
@@ -428,12 +433,30 @@ export class Editor {
           }
         }
         const hit = this.hitTest(w);
-        this.selection = hit;
-        this.refreshInspector();
-        if (hit !== null) {
-          this.beginChange();
-          this.drag = { type: "move", last: w };
+        if (e.shiftKey) {
+          if (hit !== null) {
+            const idx = this.selection.findIndex(
+              (s: any) =>
+                s.kind === hit.kind && s.id === (hit as any).id && s.index === (hit as any).index,
+            );
+            if (idx >= 0) this.selection.splice(idx, 1);
+            else this.selection.push(hit);
+          }
+        } else {
+          if (hit === null) {
+            this.selection = [];
+            this.drag = { type: "box-select", start: w, current: w };
+          } else {
+            const has = this.selection.some(
+              (s: any) =>
+                s.kind === hit.kind && s.id === (hit as any).id && s.index === (hit as any).index,
+            );
+            if (!has) this.selection = [hit];
+            this.beginChange();
+            this.drag = { type: "move", last: w };
+          }
         }
+        this.refreshInspector();
         break;
       }
       case "rect":
@@ -467,10 +490,36 @@ export class Editor {
       case "entity":
         this.placeEntity(w);
         break;
+      case "brush":
+        this.beginChange();
+        this.drag = { type: "paint", val: this.newSolidity === "solid" ? "#" : "." };
+        this.paintTile(w, this.drag.val);
+        break;
     }
   }
 
-  private mirrorEntityParams(params: Record<string, any> | undefined): Record<string, any> | undefined {
+  private paintTile(w: Vec2, val: string): void {
+    let modified = false;
+    const paintOne = (tx: number, ty: number) => {
+      if (ty < 0 || ty >= this.doc.tiles.length) return;
+      const row = this.doc.tiles[ty];
+      if (row === undefined || tx < 0 || tx >= row.length) return;
+      if (row[tx] !== val && row[tx] !== "S" && row[tx] !== "D") {
+        this.doc.tiles[ty] = row.substring(0, tx) + val + row.substring(tx + 1);
+        modified = true;
+      }
+    };
+    paintOne(Math.floor(w.x), Math.floor(w.y));
+    if (this.mirrorMode) {
+      const mw = this.doc.tiles[0]?.length ?? 48;
+      paintOne(mw - 1 - Math.floor(w.x), Math.floor(w.y));
+    }
+    if (modified) this.changed();
+  }
+
+  private mirrorEntityParams(
+    params: Record<string, any> | undefined,
+  ): Record<string, any> | undefined {
     if (!params) return params;
     const out = { ...params };
     if (typeof out.team === "string") {
@@ -480,10 +529,10 @@ export class Editor {
       else if (out.team === "B") out.team = "A";
     }
     if (typeof out.rotation === "number") {
-      out.rotation = ((360 - out.rotation) % 360 + 360) % 360;
+      out.rotation = (((360 - out.rotation) % 360) + 360) % 360;
     }
     if (typeof out.direction === "number") {
-      out.direction = ((180 - out.direction) % 360 + 360) % 360;
+      out.direction = (((180 - out.direction) % 360) + 360) % 360;
     }
     if (typeof out.forceX === "number") {
       out.forceX = -out.forceX;
@@ -505,7 +554,7 @@ export class Editor {
       size: [...spec.defaultSize],
       params: defaultParams(spec),
     } as EntityDef);
-    
+
     if (this.mirrorMode) {
       const mw = this.doc.tiles[0]?.length ?? 48;
       const twinId = this.nextEntityId(spec.type);
@@ -517,8 +566,8 @@ export class Editor {
         params: this.mirrorEntityParams(defaultParams(spec)),
       } as EntityDef);
     }
-    
-    this.selection = { kind: "entity", id };
+
+    this.selection = [{ kind: "entity", id }];
     this.tool = "select";
     this.syncToolButtons();
     this.changed();
@@ -543,7 +592,11 @@ export class Editor {
         this.cam.y = drag.camY + (e.clientY - drag.sy);
         break;
       case "draw-rect":
+      case "box-select":
         drag.current = w;
+        break;
+      case "paint":
+        this.paintTile(w, drag.val);
         break;
       case "move": {
         const dx = this.snapPt(w.x) - this.snapPt(drag.last.x);
@@ -595,6 +648,25 @@ export class Editor {
   private pointerUp(e: PointerEvent): void {
     const drag = this.drag;
     this.drag = null;
+    if (drag?.type === "box-select" && e.button === 0) {
+      const minX = Math.min(drag.start.x, drag.current.x);
+      const maxX = Math.max(drag.start.x, drag.current.x);
+      const minY = Math.min(drag.start.y, drag.current.y);
+      const maxY = Math.max(drag.start.y, drag.current.y);
+      if (maxX - minX > 0.1 && maxY - minY > 0.1) {
+        const inBox = (x: number, y: number) => x >= minX && x <= maxX && y >= minY && y <= maxY;
+        this.doc.shapes.forEach((s) => {
+          if (s.kind === "rect" && inBox(s.pos[0], s.pos[1]))
+            this.selection.push({ kind: "shape", id: s.id });
+          else if (s.kind === "polygon" && s.points.some((p) => inBox(p[0], p[1])))
+            this.selection.push({ kind: "shape", id: s.id });
+        });
+        this.doc.entities.forEach((en) => {
+          if (inBox(en.pos[0], en.pos[1])) this.selection.push({ kind: "entity", id: en.id });
+        });
+        this.refreshInspector();
+      }
+    }
     if (drag?.type === "draw-rect" && e.button === 0) {
       const x0 = drag.start.x;
       const y0 = drag.start.y;
@@ -631,7 +703,7 @@ export class Editor {
           });
         }
 
-        this.selection = { kind: "shape", id };
+        this.selection = [{ kind: "shape", id }];
         this.tool = "select";
         this.syncToolButtons();
         this.changed();
@@ -641,65 +713,78 @@ export class Editor {
   }
 
   private moveSelection(dx: number, dy: number): void {
-    const sel = this.selection;
-    if (sel === null) return;
+    if (this.selection.length === 0) return;
     const mw = this.doc.tiles[0]?.length ?? 48;
-    if (sel.kind === "shape") {
-      const s = this.doc.shapes.find((sh) => sh.id === sel.id);
-      if (s) {
-        let twin: ShapeDef | undefined;
-        if (this.mirrorMode && s.kind === "rect") {
-           twin = this.doc.shapes.find(sh => 
-              sh.id !== s.id && sh.kind === "rect" && 
-              Math.abs(sh.pos[0] - (mw - s.pos[0])) < 0.1 && 
-              Math.abs(sh.pos[1] - s.pos[1]) < 0.1
-           );
+    for (const sel of this.selection) {
+      if (sel.kind === "shape") {
+        const s = this.doc.shapes.find((sh) => sh.id === (sel as any).id);
+        if (s) {
+          let twin;
+          if (this.mirrorMode && s.kind === "rect") {
+            twin = this.doc.shapes.find(
+              (sh) =>
+                sh.id !== s.id &&
+                sh.kind === "rect" &&
+                Math.abs(sh.pos[0] - (mw - s.pos[0])) < 0.1 &&
+                Math.abs(sh.pos[1] - s.pos[1]) < 0.1,
+            );
+          }
+          this.translateShape(s, dx, dy);
+          if (twin && !this.selection.some((x: any) => x.id === twin.id))
+            this.translateShape(twin, -dx, dy);
         }
-        this.translateShape(s, dx, dy);
-        if (twin) this.translateShape(twin, -dx, dy);
-      }
-    } else if (sel.kind === "entity") {
-      const e = this.doc.entities.find((en) => en.id === sel.id);
-      if (e) {
-        let twin: EntityDef | undefined;
-        if (this.mirrorMode) {
-           twin = this.doc.entities.find(en => 
-              en.id !== e.id && en.type === e.type && 
-              Math.abs(en.pos[0] - (mw - e.pos[0])) < 0.1 && 
-              Math.abs(en.pos[1] - e.pos[1]) < 0.1
-           );
+      } else if (sel.kind === "entity") {
+        const e = this.doc.entities.find((en) => en.id === (sel as any).id);
+        if (e) {
+          let twin;
+          if (this.mirrorMode) {
+            twin = this.doc.entities.find(
+              (en) =>
+                en.id !== e.id &&
+                en.type === e.type &&
+                Math.abs(en.pos[0] - (mw - e.pos[0])) < 0.1 &&
+                Math.abs(en.pos[1] - e.pos[1]) < 0.1,
+            );
+          }
+          e.pos = [e.pos[0] + dx, e.pos[1] + dy];
+          if (twin && !this.selection.some((x: any) => x.id === twin.id))
+            twin.pos = [twin.pos[0] - dx, twin.pos[1] + dy];
         }
-        e.pos = [e.pos[0] + dx, e.pos[1] + dy];
-        if (twin) twin.pos = [twin.pos[0] - dx, twin.pos[1] + dy];
-      }
-    } else if (sel.kind === "spawn") {
-      const p = this.doc.playerSpawns[sel.index];
-      if (p) {
-        let twinIdx = -1;
-        if (this.mirrorMode) {
-          twinIdx = this.doc.playerSpawns.findIndex((other, idx) => 
-            idx !== sel.index && Math.abs(other[0] - (mw - p[0])) < 0.1 && Math.abs(other[1] - p[1]) < 0.1
-          );
+      } else if (sel.kind === "spawn") {
+        const p = this.doc.playerSpawns[(sel as any).index];
+        if (p) {
+          let twinIdx = -1;
+          if (this.mirrorMode) {
+            twinIdx = this.doc.playerSpawns.findIndex(
+              (other, idx) =>
+                idx !== (sel as any).index &&
+                Math.abs(other[0] - (mw - p[0])) < 0.1 &&
+                Math.abs(other[1] - p[1]) < 0.1,
+            );
+          }
+          this.doc.playerSpawns[(sel as any).index] = [p[0] + dx, p[1] + dy, p[2]];
+          if (twinIdx !== -1 && !this.selection.some((x: any) => x.index === twinIdx)) {
+            const twin = this.doc.playerSpawns[twinIdx];
+            if (twin) this.doc.playerSpawns[twinIdx] = [twin[0] - dx, twin[1] + dy, twin[2]];
+          }
         }
-        this.doc.playerSpawns[sel.index] = [p[0] + dx, p[1] + dy, p[2]];
-        if (twinIdx !== -1) {
-          const twin = this.doc.playerSpawns[twinIdx];
-          if (twin) this.doc.playerSpawns[twinIdx] = [twin[0] - dx, twin[1] + dy, twin[2]];
-        }
-      }
-    } else {
-      const p = this.doc.dummySpawns[sel.index];
-      if (p) {
-        let twinIdx = -1;
-        if (this.mirrorMode) {
-          twinIdx = this.doc.dummySpawns.findIndex((other, idx) => 
-            idx !== sel.index && Math.abs(other[0] - (mw - p[0])) < 0.1 && Math.abs(other[1] - p[1]) < 0.1
-          );
-        }
-        this.doc.dummySpawns[sel.index] = [p[0] + dx, p[1] + dy];
-        if (twinIdx !== -1) {
-          const twin = this.doc.dummySpawns[twinIdx];
-          if (twin) this.doc.dummySpawns[twinIdx] = [twin[0] - dx, twin[1] + dy];
+      } else {
+        const p = this.doc.dummySpawns[(sel as any).index];
+        if (p) {
+          let twinIdx = -1;
+          if (this.mirrorMode) {
+            twinIdx = this.doc.dummySpawns.findIndex(
+              (other, idx) =>
+                idx !== (sel as any).index &&
+                Math.abs(other[0] - (mw - p[0])) < 0.1 &&
+                Math.abs(other[1] - p[1]) < 0.1,
+            );
+          }
+          this.doc.dummySpawns[(sel as any).index] = [p[0] + dx, p[1] + dy];
+          if (twinIdx !== -1 && !this.selection.some((x: any) => x.index === twinIdx)) {
+            const twin = this.doc.dummySpawns[twinIdx];
+            if (twin) this.doc.dummySpawns[twinIdx] = [twin[0] - dx, twin[1] + dy];
+          }
         }
       }
     }
@@ -732,9 +817,9 @@ export class Editor {
     const dy = w.y - s.pos[1];
     let lx = dx * c + dy * n;
     let ly = -dx * n + dy * c;
-    if (this.snap) {
-      lx = Math.round(lx * 2) / 2;
-      ly = Math.round(ly * 2) / 2;
+    if (this.snapVal !== null) {
+      lx = Math.round(lx / this.snapVal) * this.snapVal;
+      ly = Math.round(ly / this.snapVal) * this.snapVal;
     }
     // Opposite corner stays fixed.
     const signs: [number, number][] = [
@@ -777,9 +862,9 @@ export class Editor {
     const dy = w.y - e.pos[1];
     let lx = dx * c + dy * n;
     let ly = -dx * n + dy * c;
-    if (this.snap) {
-      lx = Math.round(lx * 2) / 2;
-      ly = Math.round(ly * 2) / 2;
+    if (this.snapVal !== null) {
+      lx = Math.round(lx / this.snapVal) * this.snapVal;
+      ly = Math.round(ly / this.snapVal) * this.snapVal;
     }
     // Opposite corner stays fixed.
     const signs: [number, number][] = [
@@ -824,7 +909,7 @@ export class Editor {
       });
     }
     this.draft = [];
-    this.selection = { kind: "shape", id };
+    this.selection = [{ kind: "shape", id }];
     this.tool = "select";
     this.syncToolButtons();
     this.changed();
@@ -838,19 +923,63 @@ export class Editor {
   }
 
   private deleteSelection(): void {
-    const sel = this.selection;
-    if (sel === null) return;
+    if (this.selection.length === 0) return;
     this.beginChange();
-    if (sel.kind === "shape") {
-      this.doc.shapes = this.doc.shapes.filter((s) => s.id !== sel.id);
-    } else if (sel.kind === "entity") {
-      this.doc.entities = this.doc.entities.filter((e) => e.id !== sel.id);
-    } else if (sel.kind === "spawn") {
-      if (this.doc.playerSpawns.length > 1) this.doc.playerSpawns.splice(sel.index, 1);
-    } else {
-      this.doc.dummySpawns.splice(sel.index, 1);
+    for (const sel of this.selection) {
+      if (sel.kind === "shape") {
+        this.doc.shapes = this.doc.shapes.filter((s) => s.id !== (sel as any).id);
+      } else if (sel.kind === "entity") {
+        this.doc.entities = this.doc.entities.filter((e) => e.id !== (sel as any).id);
+      } else if (sel.kind === "spawn") {
+        if (this.doc.playerSpawns.length > 1) this.doc.playerSpawns.splice((sel as any).index, 1);
+      } else {
+        this.doc.dummySpawns.splice((sel as any).index, 1);
+      }
     }
-    this.selection = null;
+    this.selection = [];
+    this.changed();
+    this.refreshInspector();
+  }
+
+  private duplicateSelection(): void {
+    if (this.selection.length === 0) return;
+    this.beginChange();
+    const newSel: Selection[] = [];
+    for (const sel of this.selection) {
+      if (sel.kind === "shape") {
+        const s = this.doc.shapes.find((x: any) => x.id === (sel as any).id);
+        if (s) {
+          const copy = JSON.parse(JSON.stringify(s));
+          copy.id = this.nextShapeId();
+          this.translateShape(copy, 0.5, 0.5);
+          this.doc.shapes.push(copy);
+          newSel.push({ kind: "shape", id: copy.id } as Selection);
+        }
+      } else if (sel.kind === "entity") {
+        const e = this.doc.entities.find((x: any) => x.id === (sel as any).id);
+        if (e) {
+          const copy = JSON.parse(JSON.stringify(e));
+          copy.id = this.nextEntityId(e.type);
+          copy.pos[0] += 0.5;
+          copy.pos[1] += 0.5;
+          this.doc.entities.push(copy);
+          newSel.push({ kind: "entity", id: copy.id } as Selection);
+        }
+      } else if (sel.kind === "spawn") {
+        const p = this.doc.playerSpawns[(sel as any).index];
+        if (p) {
+          this.doc.playerSpawns.push([p[0] + 0.5, p[1] + 0.5, p[2]]);
+          newSel.push({ kind: "spawn", index: this.doc.playerSpawns.length - 1 } as Selection);
+        }
+      } else {
+        const d = this.doc.dummySpawns[(sel as any).index];
+        if (d) {
+          this.doc.dummySpawns.push([d[0] + 0.5, d[1] + 0.5]);
+          newSel.push({ kind: "dummy", index: this.doc.dummySpawns.length - 1 } as Selection);
+        }
+      }
+    }
+    this.selection = newSel;
     this.changed();
     this.refreshInspector();
   }
@@ -864,16 +993,19 @@ export class Editor {
       if (e.code === "Delete" || e.code === "Backspace") this.deleteSelection();
       else if (e.code === "Escape") {
         this.draft = [];
-        this.selection = null;
+        this.selection = [];
         this.refreshInspector();
       } else if (e.code === "Enter") this.finishDraft();
       else if (e.code === "KeyG") {
-        this.snap = !this.snap;
+        this.snapVal = this.snapVal === null ? 0.5 : null;
         this.updateStatus();
       } else if (e.code === "KeyM") {
         this.mirrorMode = !this.mirrorMode;
         this.updateStatus();
         this.syncToolButtons();
+      } else if ((e.ctrlKey || e.metaKey) && e.code === "KeyD") {
+        e.preventDefault();
+        this.duplicateSelection();
       } else if ((e.ctrlKey || e.metaKey) && e.code === "KeyZ" && !e.shiftKey) {
         e.preventDefault();
         this.undo();
@@ -1034,87 +1166,97 @@ export class Editor {
       for (const [x, y] of this.draft) g.circle(px(x), px(y), lw(4)).fill(0xffd166);
     }
 
-    // Rect-draw preview.
-    if (this.drag?.type === "draw-rect") {
+    // Rect-draw or box-select preview.
+    if (this.drag?.type === "draw-rect" || this.drag?.type === "box-select") {
       const { start, current } = this.drag;
+      const isBox = this.drag.type === "box-select";
       g.rect(
         px(Math.min(start.x, current.x)),
         px(Math.min(start.y, current.y)),
         px(Math.abs(current.x - start.x)),
         px(Math.abs(current.y - start.y)),
-      ).stroke({ color: 0xffd166, width: lw(2) });
+      ).stroke({ color: isBox ? 0x7df9ff : 0xffd166, width: lw(2) });
+      if (isBox) {
+        g.rect(
+          px(Math.min(start.x, current.x)),
+          px(Math.min(start.y, current.y)),
+          px(Math.abs(current.x - start.x)),
+          px(Math.abs(current.y - start.y)),
+        ).fill({ color: 0x7df9ff, alpha: 0.1 });
+      }
     }
 
     // Selection.
-    const sel = this.selection;
-    if (sel?.kind === "shape") {
-      const s = this.doc.shapes.find((sh) => sh.id === sel.id);
-      if (s) this.drawShapeSelection(g, s, lw);
-    } else if (sel?.kind === "entity") {
-      const e = this.doc.entities.find((en) => en.id === sel.id);
-      if (e) {
-        const SEL = 0xff2bd6;
-        const corners = this.entityCorners(e);
-        const c0 = corners[0];
-        const c1 = corners[1];
-        if (c0 && c1) {
-          g.moveTo(px(c0.x), px(c0.y));
-          for (const c of corners.slice(1)) g.lineTo(px(c.x), px(c.y));
-          g.lineTo(px(c0.x), px(c0.y));
-          g.stroke({ color: SEL, width: lw(2) });
-          for (const c of corners) {
-            g.rect(px(c.x) - lw(5), px(c.y) - lw(5), lw(10), lw(10)).fill(0xffffff);
+    for (const sel of this.selection) {
+      if (sel?.kind === "shape") {
+        const s = this.doc.shapes.find((sh) => sh.id === (sel as any).id);
+        if (s) this.drawShapeSelection(g, s, lw);
+      } else if (sel?.kind === "entity") {
+        const e = this.doc.entities.find((en) => en.id === (sel as any).id);
+        if (e) {
+          const SEL = 0xff2bd6;
+          const corners = this.entityCorners(e);
+          const c0 = corners[0];
+          const c1 = corners[1];
+          if (c0 && c1) {
+            g.moveTo(px(c0.x), px(c0.y));
+            for (const c of corners.slice(1)) g.lineTo(px(c.x), px(c.y));
+            g.lineTo(px(c0.x), px(c0.y));
+            g.stroke({ color: SEL, width: lw(2) });
+            for (const c of corners) {
+              g.rect(px(c.x) - lw(5), px(c.y) - lw(5), lw(10), lw(10)).fill(0xffffff);
+            }
+            const rh = this.entityRotateHandlePos(e);
+            g.moveTo(px((c0.x + c1.x) / 2), px((c0.y + c1.y) / 2))
+              .lineTo(px(rh.x), px(rh.y))
+              .stroke({ color: SEL, width: lw(1) });
+            g.circle(px(rh.x), px(rh.y), lw(6)).fill(SEL);
           }
-          const rh = this.entityRotateHandlePos(e);
-          g.moveTo(px((c0.x + c1.x) / 2), px((c0.y + c1.y) / 2))
-            .lineTo(px(rh.x), px(rh.y))
-            .stroke({ color: SEL, width: lw(1) });
-          g.circle(px(rh.x), px(rh.y), lw(6)).fill(SEL);
-        }
 
-        // Draw connection lines to linked entities
-        const spec = entityTypeSpec(e.type);
-        const targetIds = new Set<string>();
-        if (e.targets) {
-          for (const t of e.targets) {
-            if (t) targetIds.add(t);
+          // Draw connection lines to linked entities
+          const spec = entityTypeSpec(e.type);
+          const targetIds = new Set<string>();
+          if (e.targets) {
+            for (const t of e.targets) {
+              if (t) targetIds.add(t);
+            }
           }
-        }
-        if (e.onDestroyed) {
-          for (const t of e.onDestroyed) {
-            if (t) targetIds.add(t);
+          if (e.onDestroyed) {
+            for (const t of e.onDestroyed) {
+              if (t) targetIds.add(t);
+            }
           }
-        }
-        if (spec) {
-          for (const [key, p] of Object.entries(spec.params)) {
-            if (p.kind === "entityId") {
-              const val = e.params?.[key];
-              if (typeof val === "string" && val) {
-                targetIds.add(val);
+          if (spec) {
+            for (const [key, p] of Object.entries(spec.params)) {
+              if (p.kind === "entityId") {
+                const val = e.params?.[key];
+                if (typeof val === "string" && val) {
+                  targetIds.add(val);
+                }
               }
             }
           }
-        }
-        for (const tid of targetIds) {
-          const t = this.doc.entities.find((en) => en.id === tid);
-          if (t) {
-            g.moveTo(px(e.pos[0]), px(e.pos[1]))
-              .lineTo(px(t.pos[0]), px(t.pos[1]))
-              .stroke({ color: SEL, width: lw(2), alpha: 0.7 });
-            g.circle(px(t.pos[0]), px(t.pos[1]), px(0.15)).fill({ color: SEL, alpha: 0.9 });
+          for (const tid of targetIds) {
+            const t = this.doc.entities.find((en) => en.id === tid);
+            if (t) {
+              g.moveTo(px(e.pos[0]), px(e.pos[1]))
+                .lineTo(px(t.pos[0]), px(t.pos[1]))
+                .stroke({ color: SEL, width: lw(2), alpha: 0.7 });
+              g.circle(px(t.pos[0]), px(t.pos[1]), px(0.15)).fill({ color: SEL, alpha: 0.9 });
+            }
           }
         }
+      } else if (sel?.kind === "spawn") {
+        const p = this.doc.playerSpawns[(sel as any).index];
+        if (p) g.circle(px(p[0]), px(p[1]), px(0.5)).stroke({ color: 0xffffff, width: lw(2) });
+      } else if (sel?.kind === "dummy") {
+        const p = this.doc.dummySpawns[(sel as any).index];
+        if (p)
+          g.rect(px(p[0]) - px(0.4), px(p[1]) - px(0.55), px(0.8), px(1.1)).stroke({
+            color: 0xffffff,
+            width: lw(2),
+          });
       }
-    } else if (sel?.kind === "spawn") {
-      const p = this.doc.playerSpawns[sel.index];
-      if (p) g.circle(px(p[0]), px(p[1]), px(0.5)).stroke({ color: 0xffffff, width: lw(2) });
-    } else if (sel?.kind === "dummy") {
-      const p = this.doc.dummySpawns[sel.index];
-      if (p)
-        g.rect(px(p[0]) - px(0.4), px(p[1]) - px(0.55), px(0.8), px(1.1)).stroke({
-          color: 0xffffff,
-          width: lw(2),
-        });
     }
 
     this.updateStatus();
@@ -1175,6 +1317,7 @@ export class Editor {
 
     const tools: [Tool, string][] = [
       ["select", "Select (V)"],
+      ["brush", "Tile Brush (solid/none)"],
       ["rect", "Rect"],
       ["polygon", "Polygon (dblclick/Enter to close)"],
       ["spawn", "Spawn"],
@@ -1227,11 +1370,14 @@ export class Editor {
     }
 
     const actions: [string, () => void][] = [
-      ["mirror (M)", () => {
-        this.mirrorMode = !this.mirrorMode;
-        this.updateStatus();
-        this.syncToolButtons();
-      }],
+      [
+        "mirror (M)",
+        () => {
+          this.mirrorMode = !this.mirrorMode;
+          this.updateStatus();
+          this.syncToolButtons();
+        },
+      ],
       ["undo", () => this.undo()],
       ["redo", () => this.redo()],
       ["export", () => this.exportJson()],
@@ -1245,6 +1391,21 @@ export class Editor {
       b.addEventListener("click", fn);
       bar.appendChild(b);
     }
+
+    const snapSelect = document.createElement("select");
+    snapSelect.title = "grid snap";
+    for (const v of [1.0, 0.5, 0.25, 0.1, 0]) {
+      const o = document.createElement("option");
+      o.value = v.toString();
+      o.textContent = v === 0 ? "snap: OFF" : `snap: ${v}`;
+      if (v === 0.5) o.selected = true;
+      snapSelect.appendChild(o);
+    }
+    snapSelect.addEventListener("change", () => {
+      this.snapVal = parseFloat(snapSelect.value) || null;
+      this.updateStatus();
+    });
+    bar.appendChild(snapSelect);
 
     const status = document.createElement("span");
     status.id = "editorstatus";
@@ -1287,8 +1448,8 @@ export class Editor {
 
   private validateMap(): string[] {
     const warnings: string[] = [];
-    const redSpawns = this.doc.playerSpawns.filter(p => p[2] === "RED").length;
-    const bluSpawns = this.doc.playerSpawns.filter(p => p[2] === "BLU").length;
+    const redSpawns = this.doc.playerSpawns.filter((p) => p[2] === "RED").length;
+    const bluSpawns = this.doc.playerSpawns.filter((p) => p[2] === "BLU").length;
     if (redSpawns === 0) warnings.push("Missing RED player spawn");
     if (bluSpawns === 0) warnings.push("Missing BLU player spawn");
 
@@ -1307,8 +1468,8 @@ export class Editor {
     }
 
     const allIds = new Set<string>();
-    this.doc.shapes.forEach(s => allIds.add(s.id));
-    this.doc.entities.forEach(e => allIds.add(e.id));
+    this.doc.shapes.forEach((s) => allIds.add(s.id));
+    this.doc.entities.forEach((e) => allIds.add(e.id));
 
     for (const e of this.doc.entities) {
       const checkIds = (ids: string[] | undefined, name: string) => {
@@ -1319,7 +1480,7 @@ export class Editor {
       };
       checkIds(e.targets, "target");
       checkIds(e.onDestroyed, "onDestroyed");
-      
+
       const spec = entityTypeSpec(e.type);
       if (spec && e.params) {
         for (const [key, p] of Object.entries(spec.params)) {
@@ -1336,7 +1497,7 @@ export class Editor {
   }
 
   private updateStatus(): void {
-    this.statusEl.textContent = ` snap ${this.snap ? "on" : "off"} (G) · zoom ${this.cam.scale.toFixed(2)} · Tab to play`;
+    this.statusEl.textContent = ` zoom ${this.cam.scale.toFixed(2)} · Tab to play`;
     const warnings = this.validateMap();
     if (warnings.length > 0) {
       this.warningsEl.textContent = ` ⚠️ ${warnings.join(" · ")}`;
@@ -1350,10 +1511,9 @@ export class Editor {
   }
 
   private refreshInspector(): void {
-    const sel = this.selection;
     const panel = this.inspector;
     panel.innerHTML = "";
-    if (!this.active || sel === null) {
+    if (!this.active || this.selection.length === 0) {
       panel.style.display = "none";
       if (this.renderer.canvasElement) {
         this.renderer.canvasElement.style.cursor = "default";
@@ -1367,12 +1527,21 @@ export class Editor {
         this.linkingField !== null ? "crosshair" : "default";
     }
 
+    if (this.selection.length > 1) {
+      const heading = document.createElement("h4");
+      heading.textContent = `${this.selection.length} items selected`;
+      panel.appendChild(heading);
+      return;
+    }
+    const sel = this.selection[0];
+    if (!sel) return;
+
     // Position panel near the selected item
     let targetPos: { x: number; y: number } | null = null;
     let targetSize = { w: 1, h: 1 };
 
     if (sel.kind === "shape") {
-      const s = this.doc.shapes.find((sh) => sh.id === sel.id);
+      const s = this.doc.shapes.find((sh) => sh.id === (sel as any).id);
       if (s) {
         if (s.kind === "rect") {
           targetPos = { x: s.pos[0], y: s.pos[1] };
@@ -1396,20 +1565,20 @@ export class Editor {
         }
       }
     } else if (sel.kind === "entity") {
-      const e = this.doc.entities.find((en) => en.id === sel.id);
+      const e = this.doc.entities.find((en) => en.id === (sel as any).id);
       if (e) {
         const [w, h] = this.entitySize(e);
         targetPos = { x: e.pos[0], y: e.pos[1] };
         targetSize = { w, h };
       }
     } else if (sel.kind === "spawn") {
-      const p = this.doc.playerSpawns[sel.index];
+      const p = this.doc.playerSpawns[(sel as any).index];
       if (p) {
         targetPos = { x: p[0], y: p[1] };
         targetSize = { w: 1, h: 1.6 };
       }
     } else if (sel.kind === "dummy") {
-      const p = this.doc.dummySpawns[sel.index];
+      const p = this.doc.dummySpawns[(sel as any).index];
       if (p) {
         targetPos = { x: p[0], y: p[1] };
         targetSize = { w: 1, h: 2 };
@@ -1455,7 +1624,7 @@ export class Editor {
     const datalist = document.createElement("datalist");
     datalist.id = "entity-ids-list";
     for (const other of this.doc.entities) {
-      if (sel.kind === "entity" && other.id === sel.id) continue;
+      if (sel.kind === "entity" && other.id === (sel as any).id) continue;
       const opt = document.createElement("option");
       opt.value = other.id;
       datalist.appendChild(opt);
@@ -1479,9 +1648,33 @@ export class Editor {
     panel.appendChild(heading);
 
     if (sel.kind === "shape") {
-      const s = this.doc.shapes.find((sh) => sh.id === sel.id);
+      const s = this.doc.shapes.find((sh) => sh.id === (sel as any).id);
       if (!s) return;
       heading.textContent = `${s.kind} · ${s.id}`;
+
+      const layerControls = document.createElement("div");
+      layerControls.style.display = "flex";
+      layerControls.style.gap = "4px";
+      layerControls.style.marginBottom = "8px";
+      const btnBack = document.createElement("button");
+      btnBack.textContent = "to back";
+      btnBack.addEventListener("click", () => {
+        this.beginChange();
+        this.doc.shapes = this.doc.shapes.filter((x) => x.id !== s.id);
+        this.doc.shapes.unshift(s);
+        this.changed();
+      });
+      const btnFront = document.createElement("button");
+      btnFront.textContent = "to front";
+      btnFront.addEventListener("click", () => {
+        this.beginChange();
+        this.doc.shapes = this.doc.shapes.filter((x) => x.id !== s.id);
+        this.doc.shapes.push(s);
+        this.changed();
+      });
+      layerControls.appendChild(btnBack);
+      layerControls.appendChild(btnFront);
+      panel.appendChild(layerControls);
 
       const solLabel = document.createElement("label");
       solLabel.textContent = "solidity";
@@ -1533,10 +1726,34 @@ export class Editor {
         panel.appendChild(rotLabel);
       }
     } else if (sel.kind === "entity") {
-      const e = this.doc.entities.find((en) => en.id === sel.id);
+      const e = this.doc.entities.find((en) => en.id === (sel as any).id);
       if (!e) return;
       const spec = entityTypeSpec(e.type);
       heading.textContent = `${spec?.label ?? e.type} · ${e.id}`;
+
+      const layerControls = document.createElement("div");
+      layerControls.style.display = "flex";
+      layerControls.style.gap = "4px";
+      layerControls.style.marginBottom = "8px";
+      const btnBack = document.createElement("button");
+      btnBack.textContent = "to back";
+      btnBack.addEventListener("click", () => {
+        this.beginChange();
+        this.doc.entities = this.doc.entities.filter((x) => x.id !== e.id);
+        this.doc.entities.unshift(e);
+        this.changed();
+      });
+      const btnFront = document.createElement("button");
+      btnFront.textContent = "to front";
+      btnFront.addEventListener("click", () => {
+        this.beginChange();
+        this.doc.entities = this.doc.entities.filter((x) => x.id !== e.id);
+        this.doc.entities.push(e);
+        this.changed();
+      });
+      layerControls.appendChild(btnBack);
+      layerControls.appendChild(btnFront);
+      panel.appendChild(layerControls);
 
       const enLabel = document.createElement("label");
       enLabel.textContent = "enabled";
@@ -1756,7 +1973,7 @@ export class Editor {
     } else {
       heading.textContent = sel.kind === "spawn" ? "player spawn" : "dummy";
       if (sel.kind === "spawn") {
-        const p = this.doc.playerSpawns[sel.index];
+        const p = this.doc.playerSpawns[(sel as any).index];
         if (p) {
           const teamLabel = document.createElement("label");
           teamLabel.textContent = "team";

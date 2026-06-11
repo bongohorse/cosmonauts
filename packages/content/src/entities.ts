@@ -201,6 +201,22 @@ export const ENTITY_TYPES: EntityTypeSpec[] = [
       count: { kind: "number", label: "count", default: 2, min: 1, max: 10 },
     },
   },
+  {
+    type: "hideZone",
+    label: "Hide Zone",
+    color: "#2a5c36",
+    defaultSize: [4, 3],
+    params: {},
+  },
+  {
+    type: "creepDen",
+    label: "Creep Den",
+    color: "#7a5c36",
+    defaultSize: [2, 2],
+    params: {
+      respawnTime: { kind: "duration", label: "respawn s", default: 20 },
+    },
+  },
 ];
 
 export function entityTypeSpec(type: string): EntityTypeSpec | undefined {

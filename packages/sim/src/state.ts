@@ -71,6 +71,8 @@ export interface MapEntityState {
   timerElapsed?: number;
   health?: number;
   dead?: boolean;
+  visionRED?: boolean; // True if RED team has vision of this hideZone
+  visionBLU?: boolean; // True if BLU team has vision of this hideZone
 }
 
 export interface DummyState {
@@ -95,6 +97,20 @@ export interface DroidState {
   attackCooldown: number;
 }
 
+export interface CreepState {
+  id: number;
+  pos: Vec2;
+  vel: Vec2;
+  health: number;
+  maxHealth: number;
+  facing: 1 | -1;
+  grounded: boolean;
+  groundShapeId: string;
+  fleeTicks: number; // Ticks remaining in flee mode
+  origin: Vec2;      // Where the creep den is, to bound their pacing
+  denId: string;     // ID of the creepDen that spawned this creep
+}
+
 /** Plain JSON-compatible data, by design (doc 02 §1). No classes, no Maps. */
 export interface GameState {
   tick: number;
@@ -107,6 +123,7 @@ export interface GameState {
   mapEntities: MapEntityState[]; // index-aligned with map.entities
   pickups: LivePickupState[];
   droids: DroidState[];
+  creeps: CreepState[];
   gameOver?: { winner: Team; ticksLeft: number };
 }
 
@@ -149,6 +166,7 @@ export function createState(map: MapData, spawns: SpawnSpec[], content: ContentI
     }),
     pickups: [],
     droids: [],
+    creeps: [],
   };
 
   for (let i = 0; i < spawns.length; i++) {

@@ -161,6 +161,23 @@ export class Renderer {
       }
     }
 
+    if (curr.creeps) {
+      const prevCreeps = new Map(prev.creeps?.map((c) => [c.id, c]) ?? []);
+      for (const c of curr.creeps) {
+        const before = prevCreeps.get(c.id) ?? c;
+        const x = lerp(before.pos.x, c.pos.x) * TILE_PX;
+        const y = lerp(before.pos.y, c.pos.y) * TILE_PX;
+        const hw = 0.4 * TILE_PX;
+        const hh = 0.45 * TILE_PX;
+        const color = 0x8b5a2b; // Brown-ish creep color
+        g.rect(x - hw, y - hh, hw * 2, hh * 2).fill(color);
+        g.circle(x + c.facing * hw * 0.45, y - hh * 0.45, 3.5).fill(0x10142a);
+        if (c.health > 0) {
+          this.drawHealthBar(x, y - hh - 8, 0.8 * TILE_PX, c.health / c.maxHealth);
+        }
+      }
+    }
+
     for (const p of curr.players) {
       const char = this.content.characters[p.characterId];
       if (char === undefined) continue;
@@ -228,6 +245,17 @@ export class Renderer {
       let alpha = dyn.enabled ? 0.4 : 0.15;
       let strokeAlpha = dyn.enabled ? 0.6 : 0.2;
       let strokeWidth = 1;
+
+      if (data.type === "hideZone") {
+        const myTeam = curr.players[0]?.team;
+        let hasVision = false;
+        if (myTeam === "RED" && dyn.visionRED) hasVision = true;
+        if (myTeam === "BLU" && dyn.visionBLU) hasVision = true;
+
+        alpha = hasVision ? 0.2 : 1.0;
+        strokeAlpha = hasVision ? 0.4 : 1.0;
+        finalColor = 0x1a1e29; // Very dark green/grey like bushes
+      }
 
       if (data.type === "teamBarrier") {
         const team = typeof data.params.team === "string" ? data.params.team : "RED";

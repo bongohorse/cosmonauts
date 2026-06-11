@@ -80,6 +80,24 @@ export function triggerOnDestroyed(state: GameState, map: MapData, entityId: str
   }
 }
 
+export function isTargetVisible(state: GameState, map: MapData, targetPos: Vec2, observerTeam: "RED" | "BLU"): boolean {
+  for (let i = 0; i < map.entities.length; i++) {
+    const data = map.entities[i];
+    if (data && data.type === "hideZone" && data.size) {
+      const inside = aabbOverlap(
+        data.pos.x, data.pos.y, data.size.w / 2, data.size.h / 2,
+        targetPos.x, targetPos.y, 0.1, 0.1
+      );
+      if (inside) {
+        const dyn = state.mapEntities[i];
+        if (observerTeam === "RED" && !dyn?.visionRED) return false;
+        if (observerTeam === "BLU" && !dyn?.visionBLU) return false;
+      }
+    }
+  }
+  return true;
+}
+
 /**
  * The shared trigger-volume system (doc 07 §1, §5): every wave-1 entity is an
  * axis-aligned box plus one effect against players standing inside it.
@@ -194,6 +212,11 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
       continue;
     }
 
+    if (data.type === "hideZone") {
+      dyn.visionRED = false;
+      dyn.visionBLU = false;
+    }
+
     for (const p of state.players) {
       if (!dyn.enabled) break;
       const char = content.characters[p.characterId];
@@ -209,10 +232,15 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
         char.hitbox.h / 2,
       );
       if (inside) {
-        const oldHealth = p.health;
-        applyEntity(state, map, data, dyn, p, char.stats.maxHealth);
-        if (oldHealth > 0 && p.health <= 0) {
-          spawnPlayerDrops(state, p.pos, undefined);
+        if (data.type === "hideZone") {
+          if (p.team === "RED") dyn.visionRED = true;
+          if (p.team === "BLU") dyn.visionBLU = true;
+        } else {
+          const oldHealth = p.health;
+          applyEntity(state, map, data, dyn, p, char.stats.maxHealth);
+          if (oldHealth > 0 && p.health <= 0) {
+            spawnPlayerDrops(state, p.pos, undefined);
+          }
         }
       }
     }
@@ -232,11 +260,16 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
         0.45, // droid half-height
       );
       if (inside) {
-        const mockP = d as unknown as PlayerState;
-        const oldHealth = mockP.health;
-        applyEntity(state, map, data, dyn, mockP, d.maxHealth);
-        if (oldHealth > 0 && mockP.health <= 0) {
-          spawnDroppedPickups(state, d.pos, undefined);
+        if (data.type === "hideZone") {
+          if (d.team === "RED") dyn.visionRED = true;
+          if (d.team === "BLU") dyn.visionBLU = true;
+        } else {
+          const mockP = d as unknown as PlayerState;
+          const oldHealth = mockP.health;
+          applyEntity(state, map, data, dyn, mockP, d.maxHealth);
+          if (oldHealth > 0 && mockP.health <= 0) {
+            spawnDroppedPickups(state, d.pos, undefined);
+          }
         }
       }
     }
@@ -264,7 +297,7 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
           const dx = p.pos.x - data.pos.x;
           const dy = p.pos.y - data.pos.y;
           const dist2 = dx*dx + dy*dy;
-          if (dist2 < minDist) {
+          if (dist2 < minDist && isTargetVisible(state, map, p.pos, team as any)) {
             minDist = dist2;
             targetPos = p.pos;
           }
@@ -276,7 +309,7 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
           const dx = d.pos.x - data.pos.x;
           const dy = d.pos.y - data.pos.y;
           const dist2 = dx*dx + dy*dy;
-          if (dist2 < minDist) {
+          if (dist2 < minDist && isTargetVisible(state, map, d.pos, team as any)) {
             minDist = dist2;
             targetPos = d.pos;
           }
@@ -330,6 +363,27 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
             attackCooldown: 0
           });
         }
+      }
+    }
+
+    if (data.type === "creepDen") {
+      if (dyn.cooldown > 0) dyn.cooldown -= 1;
+      
+      const hasAliveCreep = state.creeps.some(c => c.denId === data.id);
+      if (!hasAliveCreep && dyn.cooldown <= 0) {
+        state.creeps.push({
+          id: state.nextEntityId++,
+          pos: { x: data.pos.x, y: data.pos.y },
+          vel: { x: 0, y: 0 },
+          health: 400,
+          maxHealth: 400,
+          facing: 1,
+          grounded: false,
+          groundShapeId: "",
+          fleeTicks: 0,
+          origin: { x: data.pos.x, y: data.pos.y },
+          denId: data.id
+        });
       }
     }
   }
@@ -497,6 +551,30 @@ export function spawnPlayerDrops(state: GameState, pos: Vec2, killerId?: number)
     homingPlayerId: killerId,
     ticksLeft: 600,
   });
+}
+
+export function spawnCreepDrops(state: GameState, pos: Vec2, killerId?: number): void {
+  // Drops a large health pack (200) and 3 silver flux
+  state.pickups.push({
+    id: state.nextEntityId++,
+    kind: "health",
+    pos: { x: pos.x, y: pos.y },
+    vel: { x: 0, y: -5 },
+    amount: 200,
+    ticksLeft: 1200,
+  });
+
+  for (let i = 0; i < 3; i++) {
+    state.pickups.push({
+      id: state.nextEntityId++,
+      kind: "flux",
+      pos: { x: pos.x, y: pos.y },
+      vel: killerId !== undefined ? { x: 0, y: 0 } : { x: -2 + i * 2, y: -4 - i },
+      amount: 1,
+      homingPlayerId: killerId,
+      ticksLeft: 1200,
+    });
+  }
 }
 
 export function findActiveBaseForPlayer(

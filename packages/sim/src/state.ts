@@ -48,6 +48,9 @@ export interface MapEntityState {
   id: string;
   enabled: boolean;
   cooldown: number; // ticks until this entity may trigger again
+  active?: boolean;
+  triggered?: boolean;
+  timerElapsed?: number;
 }
 
 export interface DummyState {
@@ -92,7 +95,14 @@ export function createState(map: MapData, spawns: SpawnSpec[], content: ContentI
     players: [],
     projectiles: [],
     dummies: [],
-    mapEntities: map.entities.map((e) => ({ id: e.id, enabled: e.enabled, cooldown: 0 })),
+    mapEntities: map.entities.map((e) => ({
+      id: e.id,
+      enabled: e.enabled,
+      cooldown: 0,
+      active: false,
+      triggered: false,
+      timerElapsed: 0,
+    })),
   };
 
   for (let i = 0; i < spawns.length; i++) {

@@ -20,6 +20,66 @@ function bool(params: Params, key: string): boolean {
   return params[key] === true;
 }
 
+export function triggerTargets(state: GameState, map: MapData, targets?: string[]): void {
+  if (!targets) return;
+  for (const tId of targets) {
+    const idx = map.entities.findIndex((e) => e.id === tId);
+    if (idx !== -1) {
+      const targetDyn = state.mapEntities[idx];
+      if (targetDyn) {
+        targetDyn.enabled = !targetDyn.enabled;
+      }
+    }
+  }
+}
+
+export function resolveMomentaryWiring(state: GameState, map: MapData): void {
+  const activeTargets = new Map<string, boolean>();
+  const targetedByMomentary = new Set<string>();
+
+  for (let i = 0; i < map.entities.length; i++) {
+    const data = map.entities[i];
+    const dyn = state.mapEntities[i];
+    if (data === undefined || dyn === undefined) continue;
+
+    const isMomentaryActivator =
+      data.type === "activator" && str(data.params, "mode") === "momentary";
+    const isTimer = data.type === "timer";
+
+    if ((isMomentaryActivator || isTimer) && data.targets) {
+      for (const tId of data.targets) {
+        targetedByMomentary.add(tId);
+        if (dyn.active) {
+          activeTargets.set(tId, true);
+        }
+      }
+    }
+  }
+
+  for (const tId of targetedByMomentary) {
+    const idx = map.entities.findIndex((e) => e.id === tId);
+    if (idx !== -1) {
+      const targetData = map.entities[idx];
+      const targetDyn = state.mapEntities[idx];
+      if (targetData && targetDyn) {
+        const isActive = activeTargets.get(tId) === true;
+        const initialEnabled = targetData.enabled;
+        targetDyn.enabled = isActive ? !initialEnabled : initialEnabled;
+      }
+    }
+  }
+}
+
+export function triggerOnDestroyed(state: GameState, map: MapData, entityId: string): void {
+  const idx = map.entities.findIndex((e) => e.id === entityId);
+  if (idx !== -1) {
+    const data = map.entities[idx];
+    if (data?.onDestroyed) {
+      triggerTargets(state, map, data.onDestroyed);
+    }
+  }
+}
+
 /**
  * The shared trigger-volume system (doc 07 §1, §5): every wave-1 entity is an
  * axis-aligned box plus one effect against players standing inside it.
@@ -27,12 +87,107 @@ function bool(params: Params, key: string): boolean {
  * the sim tolerates content from newer waves.
  */
 export function stepMapEntities(state: GameState, map: MapData, content: ContentIndex): void {
+  // 1. Process timer ticks
   for (let i = 0; i < map.entities.length; i++) {
     const data = map.entities[i];
     const dyn = state.mapEntities[i];
     if (data === undefined || dyn === undefined) continue;
+
+    // Cooldown ticks down for everyone
     if (dyn.cooldown > 0) dyn.cooldown -= 1;
+
+    if (data.type === "timer") {
+      if (!dyn.enabled) {
+        dyn.timerElapsed = 0;
+        dyn.active = false;
+        continue;
+      }
+      dyn.timerElapsed = (dyn.timerElapsed ?? 0) + 1;
+      const period = num(data.params, "periodTicks", 120);
+      const onDuration = num(data.params, "onDurationTicks", 60);
+      const startDelay = num(data.params, "startDelayTicks", 0);
+      if (dyn.timerElapsed >= startDelay) {
+        const t = dyn.timerElapsed - startDelay;
+        const cycleTime = t % period;
+        dyn.active = cycleTime < onDuration;
+      } else {
+        dyn.active = false;
+      }
+    }
+  }
+
+  // 2. Process touch activators
+  for (let i = 0; i < map.entities.length; i++) {
+    const data = map.entities[i];
+    const dyn = state.mapEntities[i];
+    if (data === undefined || dyn === undefined) continue;
     if (!dyn.enabled) continue;
+
+    if (data.type === "activator") {
+      const trigger = str(data.params, "trigger") || "touch";
+      const mode = str(data.params, "mode") || "toggle";
+
+      if (trigger === "touch") {
+        let anyPlayerInside = false;
+        for (const p of state.players) {
+          const char = content.characters[p.characterId];
+          if (char === undefined) continue;
+          const inside = aabbOverlap(
+            data.pos.x,
+            data.pos.y,
+            data.size.w / 2,
+            data.size.h / 2,
+            p.pos.x,
+            p.pos.y,
+            char.hitbox.w / 2,
+            char.hitbox.h / 2,
+          );
+          if (inside) {
+            anyPlayerInside = true;
+            break;
+          }
+        }
+
+        if (mode === "momentary") {
+          dyn.active = anyPlayerInside;
+        } else {
+          // toggle or once: detect rising edge using dyn.active as "was touched last tick"
+          const previouslyTouched = !!dyn.active;
+          dyn.active = anyPlayerInside;
+
+          if (anyPlayerInside && !previouslyTouched) {
+            if (mode === "once" && !dyn.triggered) {
+              dyn.triggered = true;
+              triggerTargets(state, map, data.targets);
+            } else if (mode === "toggle" && dyn.cooldown === 0) {
+              triggerTargets(state, map, data.targets);
+              dyn.cooldown = num(data.params, "cooldownTicks", 30);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 3. Resolve momentary/timer wiring (state-driven propagation)
+  resolveMomentaryWiring(state, map);
+
+  // 4. Apply Wave 1 trigger volumes
+  for (let i = 0; i < map.entities.length; i++) {
+    const data = map.entities[i];
+    const dyn = state.mapEntities[i];
+    if (data === undefined || dyn === undefined) continue;
+    if (!dyn.enabled) continue;
+
+    // Ignore Wave 2 logic entities and stateful colliders here
+    if (
+      data.type === "activator" ||
+      data.type === "timer" ||
+      data.type === "door" ||
+      data.type === "teamBarrier"
+    ) {
+      continue;
+    }
 
     for (const p of state.players) {
       const char = content.characters[p.characterId];

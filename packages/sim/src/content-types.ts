@@ -47,6 +47,8 @@ export interface MapEntityData {
   enabled: boolean; // initial value; runtime flag lives in GameState.mapEntities
   tint?: string;
   params: Record<string, number | string | boolean>;
+  targets?: string[];
+  onDestroyed?: string[];
 }
 
 export interface MapData {

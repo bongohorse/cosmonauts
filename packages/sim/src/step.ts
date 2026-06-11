@@ -2,7 +2,7 @@ import { movePlayer } from "./capsule";
 import { aabbOverlap } from "./collision";
 import { DROP_IGNORE_TICKS, DT, DUMMY_HEIGHT, DUMMY_RESPAWN_TICKS, DUMMY_WIDTH } from "./constants";
 import type { CharacterData, ContentIndex, MapData } from "./content-types";
-import { stepMapEntities } from "./entities";
+import { stepMapEntities, triggerTargets } from "./entities";
 import { closestSegSeg } from "./geometry";
 import { NEUTRAL_INPUT, type PlayerInput } from "./input";
 import { approach } from "./math";
@@ -14,6 +14,17 @@ export type InputMap = Record<number, PlayerInput>;
 export function step(state: GameState, inputs: InputMap, content: ContentIndex): void {
   const map = content.maps[state.mapId];
   if (map === undefined) throw new Error(`unknown map "${state.mapId}"`);
+
+  // Reset active state for momentary activators and timers at the start of the tick.
+  // This allows touch or projectile hits to set it to true during the tick.
+  for (let i = 0; i < map.entities.length; i++) {
+    const dyn = state.mapEntities[i];
+    if (dyn === undefined) continue;
+    const data = map.entities[i];
+    if (data && (data.type === "activator" || data.type === "timer")) {
+      dyn.active = false;
+    }
+  }
 
   for (const player of state.players) {
     const char = content.characters[player.characterId];
@@ -85,7 +96,7 @@ function stepPlayer(
   if (input.aimX > 0.01) p.facing = 1;
   else if (input.aimX < -0.01) p.facing = -1;
 
-  movePlayer(map, p, char, jumpedThisTick);
+  movePlayer(state, map, p, char, jumpedThisTick);
 
   if (p.attackCooldown > 0) p.attackCooldown -= 1;
   if (input.shoot && p.attackCooldown === 0) {
@@ -107,6 +118,7 @@ function stepPlayer(
 
 /** Swept circle vs solid segments — fast shots can't tunnel (doc 06 §5). */
 function projectileHitsWorld(
+  state: GameState,
   map: MapData,
   ox: number,
   oy: number,
@@ -116,7 +128,23 @@ function projectileHitsWorld(
 ): boolean {
   const r2 = radius * radius;
   for (const seg of map.segments) {
-    if (seg.solidity !== "solid") continue; // glass/team never block shots
+    // Check if this segment belongs to a door entity.
+    const entityIndex = map.entities.findIndex((e) => e.id === seg.shapeId);
+    if (entityIndex !== -1) {
+      const data = map.entities[entityIndex];
+      const dyn = state.mapEntities[entityIndex];
+      if (data && dyn) {
+        if (data.type === "door") {
+          // An enabled door blocks projectiles; a disabled door does not.
+          if (!dyn.enabled) continue;
+        } else if (data.type === "teamBarrier") {
+          // teamBarrier never blocks shots
+          continue;
+        }
+      }
+    } else {
+      if (seg.solidity !== "solid") continue; // glass/team never block shots
+    }
     const cs = closestSegSeg(ox, oy, nx, ny, seg.ax, seg.ay, seg.bx, seg.by);
     if (cs.dist2 <= r2) return true;
   }
@@ -138,8 +166,55 @@ function stepProjectiles(state: GameState, map: MapData): void {
 
     let dead = pr.ticksLeft <= 0;
 
-    if (!dead && projectileHitsWorld(map, ox, oy, pr.pos.x, pr.pos.y, pr.radius)) {
+    if (!dead && projectileHitsWorld(state, map, ox, oy, pr.pos.x, pr.pos.y, pr.radius)) {
       dead = true;
+    }
+
+    // Check hit against damage-triggered activators
+    if (!dead) {
+      for (let j = 0; j < map.entities.length; j++) {
+        const entData = map.entities[j];
+        const entDyn = state.mapEntities[j];
+        if (entData && entDyn?.enabled && entData.type === "activator") {
+          const trigger = entData.params.trigger ?? "touch";
+          if (trigger === "damage") {
+            const hw = entData.size.w / 2;
+            const hh = entData.size.h / 2;
+            if (
+              aabbOverlap(
+                pr.pos.x,
+                pr.pos.y,
+                pr.radius,
+                pr.radius,
+                entData.pos.x,
+                entData.pos.y,
+                hw,
+                hh,
+              )
+            ) {
+              const mode = entData.params.mode ?? "toggle";
+              if (mode === "momentary") {
+                entDyn.active = true;
+              } else if (mode === "once") {
+                if (!entDyn.triggered) {
+                  entDyn.triggered = true;
+                  triggerTargets(state, map, entData.targets);
+                }
+              } else if (mode === "toggle" && entDyn.cooldown === 0) {
+                triggerTargets(state, map, entData.targets);
+                // Cooldown parameter converted to ticks on sim side:
+                const cdTicks =
+                  typeof entData.params.cooldownTicks === "number"
+                    ? entData.params.cooldownTicks
+                    : 30;
+                entDyn.cooldown = cdTicks;
+              }
+              dead = true;
+              break;
+            }
+          }
+        }
+      }
     }
 
     if (!dead) {

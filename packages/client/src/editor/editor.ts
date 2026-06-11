@@ -1,9 +1,4 @@
-import {
-  defaultParams,
-  ENTITY_TYPES,
-  type EntityDef,
-  entityTypeSpec,
-} from "@cosmonauts/content";
+import { defaultParams, ENTITY_TYPES, type EntityDef, entityTypeSpec } from "@cosmonauts/content";
 import type { ShapeDef, Solidity, Vec2 } from "@cosmonauts/sim";
 import type { Renderer } from "../renderer";
 import { TILE_PX } from "../renderer";
@@ -34,6 +29,25 @@ type Drag =
   | { type: "draw-rect"; start: Vec2; current: Vec2 };
 
 const DEG = Math.PI / 180;
+
+function getRotatedRectPoints(
+  cx: number,
+  cy: number,
+  w: number,
+  h: number,
+  rotationDeg: number,
+): number[] {
+  const hw = w / 2;
+  const hh = h / 2;
+  const r = rotationDeg * DEG;
+  const c = Math.cos(r);
+  const s = Math.sin(r);
+  const corner = (x: number, y: number): [number, number] => [
+    cx + x * c - y * s,
+    cy + x * s + y * c,
+  ];
+  return [...corner(-hw, -hh), ...corner(hw, -hh), ...corner(hw, hh), ...corner(-hw, hh)];
+}
 
 const SOLIDITY_OPTIONS: Solidity[] = ["solid", "glass", "teamA", "teamB"];
 
@@ -208,6 +222,15 @@ export class Editor {
 
   private hitEntity(e: EntityDef, w: Vec2): boolean {
     const [hw, hh] = this.entitySize(e);
+    const rotation = typeof e.params?.rotation === "number" ? e.params.rotation : 0;
+    if (rotation !== 0) {
+      const r = -rotation * DEG;
+      const dx = w.x - e.pos[0];
+      const dy = w.y - e.pos[1];
+      const lx = dx * Math.cos(r) - dy * Math.sin(r);
+      const ly = dx * Math.sin(r) + dy * Math.cos(r);
+      return Math.abs(lx) <= hw / 2 + 0.1 && Math.abs(ly) <= hh / 2 + 0.1;
+    }
     return Math.abs(w.x - e.pos[0]) <= hw / 2 + 0.1 && Math.abs(w.y - e.pos[1]) <= hh / 2 + 0.1;
   }
 
@@ -612,15 +635,29 @@ export class Editor {
       const [w, h] = this.entitySize(e);
       const spec = entityTypeSpec(e.type);
       const color = Number.parseInt((e.tint ?? spec?.color ?? "#ffffff").slice(1), 16);
-      g.rect(px(e.pos[0] - w / 2), px(e.pos[1] - h / 2), px(w), px(h)).fill({
-        color,
-        alpha: e.enabled === false ? 0.3 : 0.6,
-      });
-      g.rect(px(e.pos[0] - w / 2), px(e.pos[1] - h / 2), px(w), px(h)).stroke({
-        color,
-        width: lw(1),
-        alpha: 0.8,
-      });
+      const rotation = typeof e.params?.rotation === "number" ? e.params.rotation : 0;
+      if (rotation !== 0) {
+        const pts = getRotatedRectPoints(px(e.pos[0]), px(e.pos[1]), px(w), px(h), rotation);
+        g.poly(pts).fill({
+          color,
+          alpha: e.enabled === false ? 0.3 : 0.6,
+        });
+        g.poly(pts).stroke({
+          color,
+          width: lw(1),
+          alpha: 0.8,
+        });
+      } else {
+        g.rect(px(e.pos[0] - w / 2), px(e.pos[1] - h / 2), px(w), px(h)).fill({
+          color,
+          alpha: e.enabled === false ? 0.3 : 0.6,
+        });
+        g.rect(px(e.pos[0] - w / 2), px(e.pos[1] - h / 2), px(w), px(h)).stroke({
+          color,
+          width: lw(1),
+          alpha: 0.8,
+        });
+      }
     }
 
     // Polygon draft.
@@ -653,10 +690,19 @@ export class Editor {
       const e = this.doc.entities.find((en) => en.id === sel.id);
       if (e) {
         const [w, h] = this.entitySize(e);
-        g.rect(px(e.pos[0] - w / 2), px(e.pos[1] - h / 2), px(w), px(h)).stroke({
-          color: 0xff2bd6,
-          width: lw(2),
-        });
+        const rotation = typeof e.params?.rotation === "number" ? e.params.rotation : 0;
+        if (rotation !== 0) {
+          const pts = getRotatedRectPoints(px(e.pos[0]), px(e.pos[1]), px(w), px(h), rotation);
+          g.poly(pts).stroke({
+            color: 0xff2bd6,
+            width: lw(2),
+          });
+        } else {
+          g.rect(px(e.pos[0] - w / 2), px(e.pos[1] - h / 2), px(w), px(h)).stroke({
+            color: 0xff2bd6,
+            width: lw(2),
+          });
+        }
       }
     } else if (sel?.kind === "spawn") {
       const p = this.doc.playerSpawns[sel.index];
@@ -922,11 +968,58 @@ export class Editor {
       tintLabel.appendChild(tint);
       panel.appendChild(tintLabel);
 
+      // targets input
+      const targetsLabel = document.createElement("label");
+      targetsLabel.textContent = "targets";
+      const targetsInput = document.createElement("input");
+      targetsInput.type = "text";
+      targetsInput.placeholder = "e.g., door1, barrier2";
+      targetsInput.value = (e.targets ?? []).join(", ");
+      targetsInput.addEventListener("change", () => {
+        this.beginChange();
+        const ids = targetsInput.value
+          .split(",")
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+        if (ids.length > 0) {
+          e.targets = ids;
+        } else {
+          delete e.targets;
+        }
+        this.changed();
+      });
+      targetsLabel.appendChild(targetsInput);
+      panel.appendChild(targetsLabel);
+
+      // onDestroyed input
+      const onDestroyedLabel = document.createElement("label");
+      onDestroyedLabel.textContent = "onDestroyed";
+      const onDestroyedInput = document.createElement("input");
+      onDestroyedInput.type = "text";
+      onDestroyedInput.placeholder = "e.g., door1, barrier2";
+      onDestroyedInput.value = (e.onDestroyed ?? []).join(", ");
+      onDestroyedInput.addEventListener("change", () => {
+        this.beginChange();
+        const ids = onDestroyedInput.value
+          .split(",")
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+        if (ids.length > 0) {
+          e.onDestroyed = ids;
+        } else {
+          delete e.onDestroyed;
+        }
+        this.changed();
+      });
+      onDestroyedLabel.appendChild(onDestroyedInput);
+      panel.appendChild(onDestroyedLabel);
+
       if (spec) {
         for (const [key, p] of Object.entries(spec.params)) {
           const row = document.createElement("label");
           row.textContent = p.label;
-          const params = (e.params ??= {}) as Record<string, number | string | boolean>;
+          if (!e.params) e.params = {};
+          const params = e.params as Record<string, number | string | boolean>;
           const val = params[key] ?? (p.kind === "entityId" ? "" : p.default);
 
           if (p.kind === "boolean") {
@@ -952,6 +1045,21 @@ export class Editor {
               o.value = other.id;
               o.textContent = other.id;
               o.selected = other.id === val;
+              sel.appendChild(o);
+            }
+            sel.addEventListener("change", () => {
+              this.beginChange();
+              params[key] = sel.value;
+              this.changed();
+            });
+            row.appendChild(sel);
+          } else if (p.kind === "select") {
+            const sel = document.createElement("select");
+            for (const opt of p.options) {
+              const o = document.createElement("option");
+              o.value = opt;
+              o.textContent = opt;
+              o.selected = opt === val;
               sel.appendChild(o);
             }
             sel.addEventListener("change", () => {

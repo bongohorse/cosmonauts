@@ -11,7 +11,8 @@ export type ParamSpec =
   | { kind: "angle"; label: string; default: number } // degrees, y-up, 90 = straight up
   | { kind: "duration"; label: string; default: number } // authored seconds → sim ticks
   | { kind: "boolean"; label: string; default: boolean }
-  | { kind: "entityId"; label: string; sameType?: boolean }; // reference to another entity
+  | { kind: "entityId"; label: string; sameType?: boolean } // reference to another entity
+  | { kind: "select"; label: string; default: string; options: string[] };
 
 export interface EntityTypeSpec {
   type: string;
@@ -79,6 +80,58 @@ export const ENTITY_TYPES: EntityTypeSpec[] = [
     defaultSize: [4, 1],
     params: {},
   },
+  {
+    type: "activator",
+    label: "Activator",
+    color: "#4caf50",
+    defaultSize: [1.5, 0.5],
+    params: {
+      mode: {
+        kind: "select",
+        label: "mode",
+        default: "toggle",
+        options: ["toggle", "momentary", "once"],
+      },
+      trigger: { kind: "select", label: "trigger", default: "touch", options: ["touch", "damage"] },
+      cooldown: { kind: "duration", label: "cooldown s", default: 0.5 },
+    },
+  },
+  {
+    type: "timer",
+    label: "Timer",
+    color: "#9e9e9e",
+    defaultSize: [1, 1],
+    params: {
+      period: { kind: "duration", label: "period s", default: 2.0 },
+      onDuration: { kind: "duration", label: "on duration s", default: 1.0 },
+      startDelay: { kind: "duration", label: "start delay s", default: 0.0 },
+    },
+  },
+  {
+    type: "door",
+    label: "Door",
+    color: "#ffb74d",
+    defaultSize: [1, 3],
+    params: {
+      rotation: { kind: "angle", label: "rotation °", default: 0 },
+    },
+  },
+  {
+    type: "teamBarrier",
+    label: "Team Barrier",
+    color: "#26a69a",
+    defaultSize: [1, 3],
+    params: {
+      team: { kind: "select", label: "team", default: "A", options: ["A", "B"] },
+      downgradeTo: {
+        kind: "select",
+        label: "downgrade to",
+        default: "gone",
+        options: ["glass", "gone"],
+      },
+      rotation: { kind: "angle", label: "rotation °", default: 0 },
+    },
+  },
 ];
 
 export function entityTypeSpec(type: string): EntityTypeSpec | undefined {
@@ -105,6 +158,8 @@ function paramZod(spec: ParamSpec): z.ZodTypeAny {
       return z.boolean();
     case "entityId":
       return z.string();
+    case "select":
+      return z.enum(spec.options as [string, ...string[]]);
   }
 }
 
@@ -119,6 +174,8 @@ function variantSchema(spec: EntityTypeSpec) {
     enabled: z.boolean().optional(),
     tint: TintSchema.optional(),
     params: z.object(paramShape).strict().optional(),
+    targets: z.array(z.string()).optional(),
+    onDestroyed: z.array(z.string()).optional(),
   });
 }
 
@@ -165,5 +222,7 @@ export function toEntityData(def: EntityDef): MapEntityData {
     enabled: def.enabled ?? true,
     ...(def.tint !== undefined ? { tint: def.tint } : {}),
     params,
+    targets: def.targets,
+    onDestroyed: def.onDestroyed,
   };
 }

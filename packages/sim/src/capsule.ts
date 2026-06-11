@@ -1,7 +1,7 @@
 import { DT, GLASS_EPS, GROUND_NORMAL_Y, GROUND_SNAP, SKIN } from "./constants";
 import type { CharacterData, MapData } from "./content-types";
 import { closestSegSeg, type SegmentData } from "./geometry";
-import type { PlayerState } from "./state";
+import type { GameState, PlayerState } from "./state";
 
 // Capsule collide-and-slide vs level segments (doc 06 §3-§4a).
 // The capsule is derived from the character hitbox: radius = w/2, with a
@@ -15,11 +15,44 @@ interface Contact {
 }
 
 function segmentCollidable(
+  state: GameState,
+  map: MapData,
   seg: SegmentData,
   p: PlayerState,
   prevBottom: number,
   velY: number,
 ): boolean {
+  // Check if this segment belongs to an entity (door or teamBarrier)
+  const entityIndex = map.entities.findIndex((e) => e.id === seg.shapeId);
+  if (entityIndex !== -1) {
+    const data = map.entities[entityIndex];
+    const dyn = state.mapEntities[entityIndex];
+    if (data && dyn) {
+      if (data.type === "door") {
+        if (!dyn.enabled) return false;
+        return true;
+      }
+      if (data.type === "teamBarrier") {
+        const team = typeof data.params.team === "string" ? data.params.team : "A";
+        const downgradeTo =
+          typeof data.params.downgradeTo === "string" ? data.params.downgradeTo : "gone";
+        if (dyn.enabled) {
+          // Own team passes through (does NOT collide). Enemy team is blocked (collides).
+          return team === "A" ? p.team === "B" : p.team === "A";
+        } else {
+          if (downgradeTo === "gone") return false;
+          if (downgradeTo === "glass") {
+            if (p.dropTicks > 0 && p.dropShapeId === seg.shapeId) return false;
+            if (velY < 0) return false; // rising — pass through from below
+            if (seg.ny > -0.1) return false; // only up-facing fronts are landable
+            const faceTop = Math.min(seg.ay, seg.by);
+            return prevBottom <= faceTop + GLASS_EPS; // approached from above
+          }
+        }
+      }
+    }
+  }
+
   switch (seg.solidity) {
     case "solid":
       return true;
@@ -42,6 +75,7 @@ function segmentCollidable(
  * iterations) and cancel velocity into each contact surface.
  */
 function depenetrate(
+  state: GameState,
   map: MapData,
   p: PlayerState,
   a: number,
@@ -54,7 +88,7 @@ function depenetrate(
     let best: Contact | null = null;
     let bestDepth = SKIN * 0.5;
     for (const seg of map.segments) {
-      if (!segmentCollidable(seg, p, prevBottom, p.vel.y)) continue;
+      if (!segmentCollidable(state, map, seg, p, prevBottom, p.vel.y)) continue;
       const cs = closestSegSeg(
         p.pos.x,
         p.pos.y - a,
@@ -104,6 +138,7 @@ function classifyGround(contacts: Contact[]): Contact | null {
 
 /** Deepest walkable-normal contact at the current position (no resolution). */
 function deepestGroundContact(
+  state: GameState,
   map: MapData,
   p: PlayerState,
   a: number,
@@ -113,7 +148,7 @@ function deepestGroundContact(
   const r2 = r * r;
   let best: (Contact & { depth: number }) | null = null;
   for (const seg of map.segments) {
-    if (!segmentCollidable(seg, p, prevBottom, p.vel.y)) continue;
+    if (!segmentCollidable(state, map, seg, p, prevBottom, p.vel.y)) continue;
     const cs = closestSegSeg(
       p.pos.x,
       p.pos.y - a,
@@ -148,6 +183,7 @@ function deepestGroundContact(
  * Mutates pos/vel and the grounded fields of `p`.
  */
 export function movePlayer(
+  state: GameState,
   map: MapData,
   p: PlayerState,
   char: CharacterData,
@@ -162,13 +198,13 @@ export function movePlayer(
   p.pos.y += p.vel.y * DT;
 
   const contacts: Contact[] = [];
-  depenetrate(map, p, a, r, prevBottom, contacts);
+  depenetrate(state, map, p, a, r, prevBottom, contacts);
   let ground = classifyGround(contacts);
 
   if (ground === null && wasGrounded && !jumpedThisTick) {
     const saveY = p.pos.y;
     p.pos.y += GROUND_SNAP;
-    const snap = deepestGroundContact(map, p, a, r, prevBottom);
+    const snap = deepestGroundContact(state, map, p, a, r, prevBottom);
     if (snap !== null) {
       p.pos.y -= (snap.depth + SKIN) / -snap.ny;
       ground = snap;
@@ -182,7 +218,21 @@ export function movePlayer(
     p.groundNX = ground.nx;
     p.groundNY = ground.ny;
     p.groundShapeId = ground.seg.shapeId;
-    p.groundGlass = ground.seg.solidity === "glass";
+
+    let isGlass = ground.seg.solidity === "glass";
+    const entityIndex = map.entities.findIndex((e) => e.id === ground.seg.shapeId);
+    if (entityIndex !== -1) {
+      const data = map.entities[entityIndex];
+      const dyn = state.mapEntities[entityIndex];
+      if (data && dyn && data.type === "teamBarrier" && !dyn.enabled) {
+        const downgradeTo =
+          typeof data.params.downgradeTo === "string" ? data.params.downgradeTo : "gone";
+        if (downgradeTo === "glass") {
+          isGlass = true;
+        }
+      }
+    }
+    p.groundGlass = isGlass;
     p.jumpsUsed = 0;
   } else {
     p.grounded = false;

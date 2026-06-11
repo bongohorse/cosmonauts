@@ -3,6 +3,25 @@ import type { ContentIndex, GameState, MapData, Vec2 } from "@cosmonauts/sim";
 import { DUMMY_HEIGHT, DUMMY_WIDTH, isSolid } from "@cosmonauts/sim";
 import { type Application, Container, Graphics } from "pixi.js";
 
+function getRotatedRectPoints(
+  cx: number,
+  cy: number,
+  w: number,
+  h: number,
+  rotationDeg: number,
+): number[] {
+  const hw = w / 2;
+  const hh = h / 2;
+  const r = rotationDeg * (Math.PI / 180);
+  const c = Math.cos(r);
+  const s = Math.sin(r);
+  const corner = (x: number, y: number): [number, number] => [
+    cx + x * c - y * s,
+    cy + x * s + y * c,
+  ];
+  return [...corner(-hw, -hh), ...corner(hw, -hh), ...corner(hw, hh), ...corner(-hw, hh)];
+}
+
 export const TILE_PX = 40;
 
 const COLORS = {
@@ -161,15 +180,66 @@ export class Renderer {
       const hh = (data.size.h / 2) * TILE_PX;
       const spec = entityTypeSpec(data.type);
       const color = Number.parseInt((data.tint ?? spec?.color ?? "#ffffff").slice(1), 16);
-      g.rect(x - hw, y - hh, hw * 2, hh * 2).fill({
-        color,
-        alpha: dyn.enabled ? 0.4 : 0.15,
-      });
-      g.rect(x - hw, y - hh, hw * 2, hh * 2).stroke({
-        color,
-        width: 1,
-        alpha: dyn.enabled ? 0.6 : 0.2,
-      });
+
+      let finalColor = color;
+      let alpha = dyn.enabled ? 0.4 : 0.15;
+      let strokeAlpha = dyn.enabled ? 0.6 : 0.2;
+      let strokeWidth = 1;
+
+      if (data.type === "teamBarrier") {
+        const team = typeof data.params.team === "string" ? data.params.team : "A";
+        if (dyn.enabled) {
+          // Team A is red, Team B is blue
+          finalColor = team === "A" ? 0xff4d5e : 0x4d7dff;
+        } else {
+          const downgradeTo =
+            typeof data.params.downgradeTo === "string" ? data.params.downgradeTo : "gone";
+          if (downgradeTo === "glass") {
+            finalColor = 0x9fe8ff;
+            alpha = 0.55;
+            strokeAlpha = 0.8;
+            strokeWidth = 2;
+          } else {
+            // gone
+            alpha = 0.05;
+            strokeAlpha = 0.1;
+          }
+        }
+      }
+
+      if (data.tint) {
+        finalColor = Number.parseInt(data.tint.slice(1), 16);
+      }
+
+      const rotation = typeof data.params.rotation === "number" ? data.params.rotation : 0;
+      if (rotation !== 0) {
+        const polyPoints = getRotatedRectPoints(
+          x,
+          y,
+          data.size.w * TILE_PX,
+          data.size.h * TILE_PX,
+          rotation,
+        );
+        g.poly(polyPoints).fill({
+          color: finalColor,
+          alpha,
+        });
+        g.poly(polyPoints).stroke({
+          color: finalColor,
+          width: strokeWidth,
+          alpha: strokeAlpha,
+        });
+      } else {
+        g.rect(x - hw, y - hh, hw * 2, hh * 2).fill({
+          color: finalColor,
+          alpha,
+        });
+        g.rect(x - hw, y - hh, hw * 2, hh * 2).stroke({
+          color: finalColor,
+          width: strokeWidth,
+          alpha: strokeAlpha,
+        });
+      }
     }
 
     this.updateCamera(curr, prev, alpha);

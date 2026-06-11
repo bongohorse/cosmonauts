@@ -6,6 +6,7 @@ import {
   type SegmentData,
   type ShapeData,
   type ShapeDef,
+  type Solidity,
 } from "./geometry";
 
 export interface ExplicitSpawns {
@@ -69,6 +70,26 @@ export function buildMap(
   const shapes: ShapeData[] = [];
   compileTiles(width, height, solid, segments);
   for (const def of shapeDefs) compileShape(def, segments, shapes);
+
+  // Compile doors and teamBarriers to segments, keeping shapes separate (they render dynamically).
+  const dummyShapes: ShapeData[] = [];
+  for (const e of entities) {
+    if (e.type === "door" || e.type === "teamBarrier") {
+      const rotation = typeof e.params.rotation === "number" ? e.params.rotation : 0;
+      const team = typeof e.params.team === "string" ? e.params.team : "A";
+      const solidity: Solidity = e.type === "door" ? "solid" : team === "A" ? "teamB" : "teamA";
+      const def: ShapeDef = {
+        id: e.id,
+        kind: "rect",
+        solidity,
+        pos: [e.pos.x, e.pos.y],
+        size: [e.size.w, e.size.h],
+        rotation,
+        tint: e.tint,
+      };
+      compileShape(def, segments, dummyShapes);
+    }
+  }
 
   return { id, name, width, height, solid, segments, shapes, entities, playerSpawns, dummySpawns };
 }

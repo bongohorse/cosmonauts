@@ -176,4 +176,247 @@ describe("map entities", () => {
     run(world, 30, input({ moveX: 1 }));
     expect(player(world).vel.y).toBe(0);
   });
+
+  it("door blocks movement when enabled and lets players pass when disabled", () => {
+    const world = makeWorld(
+      ARENA,
+      [],
+      [
+        {
+          id: "door1",
+          type: "door",
+          pos: { x: 3, y: 5.5 },
+          size: { w: 1, h: 3 },
+          enabled: true,
+          params: { rotation: 0 },
+        },
+      ],
+    );
+
+    // Player starts at x=1.5. A door is at x=3.
+    // Try to run right, player should be blocked by the door.
+    run(world, 20, input({ moveX: 1 }));
+    expect(player(world).pos.x).toBeLessThan(2.6);
+
+    // Now disable the door
+    world.state.mapEntities[0]!.enabled = false;
+    run(world, 20, input({ moveX: 1 }));
+    expect(player(world).pos.x).toBeGreaterThan(4);
+  });
+
+  it("activator in toggle mode toggles door state when player enters it", () => {
+    const world = makeWorld(
+      ARENA,
+      [],
+      [
+        {
+          id: "act1",
+          type: "activator",
+          pos: { x: 2.5, y: 5.5 },
+          size: { w: 1, h: 1 },
+          enabled: true,
+          params: { mode: "toggle", trigger: "touch", cooldownTicks: 30 },
+          targets: ["door1"],
+        },
+        {
+          id: "door1",
+          type: "door",
+          pos: { x: 5, y: 5.5 },
+          size: { w: 1, h: 3 },
+          enabled: true,
+          params: {},
+        },
+      ],
+    );
+
+    // Door starts enabled (solid)
+    expect(world.state.mapEntities[1]?.enabled).toBe(true);
+
+    // Player runs right. When player overlaps with act1 (at x=2.5), it should toggle the door to disabled.
+    run(world, 20, input({ moveX: 1 }));
+
+    // Door should now be open
+    expect(world.state.mapEntities[1]?.enabled).toBe(false);
+
+    // Player should be able to walk right past x=5
+    run(world, 20, input({ moveX: 1 }));
+    expect(player(world).pos.x).toBeGreaterThan(6);
+  });
+
+  it("activator in momentary mode opens the door only while player is inside", () => {
+    const world = makeWorld(
+      ARENA,
+      [],
+      [
+        {
+          id: "act1",
+          type: "activator",
+          pos: { x: 3.5, y: 5.5 },
+          size: { w: 2, h: 2 },
+          enabled: true,
+          params: { mode: "momentary", trigger: "touch" },
+          targets: ["door1"],
+        },
+        {
+          id: "door1",
+          type: "door",
+          pos: { x: 6, y: 5.5 },
+          size: { w: 1, h: 3 },
+          enabled: true,
+          params: {},
+        },
+      ],
+    );
+
+    // Player starts at x=1.5, runs right.
+    // At x=1.5, not in activator. Door is enabled.
+    expect(world.state.mapEntities[1]?.enabled).toBe(true);
+
+    // Run 20 ticks. Player should be in the activator (around x=3.5). Door should be disabled (open).
+    run(world, 20, input({ moveX: 1 }));
+    expect(world.state.mapEntities[1]?.enabled).toBe(false);
+
+    // Run further right. Player will leave the activator (x > 4.5).
+    // Door should become enabled again.
+    run(world, 30, input({ moveX: 1 }));
+    expect(player(world).pos.x).toBeGreaterThan(4.5);
+    // Since player is past activator, door should be enabled (closed)
+    expect(world.state.mapEntities[1]?.enabled).toBe(true);
+  });
+
+  it("timer enables/disables targets periodically", () => {
+    const world = makeWorld(
+      ARENA,
+      [],
+      [
+        {
+          id: "timer1",
+          type: "timer",
+          pos: { x: 0, y: 0 },
+          size: { w: 1, h: 1 },
+          enabled: true,
+          params: { periodTicks: 40, onDurationTicks: 20, startDelayTicks: 10 },
+          targets: ["door1"],
+        },
+        {
+          id: "door1",
+          type: "door",
+          pos: { x: 5, y: 5.5 },
+          size: { w: 1, h: 3 },
+          enabled: true,
+          params: {},
+        },
+      ],
+    );
+
+    // Ticks 0..9: delay phase. Timer not active, door remains enabled (true)
+    for (let t = 0; t < 9; t++) {
+      run(world, 1);
+      expect(world.state.mapEntities[1]?.enabled).toBe(true);
+    }
+
+    // Tick 10: timer becomes active, door is disabled (false)
+    run(world, 1);
+    expect(world.state.mapEntities[1]?.enabled).toBe(false);
+
+    // Ticks 10..28: timer active, door remains disabled
+    for (let t = 11; t < 29; t++) {
+      run(world, 1);
+      expect(world.state.mapEntities[1]?.enabled).toBe(false);
+    }
+
+    // Tick 29: last active tick
+    run(world, 1);
+    expect(world.state.mapEntities[1]?.enabled).toBe(false);
+
+    // Tick 30: timer cycle goes to off, door is enabled (true)
+    run(world, 1);
+    expect(world.state.mapEntities[1]?.enabled).toBe(true);
+  });
+
+  it("teamBarrier blocks enemies and allows own team, and downgrades when disabled", () => {
+    const world = makeWorld(
+      ARENA,
+      [],
+      [
+        {
+          id: "barrier1",
+          type: "teamBarrier",
+          pos: { x: 3, y: 5.5 },
+          size: { w: 1, h: 3 },
+          enabled: true,
+          params: { team: "A", downgradeTo: "glass" },
+        },
+      ],
+    );
+
+    const spawnY = player(world).pos.y;
+
+    // Default player is Team A. Team A player should walk straight through.
+    run(world, 40, input({ moveX: 1 }));
+    expect(player(world).pos.x).toBeGreaterThan(4);
+
+    // Reset player position and change team to B.
+    player(world).pos.x = 1.5;
+    player(world).pos.y = spawnY;
+    player(world).vel.x = 0;
+    player(world).vel.y = 0;
+    player(world).team = "B";
+
+    // Team B player should be blocked by the Team A barrier.
+    run(world, 20, input({ moveX: 1 }));
+    expect(player(world).pos.x).toBeLessThan(2.6);
+
+    // Now disable the barrier. It should downgrade to glass.
+    world.state.mapEntities[0]!.enabled = false;
+
+    // Team B player should now be able to walk through the barrier since it's glass
+    // (from the side it acts as glass, which has no side collision).
+    run(world, 20, input({ moveX: 1 }));
+    expect(player(world).pos.x).toBeGreaterThan(4);
+
+    // And they should be able to stand on top of it.
+    player(world).pos.x = 3;
+    player(world).pos.y = 2; // above the barrier (barrier is at y=5.5, top is at y=4.0)
+    player(world).vel.x = 0;
+    player(world).vel.y = 0;
+    run(world, 20); // fall down
+    expect(player(world).grounded).toBe(true);
+    expect(player(world).groundGlass).toBe(true);
+  });
+
+  it("activator in damage mode triggers when hit by a projectile", () => {
+    const world = makeWorld(
+      ARENA,
+      [],
+      [
+        {
+          id: "act1",
+          type: "activator",
+          pos: { x: 4, y: 5.5 },
+          size: { w: 1, h: 1 },
+          enabled: true,
+          params: { mode: "toggle", trigger: "damage", cooldownTicks: 30 },
+          targets: ["door1"],
+        },
+        {
+          id: "door1",
+          type: "door",
+          pos: { x: 6, y: 5.5 },
+          size: { w: 1, h: 3 },
+          enabled: true,
+          params: {},
+        },
+      ],
+    );
+
+    // Shoot projectile to the right (towards act1 at x=4)
+    run(world, 1, input({ shoot: true, aimX: 1, aimY: 0 }));
+    expect(world.state.projectiles).toHaveLength(1);
+
+    // Run until projectile hits activator and is destroyed, toggling the door
+    run(world, 20);
+    expect(world.state.projectiles).toHaveLength(0);
+    expect(world.state.mapEntities[1]?.enabled).toBe(false); // Door is open!
+  });
 });

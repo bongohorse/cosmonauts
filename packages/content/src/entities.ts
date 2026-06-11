@@ -50,8 +50,8 @@ export const ENTITY_TYPES: EntityTypeSpec[] = [
     color: "#4dd0e1",
     defaultSize: [1.5, 2],
     params: {
-      targetId: { kind: "entityId", label: "target", sameType: true },
-      cooldown: { kind: "duration", label: "cooldown s", default: 1 },
+      targetId: { kind: "entityId", label: "tele to", sameType: true },
+      cooldown: { kind: "duration", label: "cooldown s", default: 2 },
       preserveVelocity: { kind: "boolean", label: "keep velocity", default: false },
     },
   },

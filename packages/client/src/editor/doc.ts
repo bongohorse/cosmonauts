@@ -64,21 +64,49 @@ export function compileDoc(doc: MapDoc): MapData {
   return buildMapFromDef(docToDef(doc));
 }
 
-export function blankDoc(width = 48, height = 18): MapDoc {
+export function blankDoc(width = 500, height = 300, id?: string): MapDoc {
   const tiles: string[] = [];
   for (let y = 0; y < height; y++) {
-    const border = y === 0 || y === height - 1;
-    tiles.push(border ? "#".repeat(width) : `#${".".repeat(width - 2)}#`);
+    tiles.push(".".repeat(width));
   }
   return {
-    id: "custom-map",
+    id: id ?? "custom-map",
     name: "Custom Map",
     tiles,
-    shapes: [],
+    shapes: [
+      {
+        id: "ground",
+        kind: "polygon",
+        points: [
+          [0, height - 2],
+          [width, height - 2],
+          [width, height],
+          [0, height],
+        ],
+        solidity: "solid",
+      },
+    ],
     entities: [],
-    playerSpawns: [[3.5, height - 1.5, "RED"]],
+    playerSpawns: [[width / 2, height - 3, "RED"]],
     dummySpawns: [],
   };
+}
+
+export function getCustomMaps(): { id: string; name: string }[] {
+  const maps: { id: string; name: string }[] = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith(STORAGE_PREFIX)) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const doc = JSON.parse(raw);
+          maps.push({ id: doc.id, name: doc.name });
+        }
+      } catch {}
+    }
+  }
+  return maps;
 }
 
 const STORAGE_PREFIX = "cosmonauts.editor.mapdoc.";

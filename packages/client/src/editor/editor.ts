@@ -2371,8 +2371,13 @@ export class Editor {
   private confirmNew(): void {
     if (!confirm("Start a new blank map? (current map stays in undo history)")) return;
     this.history.push(this.doc);
-    clearStorage(this.doc.id);
-    this.replaceDoc(blankDoc());
+    const newDoc = blankDoc();
+    newDoc.id = "custom-map-" + Math.random().toString(36).substring(2, 8);
+    newDoc.name = "New Custom Map";
+
+    // Save to storage and switch
+    localStorage.setItem("cosmonauts.editor.mapdoc." + newDoc.id, JSON.stringify(docToDef(newDoc)));
+    this.onSwitchMap?.(newDoc.id);
   }
 }
 

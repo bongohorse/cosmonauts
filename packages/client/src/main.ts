@@ -11,7 +11,7 @@ import {
 } from "@cosmonauts/sim";
 import { Application } from "pixi.js";
 import { DebugPanel } from "./debug";
-import { compileDoc, docFromDef, loadFromStorage } from "./editor/doc";
+import { blankDoc, compileDoc, docFromDef, getCustomMaps, loadFromStorage } from "./editor/doc";
 import { Editor } from "./editor/editor";
 import { InputSource } from "./input";
 import { Renderer } from "./renderer";
@@ -22,6 +22,11 @@ const PLAYER_ID = 1;
 const content = loadContent();
 const character = content.characters[CHARACTER_ID];
 const shippedDefs = loadMapDefs();
+const customMaps = getCustomMaps();
+const allMaps = [
+  ...shippedDefs.map((d) => ({ id: d.id, name: d.name })),
+  ...customMaps.filter((cm) => !shippedDefs.some((sd) => sd.id === cm.id)),
+];
 
 let currentMapId = localStorage.getItem("cosmonauts.editor.lastMapId") || "testing-grounds";
 let shippedDef = shippedDefs.find((d) => d.id === currentMapId);
@@ -73,15 +78,10 @@ document.body.appendChild(app.canvas);
 const renderer = new Renderer(app, map, content);
 const inputSource = new InputSource(app.canvas);
 const debugPanel = new DebugPanel(character);
-const editor = new Editor(
-  renderer,
-  doc,
-  shippedDefs.map((d) => ({ id: d.id, name: d.name })),
-  (mapId) => {
-    localStorage.setItem("cosmonauts.editor.lastMapId", mapId);
-    window.location.reload();
-  },
-);
+const editor = new Editor(renderer, doc, allMaps, (mapId) => {
+  localStorage.setItem("cosmonauts.editor.lastMapId", mapId);
+  window.location.reload();
+});
 
 let mode: "play" | "edit" = "play";
 

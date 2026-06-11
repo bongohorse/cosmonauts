@@ -42,25 +42,25 @@
     {
       "id": "red-core",
       "type": "core",
-      "pos": [8, 14],
+      "pos": [8, 16],
       "params": { "team": "RED", "health": 3000 }
     },
     {
       "id": "blu-core",
       "type": "core",
-      "pos": [52, 14],
+      "pos": [52, 16],
       "params": { "team": "BLU", "health": 3000 }
     },
     {
       "id": "red-turret",
       "type": "turret",
-      "pos": [20, 14.5],
+      "pos": [20, 16],
       "params": { "team": "RED", "health": 1500, "range": 15, "dps": 50 }
     },
     {
       "id": "blu-turret",
       "type": "turret",
-      "pos": [40, 14.5],
+      "pos": [40, 16],
       "params": { "team": "BLU", "health": 1500, "range": 15, "dps": 50 }
     },
     {

@@ -177,8 +177,8 @@ function projectileHitsWorld(
         if (data.type === "door") {
           // An enabled door blocks projectiles; a disabled door does not.
           if (!dyn.enabled) continue;
-        } else if (data.type === "teamBarrier") {
-          // teamBarrier never blocks shots
+        } else if (data.type === "teamBarrier" || data.type === "turret") {
+          // teamBarrier and turret never block shots
           continue;
         }
       }

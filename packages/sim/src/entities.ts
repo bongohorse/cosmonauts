@@ -216,6 +216,30 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
         }
       }
     }
+
+    // Apply trigger volumes to droids (fireZone, killZone, jumper, etc.)
+    for (const d of state.droids) {
+      if (!dyn.enabled) break;
+      if (d.health <= 0) continue;
+      const inside = aabbOverlap(
+        data.pos.x,
+        data.pos.y,
+        data.size.w / 2,
+        data.size.h / 2,
+        d.pos.x,
+        d.pos.y,
+        0.4, // droid half-width
+        0.45, // droid half-height
+      );
+      if (inside) {
+        const mockP = d as unknown as PlayerState;
+        const oldHealth = mockP.health;
+        applyEntity(state, map, data, dyn, mockP, d.maxHealth);
+        if (oldHealth > 0 && mockP.health <= 0) {
+          spawnDroppedPickups(state, d.pos, undefined);
+        }
+      }
+    }
   }
 
   // 4. Map Objectives (Turrets and Droid Spawners)

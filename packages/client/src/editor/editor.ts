@@ -1526,6 +1526,9 @@ export class Editor {
               if (p.max !== undefined) input.max = String(p.max);
               if (p.step !== undefined) input.step = String(p.step);
               else input.step = "any";
+            } else if (p.kind === "duration") {
+              input.min = "0";
+              input.step = "any";
             } else {
               input.step = "any";
             }

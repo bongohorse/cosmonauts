@@ -151,8 +151,8 @@ export class Renderer {
         const x = lerp(before.pos.x, d.pos.x) * TILE_PX;
         const y = lerp(before.pos.y, d.pos.y) * TILE_PX;
         const hw = 0.4 * TILE_PX;
-        const hh = 0.9 * TILE_PX;
-        const color = d.team === "RED" ? 0xff4444 : 0x4444ff;
+        const hh = 0.45 * TILE_PX;
+        const color = d.team === "RED" ? 0xff4d5e : 0x4d7dff;
         g.rect(x - hw, y - hh, hw * 2, hh * 2).fill(color);
         g.circle(x + d.facing * hw * 0.45, y - hh * 0.45, 3.5).fill(0x10142a);
         if (d.health > 0) {

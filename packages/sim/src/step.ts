@@ -1,6 +1,13 @@
 import { movePlayer } from "./capsule";
 import { aabbOverlap } from "./collision";
-import { DROP_IGNORE_TICKS, DT, DUMMY_HEIGHT, DUMMY_RESPAWN_TICKS, DUMMY_WIDTH } from "./constants";
+import {
+  DROP_IGNORE_TICKS,
+  DT,
+  DUMMY_HEIGHT,
+  DUMMY_RESPAWN_TICKS,
+  DUMMY_WIDTH,
+  FLUX_INTERVAL_TICKS,
+} from "./constants";
 import type { CharacterData, ContentIndex, MapData } from "./content-types";
 import {
   buyPlayerUpgrade,
@@ -43,6 +50,13 @@ export function step(state: GameState, inputs: InputMap, content: ContentIndex):
   stepMapEntities(state, map, content);
   stepPickups(state, map, content);
   stepDummies(state);
+
+  // Passive flux income: +1 flux every 2 seconds for living players.
+  if (state.tick > 0 && state.tick % FLUX_INTERVAL_TICKS === 0) {
+    for (const p of state.players) {
+      if (p.health > 0) p.flux += 1;
+    }
+  }
 
   state.tick += 1;
 }

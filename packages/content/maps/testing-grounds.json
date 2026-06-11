@@ -82,6 +82,13 @@
       "size": [2, 7],
       "params": { "forceX": 0, "forceY": -60 }
     },
-    { "id": "kill-1", "type": "killZone", "pos": [20.5, 11.4], "size": [1, 1.2] }
+    { "id": "kill-1", "type": "killZone", "pos": [20.5, 11.4], "size": [1, 1.2] },
+    {
+      "id": "base-red",
+      "type": "base",
+      "pos": [3.5, 14.5],
+      "size": [5, 5],
+      "params": { "team": "RED", "hps": 50 }
+    }
   ]
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DT } from "./constants";
+import { DT, FLUX_INTERVAL_TICKS } from "./constants";
 import { ARENA, entity, input, makeWorld, player, run } from "./test-helpers";
 
 describe("map entities", () => {
@@ -659,6 +659,28 @@ describe("map entities", () => {
       run(world, 1, input({ buyUpgrade: "speed" }));
       expect(p.upgrades.speed).toBe(1); // no change because outside base
       expect(p.flux).toBe(10);
+    });
+
+    it("passive flux income awards 1 flux every 2 seconds", () => {
+      const world = makeWorld(ARENA, [], []);
+      const p = player(world);
+      expect(p.flux).toBe(0);
+
+      // After FLUX_INTERVAL_TICKS steps, state.tick has reached 120 but
+      // the check for tick 120 fires during step 121 (tick is checked
+      // before incrementing). So we need one extra step.
+      run(world, FLUX_INTERVAL_TICKS);
+      expect(p.flux).toBe(0); // not yet
+      run(world, 1);
+      expect(p.flux).toBe(1); // now tick=120 was checked
+
+      // Run another full interval
+      run(world, FLUX_INTERVAL_TICKS);
+      expect(p.flux).toBe(2);
+
+      // Half an interval more — no additional flux
+      run(world, FLUX_INTERVAL_TICKS / 2);
+      expect(p.flux).toBe(2);
     });
   });
 });

@@ -8,6 +8,7 @@ export const DUMMY_WIDTH = 1;
 export const DUMMY_HEIGHT = 1.5;
 export const DUMMY_HEALTH = 60;
 export const DUMMY_RESPAWN_TICKS = 2 * TICK_RATE;
+export const FLUX_INTERVAL_TICKS = 2 * TICK_RATE; // +1 flux every 2 seconds
 
 // Geometry v2 (doc 06 §4): slope and glass-platform behavior.
 // Walkable if contact normal.y <= -GROUND_NORMAL_Y (≈ surfaces up to ~50°).

@@ -68,6 +68,10 @@ export class Editor {
   private newEntityType = ENTITY_TYPES[0]?.type ?? "jumper";
   private snap = true;
   private history = new History();
+  private linkingField: {
+    type: "targets" | "onDestroyed" | { kind: "param"; key: string };
+    entityId: string;
+  } | null = null;
   private shapeCounter = 1;
   private entityCounter = 1;
   private saveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -153,6 +157,13 @@ export class Editor {
     return {
       x: (sx - this.cam.x) / (TILE_PX * this.cam.scale),
       y: (sy - this.cam.y) / (TILE_PX * this.cam.scale),
+    };
+  }
+
+  private toScreen(wx: number, wy: number): Vec2 {
+    return {
+      x: wx * TILE_PX * this.cam.scale + this.cam.x,
+      y: wy * TILE_PX * this.cam.scale + this.cam.y,
     };
   }
 
@@ -302,6 +313,40 @@ export class Editor {
 
   private pointerDown(e: PointerEvent): void {
     const w = this.toWorld(e.clientX, e.clientY);
+
+    const linking = this.linkingField;
+    if (linking !== null) {
+      if (e.button === 0) {
+        const hit = this.hitTest(w);
+        if (hit !== null && hit.kind === "entity") {
+          this.beginChange();
+          const srcEntity = this.doc.entities.find((en) => en.id === linking.entityId);
+          if (srcEntity) {
+            const targetId = hit.id;
+            if (linking.type === "targets") {
+              const list = srcEntity.targets ?? [];
+              if (!list.includes(targetId)) {
+                srcEntity.targets = [...list, targetId];
+              }
+            } else if (linking.type === "onDestroyed") {
+              const list = srcEntity.onDestroyed ?? [];
+              if (!list.includes(targetId)) {
+                srcEntity.onDestroyed = [...list, targetId];
+              }
+            } else if (typeof linking.type === "object" && linking.type.kind === "param") {
+              const key = linking.type.key;
+              if (!srcEntity.params) srcEntity.params = {};
+              srcEntity.params[key] = targetId;
+            }
+            this.changed();
+          }
+        }
+        this.linkingField = null;
+        this.refreshInspector();
+      }
+      return;
+    }
+
     if (e.button === 1 || e.button === 2) {
       this.drag = { type: "pan", sx: e.clientX, sy: e.clientY, camX: this.cam.x, camY: this.cam.y };
       return;
@@ -875,9 +920,124 @@ export class Editor {
     panel.innerHTML = "";
     if (!this.active || sel === null) {
       panel.style.display = "none";
+      if (this.renderer.canvasElement) {
+        this.renderer.canvasElement.style.cursor = "default";
+      }
       return;
     }
     panel.style.display = "block";
+
+    if (this.renderer.canvasElement) {
+      this.renderer.canvasElement.style.cursor =
+        this.linkingField !== null ? "crosshair" : "default";
+    }
+
+    // Position panel near the selected item
+    let targetPos: { x: number; y: number } | null = null;
+    let targetSize = { w: 1, h: 1 };
+
+    if (sel.kind === "shape") {
+      const s = this.doc.shapes.find((sh) => sh.id === sel.id);
+      if (s) {
+        if (s.kind === "rect") {
+          targetPos = { x: s.pos[0], y: s.pos[1] };
+          targetSize = { w: s.size[0], h: s.size[1] };
+        } else if (s.kind === "arc") {
+          targetPos = { x: s.center[0], y: s.center[1] };
+          targetSize = { w: s.radius * 2, h: s.radius * 2 };
+        } else if (s.points && s.points.length > 0) {
+          let minX = Infinity,
+            maxX = -Infinity,
+            minY = Infinity,
+            maxY = -Infinity;
+          for (const p of s.points) {
+            if (p[0] < minX) minX = p[0];
+            if (p[0] > maxX) maxX = p[0];
+            if (p[1] < minY) minY = p[1];
+            if (p[1] > maxY) maxY = p[1];
+          }
+          targetPos = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+          targetSize = { w: maxX - minX, h: maxY - minY };
+        }
+      }
+    } else if (sel.kind === "entity") {
+      const e = this.doc.entities.find((en) => en.id === sel.id);
+      if (e) {
+        const [w, h] = this.entitySize(e);
+        targetPos = { x: e.pos[0], y: e.pos[1] };
+        targetSize = { w, h };
+      }
+    } else if (sel.kind === "spawn") {
+      const p = this.doc.playerSpawns[sel.index];
+      if (p) {
+        targetPos = { x: p[0], y: p[1] };
+        targetSize = { w: 1, h: 1.6 };
+      }
+    } else if (sel.kind === "dummy") {
+      const p = this.doc.dummySpawns[sel.index];
+      if (p) {
+        targetPos = { x: p[0], y: p[1] };
+        targetSize = { w: 1, h: 2 };
+      }
+    }
+
+    if (targetPos) {
+      const screenPos = this.toScreen(
+        targetPos.x + targetSize.w / 2 + 0.5,
+        targetPos.y - targetSize.h / 2,
+      );
+      panel.style.position = "absolute";
+
+      const screenW = window.innerWidth;
+      const screenH = window.innerHeight;
+      let left = screenPos.x;
+      let top = screenPos.y;
+
+      if (left + 240 > screenW) {
+        const screenPosLeft = this.toScreen(
+          targetPos.x - targetSize.w / 2 - 0.5,
+          targetPos.y - targetSize.h / 2,
+        );
+        left = screenPosLeft.x - 240;
+      }
+
+      left = Math.max(10, Math.min(screenW - 240, left));
+      top = Math.max(10, Math.min(screenH - 350, top));
+
+      panel.style.left = `${left}px`;
+      panel.style.top = `${top}px`;
+      panel.style.bottom = "auto";
+      panel.style.right = "auto";
+    } else {
+      panel.style.position = "fixed";
+      panel.style.bottom = "8px";
+      panel.style.right = "8px";
+      panel.style.left = "auto";
+      panel.style.top = "auto";
+    }
+
+    // Create datalist for autocompletion of entity IDs
+    const datalist = document.createElement("datalist");
+    datalist.id = "entity-ids-list";
+    for (const other of this.doc.entities) {
+      const opt = document.createElement("option");
+      opt.value = other.id;
+      datalist.appendChild(opt);
+    }
+    panel.appendChild(datalist);
+
+    if (this.linkingField !== null) {
+      const banner = document.createElement("div");
+      banner.textContent = "🔗 Linking Mode: Click viewport entity to target";
+      banner.style.background = "#ff2bd6";
+      banner.style.color = "#ffffff";
+      banner.style.padding = "4px 8px";
+      banner.style.borderRadius = "4px";
+      banner.style.marginBottom = "8px";
+      banner.style.textAlign = "center";
+      banner.style.fontWeight = "bold";
+      panel.appendChild(banner);
+    }
 
     const heading = document.createElement("h4");
     panel.appendChild(heading);
@@ -971,10 +1131,21 @@ export class Editor {
       // targets input
       const targetsLabel = document.createElement("label");
       targetsLabel.textContent = "targets";
+
+      const targetsWrapper = document.createElement("div");
+      targetsWrapper.style.display = "flex";
+      targetsWrapper.style.gap = "4px";
+      targetsWrapper.style.alignItems = "center";
+      targetsWrapper.style.flex = "1";
+      targetsWrapper.style.justifyContent = "flex-end";
+
       const targetsInput = document.createElement("input");
       targetsInput.type = "text";
       targetsInput.placeholder = "e.g., door1, barrier2";
       targetsInput.value = (e.targets ?? []).join(", ");
+      targetsInput.setAttribute("list", "entity-ids-list");
+      targetsInput.style.flex = "1";
+      targetsInput.style.minWidth = "0";
       targetsInput.addEventListener("change", () => {
         this.beginChange();
         const ids = targetsInput.value
@@ -988,16 +1159,40 @@ export class Editor {
         }
         this.changed();
       });
-      targetsLabel.appendChild(targetsInput);
+
+      const targetsLinkBtn = document.createElement("button");
+      targetsLinkBtn.type = "button";
+      targetsLinkBtn.textContent = "🔗";
+      targetsLinkBtn.title =
+        "Link to entity (click to enter linking mode, then click an entity in viewport)";
+      targetsLinkBtn.addEventListener("click", () => {
+        this.linkingField = { type: "targets", entityId: e.id };
+        this.refreshInspector();
+      });
+
+      targetsWrapper.appendChild(targetsInput);
+      targetsWrapper.appendChild(targetsLinkBtn);
+      targetsLabel.appendChild(targetsWrapper);
       panel.appendChild(targetsLabel);
 
       // onDestroyed input
       const onDestroyedLabel = document.createElement("label");
       onDestroyedLabel.textContent = "onDestroyed";
+
+      const onDestroyedWrapper = document.createElement("div");
+      onDestroyedWrapper.style.display = "flex";
+      onDestroyedWrapper.style.gap = "4px";
+      onDestroyedWrapper.style.alignItems = "center";
+      onDestroyedWrapper.style.flex = "1";
+      onDestroyedWrapper.style.justifyContent = "flex-end";
+
       const onDestroyedInput = document.createElement("input");
       onDestroyedInput.type = "text";
       onDestroyedInput.placeholder = "e.g., door1, barrier2";
       onDestroyedInput.value = (e.onDestroyed ?? []).join(", ");
+      onDestroyedInput.setAttribute("list", "entity-ids-list");
+      onDestroyedInput.style.flex = "1";
+      onDestroyedInput.style.minWidth = "0";
       onDestroyedInput.addEventListener("change", () => {
         this.beginChange();
         const ids = onDestroyedInput.value
@@ -1011,7 +1206,20 @@ export class Editor {
         }
         this.changed();
       });
-      onDestroyedLabel.appendChild(onDestroyedInput);
+
+      const onDestroyedLinkBtn = document.createElement("button");
+      onDestroyedLinkBtn.type = "button";
+      onDestroyedLinkBtn.textContent = "🔗";
+      onDestroyedLinkBtn.title =
+        "Link to entity (click to enter linking mode, then click an entity in viewport)";
+      onDestroyedLinkBtn.addEventListener("click", () => {
+        this.linkingField = { type: "onDestroyed", entityId: e.id };
+        this.refreshInspector();
+      });
+
+      onDestroyedWrapper.appendChild(onDestroyedInput);
+      onDestroyedWrapper.appendChild(onDestroyedLinkBtn);
+      onDestroyedLabel.appendChild(onDestroyedWrapper);
       panel.appendChild(onDestroyedLabel);
 
       if (spec) {
@@ -1033,26 +1241,39 @@ export class Editor {
             });
             row.appendChild(input);
           } else if (p.kind === "entityId") {
-            const sel = document.createElement("select");
-            const none = document.createElement("option");
-            none.value = "";
-            none.textContent = "(none)";
-            sel.appendChild(none);
-            for (const other of this.doc.entities) {
-              if (other.id === e.id) continue;
-              if (p.sameType && other.type !== e.type) continue;
-              const o = document.createElement("option");
-              o.value = other.id;
-              o.textContent = other.id;
-              o.selected = other.id === val;
-              sel.appendChild(o);
-            }
-            sel.addEventListener("change", () => {
+            const paramWrapper = document.createElement("div");
+            paramWrapper.style.display = "flex";
+            paramWrapper.style.gap = "4px";
+            paramWrapper.style.alignItems = "center";
+            paramWrapper.style.flex = "1";
+            paramWrapper.style.justifyContent = "flex-end";
+
+            const input = document.createElement("input");
+            input.type = "text";
+            input.placeholder = "(none)";
+            input.value = String(val);
+            input.setAttribute("list", "entity-ids-list");
+            input.style.flex = "1";
+            input.style.minWidth = "0";
+            input.addEventListener("change", () => {
               this.beginChange();
-              params[key] = sel.value;
+              params[key] = input.value;
               this.changed();
             });
-            row.appendChild(sel);
+
+            const linkBtn = document.createElement("button");
+            linkBtn.type = "button";
+            linkBtn.textContent = "🔗";
+            linkBtn.title =
+              "Link to entity (click to enter linking mode, then click an entity in viewport)";
+            linkBtn.addEventListener("click", () => {
+              this.linkingField = { type: { kind: "param", key }, entityId: e.id };
+              this.refreshInspector();
+            });
+
+            paramWrapper.appendChild(input);
+            paramWrapper.appendChild(linkBtn);
+            row.appendChild(paramWrapper);
           } else if (p.kind === "select") {
             const sel = document.createElement("select");
             for (const opt of p.options) {

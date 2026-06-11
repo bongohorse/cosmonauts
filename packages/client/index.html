@@ -27,7 +27,7 @@
       }
       #tuning {
         position: fixed;
-        top: 8px;
+        top: 36px;
         right: 8px;
         color: #cfd8ff;
         font: 12px/1.6 ui-monospace, monospace;
@@ -37,6 +37,19 @@
         padding: 6px 10px;
         max-height: 90vh;
         overflow-y: auto;
+      }
+      #version {
+        position: fixed;
+        top: 8px;
+        right: 8px;
+        color: #7df9ff;
+        font: bold 11px/1 ui-monospace, monospace;
+        background: rgba(10, 14, 35, 0.9);
+        border: 1px solid #2c3354;
+        border-radius: 4px;
+        padding: 4px 8px;
+        z-index: 9999;
+        pointer-events: none;
       }
       #tuning summary {
         cursor: pointer;
@@ -113,7 +126,7 @@
         border: 1px solid #2c3354;
         border-radius: 6px;
         padding: 6px 10px;
-        min-width: 180px;
+        min-width: 220px;
       }
       #inspector h4 {
         margin: 0 0 4px;
@@ -128,6 +141,7 @@
   </head>
   <body>
     <div id="hud"></div>
+    <div id="version">v0.0.1</div>
     <details id="tuning" open>
       <summary>tuning</summary>
     </details>

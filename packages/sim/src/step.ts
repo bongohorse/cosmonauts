@@ -20,7 +20,7 @@ import {
 } from "./entities";
 import { closestSegSeg } from "./geometry";
 import { NEUTRAL_INPUT, type PlayerInput } from "./input";
-import { approach, type Vec2 } from "./math";
+import { approach, rand, type Vec2 } from "./math";
 import type { GameState, PlayerState } from "./state";
 
 export type InputMap = Record<number, PlayerInput>;
@@ -636,6 +636,37 @@ export function stepDroids(state: GameState, map: MapData, _content: ContentInde
           });
           d.attackCooldown = 60; // 1 second
         }
+      }
+    } else if (d.pathTargetId) {
+      // Follow path nodes
+      const pathNode = map.entities.find((e) => e.id === d.pathTargetId);
+      if (pathNode) {
+        const dx = pathNode.pos.x - d.pos.x;
+        const dist = Math.abs(dx);
+        if (dist > 0.5) {
+          moveDir = Math.sign(dx);
+        } else {
+          // Reached node! Pick next node
+          let nextId =
+            typeof pathNode.params.nextId === "string" ? pathNode.params.nextId : undefined;
+          const branchId =
+            typeof pathNode.params.branchId === "string" ? pathNode.params.branchId : undefined;
+
+          if (nextId && branchId) {
+            const [val, nextRng] = rand(state.rng);
+            state.rng = nextRng;
+            if (val > 0.5) {
+              nextId = branchId;
+            }
+          } else if (branchId) {
+            nextId = branchId;
+          }
+
+          d.pathTargetId = nextId;
+          moveDir = d.facing; // Keep moving this tick
+        }
+      } else {
+        moveDir = d.facing;
       }
     } else {
       // Just walk in facing direction

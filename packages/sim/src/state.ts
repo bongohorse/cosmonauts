@@ -95,6 +95,7 @@ export interface DroidState {
   grounded: boolean;
   groundShapeId: string;
   attackCooldown: number;
+  pathTargetId?: string;
 }
 
 export interface CreepState {

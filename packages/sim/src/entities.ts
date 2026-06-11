@@ -412,6 +412,7 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
             grounded: false,
             groundShapeId: "",
             attackCooldown: 0,
+            pathTargetId: str(data.params, "pathId"),
           });
         }
       }

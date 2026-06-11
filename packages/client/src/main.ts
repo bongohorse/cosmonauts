@@ -7,6 +7,7 @@ import {
   type GameState,
   type PlayerState,
   step,
+  type Team,
 } from "@cosmonauts/sim";
 import { Application } from "pixi.js";
 import { DebugPanel } from "./debug";
@@ -32,8 +33,18 @@ let doc = loadFromStorage() ?? docFromDef(shippedDef);
 let map = compileDoc(doc);
 content.maps[map.id] = map;
 
+let PLAYER_TEAM: Team = "RED";
+const teamSelect = document.getElementById("player-team") as HTMLSelectElement | null;
+if (teamSelect) {
+  teamSelect.addEventListener("change", () => {
+    PLAYER_TEAM = teamSelect.value as Team;
+    state = newGame();
+    prev = cloneState(state);
+  });
+}
+
 const newGame = (): GameState =>
-  createState(map, [{ playerId: PLAYER_ID, characterId: CHARACTER_ID }], content);
+  createState(map, [{ playerId: PLAYER_ID, characterId: CHARACTER_ID, team: PLAYER_TEAM }], content);
 
 let state = newGame();
 let prev = cloneState(state);

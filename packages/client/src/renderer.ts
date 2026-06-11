@@ -152,7 +152,7 @@ export class Renderer {
       const y = lerp(before.pos.y, p.pos.y) * TILE_PX;
       const hw = (char.hitbox.w / 2) * TILE_PX;
       const hh = (char.hitbox.h / 2) * TILE_PX;
-      const color = Number.parseInt(char.color.slice(1), 16);
+      const color = p.team === "RED" ? 0xff4444 : p.team === "BLU" ? 0x4444ff : Number.parseInt(char.color.slice(1), 16);
       g.rect(x - hw, y - hh, hw * 2, hh * 2).fill(color);
       // An "eye" marks facing — the placeholder's only anatomy.
       g.circle(x + p.facing * hw * 0.45, y - hh * 0.45, 3.5).fill(0x10142a);

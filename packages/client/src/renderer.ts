@@ -312,6 +312,51 @@ export class Renderer {
         g.circle(x, y, 5).fill(teamColor).stroke({ color: 0xffffff, width: 1.5 });
       }
 
+      // Icons
+      if (data.type === "base") {
+        g.rect(x - 6, y - 2, 12, 4).fill(0xffffff);
+        g.rect(x - 2, y - 6, 4, 12).fill(0xffffff);
+      } else if (data.type === "droidSpawner") {
+        g.rect(x - 8, y - 5, 16, 10).stroke({ color: 0xffffff, width: 2 });
+        g.circle(x - 3, y, 2).fill(0xffffff);
+        g.circle(x + 3, y, 2).fill(0xffffff);
+      } else if (data.type === "core") {
+        g.poly([x, y - 10, x + 8, y, x, y + 10, x - 8, y]).fill(0xffffff);
+      } else if (data.type === "fireZone") {
+        g.poly([x - 6, y + 6, x, y - 8, x + 6, y + 6]).fill(0xffaa00);
+      } else if (data.type === "turret" && !dyn.dead) {
+        // Draw rotatable cannon
+        const team = teamVal === "RED" ? "RED" : "BLU";
+        const range = typeof data.params.range === "number" ? data.params.range : 15;
+        let targetPos = null;
+        let minDist = range * range;
+        
+        for (const p of curr.players) {
+          if (p.health <= 0 || p.team === team) continue;
+          const dist2 = Math.pow(p.pos.x - data.pos.x, 2) + Math.pow(p.pos.y - data.pos.y, 2);
+          if (dist2 < minDist) { minDist = dist2; targetPos = p.pos; }
+        }
+        if (curr.droids) {
+          for (const d of curr.droids) {
+            if (d.health <= 0 || d.team === team) continue;
+            const dist2 = Math.pow(d.pos.x - data.pos.x, 2) + Math.pow(d.pos.y - data.pos.y, 2);
+            if (dist2 < minDist) { minDist = dist2; targetPos = d.pos; }
+          }
+        }
+        
+        const startY = y - hh;
+        let dx = team === "RED" ? 1 : -1;
+        let dy = 0;
+        if (targetPos) {
+          dx = targetPos.x - data.pos.x;
+          dy = targetPos.y - (data.pos.y - data.size.h / 2);
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist > 0) { dx /= dist; dy /= dist; }
+        }
+        g.moveTo(x, startY).lineTo(x + dx * 20, startY + dy * 20).stroke({ color: 0xa0a0a0, width: 6, cap: "round" });
+        g.circle(x, startY, 6).fill(0x555555);
+      }
+
       // Draw health bar for destructible entities (turret, core)
       if (dyn.health !== undefined && (data.type === "turret" || data.type === "core") && !dyn.dead) {
         const maxHealth = typeof data.params.health === "number" ? data.params.health : 1000;

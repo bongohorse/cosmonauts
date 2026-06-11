@@ -261,13 +261,15 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
         if (targetPos) {
           // Shoot!
           const dx = targetPos.x - data.pos.x;
-          const dy = targetPos.y - data.pos.y;
+          // Shoot from the top of the turret (Y axis points down, so subtract half height)
+          const startY = data.pos.y - data.size.h / 2;
+          const dy = targetPos.y - startY;
           const dist = Math.sqrt(dx*dx + dy*dy);
           const speed = 20;
           state.projectiles.push({
             id: state.nextEntityId++,
             team: team as any,
-            pos: { x: data.pos.x, y: data.pos.y + data.size.h / 2 }, // shoot from top
+            pos: { x: data.pos.x, y: startY },
             vel: { x: (dx/dist) * speed, y: (dy/dist) * speed },
             radius: 0.3,
             damage: dps * (30 / 60), // assume it shoots every 30 ticks (0.5s)
@@ -279,9 +281,11 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
     }
 
     if (data.type === "droidSpawner") {
+      const intervalTicks = num(data.params, "intervalTicks", 600); // 10s default
+      if (intervalTicks <= 0) continue;
+
       if (dyn.cooldown > 0) dyn.cooldown -= 1;
       if (dyn.cooldown <= 0) {
-        const intervalTicks = num(data.params, "intervalTicks", 600); // 10s default
         dyn.cooldown = intervalTicks;
 
         const team = str(data.params, "team") || "RED";

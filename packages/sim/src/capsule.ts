@@ -32,6 +32,12 @@ function segmentCollidable(
         if (!dyn.enabled) return false;
         return true;
       }
+      if (data.type === "turret") {
+        if (dyn.dead) return false;
+        // Alive turrets use default teamBarrier logic (solidity is teamRED/teamBLU)
+        const team = typeof data.params.team === "string" ? data.params.team : "RED";
+        return team === "RED" ? p.team === "BLU" : p.team === "RED";
+      }
       if (data.type === "teamBarrier") {
         const team = typeof data.params.team === "string" ? data.params.team : "RED";
         const downgradeTo =

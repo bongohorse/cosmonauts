@@ -565,13 +565,13 @@ export function stepDroids(state: GameState, map: MapData, content: ContentIndex
     }
 
     // Walk forward if no target
-    const speed = 4;
+    const speed = 2; // Slower
     let moveDir = 0;
 
     if (targetPos) {
       const dx = targetPos.x - d.pos.x;
       const dist = Math.abs(dx);
-      if (dist > 3) {
+      if (dist > 2) { // Shorter attack range
         moveDir = Math.sign(dx);
       } else {
         // Attack!
@@ -579,7 +579,7 @@ export function stepDroids(state: GameState, map: MapData, content: ContentIndex
         if (d.attackCooldown === 0) {
           const dy = targetPos.y - d.pos.y;
           const distFull = Math.sqrt(dx*dx + dy*dy);
-          const pSpeed = 15;
+          const pSpeed = 5; // Slow range attack
           state.projectiles.push({
             id: state.nextEntityId++,
             team: d.team,
@@ -600,6 +600,12 @@ export function stepDroids(state: GameState, map: MapData, content: ContentIndex
     if (moveDir !== 0) {
       d.facing = moveDir as 1 | -1;
       d.vel.x = approach(d.vel.x, moveDir * speed, 20 * DT);
+      
+      // Jump if stuck
+      if (d.grounded && Math.abs(d.vel.x) < 0.5) {
+        d.vel.y = -12; // Jump force
+        d.grounded = false;
+      }
     } else {
       d.vel.x = approach(d.vel.x, 0, 20 * DT);
     }
@@ -615,7 +621,7 @@ export function stepDroids(state: GameState, map: MapData, content: ContentIndex
       jumpsUsed: 0, jumpCutApplied: false, attackCooldown: 0, health: d.health,
       flux: 0, upgrades: { speed: 0, cooldown: 0, damage: 0, jump: 0 }
     };
-    const mockChar = { hitbox: { w: 0.8, h: 1.8 } } as any;
+    const mockChar = { hitbox: { w: 0.8, h: 0.9 } } as any;
 
     movePlayer(state, map, mockP as PlayerState, mockChar, false);
     

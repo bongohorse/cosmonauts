@@ -1,12 +1,43 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
-  "minimumReleaseAge": "2 days",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommitTypeAll(chore)",
+    ":timezone(Europe/Berlin)"
+  ],
+  "schedule": ["before 8am on monday"],
+  "prHourlyLimit": 3,
+  "prConcurrentLimit": 8,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 8am on monday"]
+  },
   "packageRules": [
     {
-      "groupName": "non-major dependencies",
-      "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "groupName": "dev dependencies (non-major)"
+    },
+    {
+      "matchPackageNames": ["pixi.js", "@pixi/**"],
+      "groupName": "pixi.js"
+    },
+    {
+      "matchPackageNames": ["vite", "vitest", "@vitejs/**"],
+      "groupName": "vite ecosystem"
+    },
+    {
+      "matchPackageNames": ["@biomejs/biome"],
+      "groupName": "biome"
+    },
+    {
+      "matchPackageNames": ["typescript", "tsx", "@types/node"],
+      "groupName": "typescript ecosystem"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
     }
   ]
 }

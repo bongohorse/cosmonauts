@@ -523,5 +523,69 @@ describe("map entities", () => {
       expect(fluxCubes[0]?.homingPlayerId).toBe(player(world).id);
       expect(hpPickups[0]?.homingPlayerId).toBeUndefined();
     });
+
+    it("does not collect health pickups if health is full", () => {
+      const world = makeWorld(
+        ARENA,
+        [],
+        [
+          {
+            id: "hp1",
+            type: "healthPickup",
+            pos: { x: 3, y: 5.5 },
+            size: { w: 1, h: 1 },
+            enabled: true,
+            params: { amount: 30, respawnTimeTicks: 60 },
+          },
+        ],
+      );
+
+      // Player has full health (100)
+      expect(player(world).health).toBe(100);
+
+      // Walk through hp1 (at x=3)
+      run(world, 20, input({ moveX: 1 }));
+      expect(player(world).health).toBe(100);
+      expect(world.state.mapEntities[0]?.enabled).toBe(true); // Left untouched
+    });
+
+    it("dropped pickups collide with solid platforms", () => {
+      // Put a solid rect platform at y=4, and drop a health pack above it
+      const world = makeWorld(
+        ARENA,
+        [
+          {
+            id: "plat",
+            kind: "rect",
+            solidity: "solid",
+            pos: [5, 4.5],
+            size: [4, 1],
+          },
+        ],
+        [],
+      );
+
+      // Add a live health pickup at x=5, y=2 (above platform) falling down
+      world.state.pickups.push({
+        id: world.state.nextEntityId++,
+        kind: "health",
+        pos: { x: 5, y: 2 },
+        vel: { x: 0, y: 1 },
+        amount: 20,
+        ticksLeft: 100,
+      });
+
+      // Run simulation so pickup falls and hits the platform
+      run(world, 50);
+
+      const pk = world.state.pickups[0];
+      expect(pk).toBeDefined();
+      if (pk) {
+        // Platform is at y=4.5 (size 1 means top edge is at y=4.0).
+        // With pickup radius 0.25, it should land around y = 4.0 - 0.25 = 3.75.
+        expect(pk.pos.y).toBeCloseTo(3.75, 1);
+        expect(pk.vel.y).toBe(0);
+      }
+    });
   });
 });

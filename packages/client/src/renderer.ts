@@ -157,6 +157,9 @@ export class Renderer {
       // An "eye" marks facing — the placeholder's only anatomy.
       g.circle(x + p.facing * hw * 0.45, y - hh * 0.45, 3.5).fill(0x10142a);
 
+      // Draw health bar above player
+      this.drawHealthBar(x, y - hh - 8, char.hitbox.w * TILE_PX, p.health / char.stats.maxHealth);
+
       if (this.showHitboxes) {
         this.debugLayer
           .rect(x - hw, y - hh, hw * 2, hh * 2)

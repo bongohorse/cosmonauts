@@ -316,6 +316,9 @@ function applyEntity(
       break;
     }
     case "healthPickup": {
+      if (p.health >= maxHealth) {
+        break;
+      }
       const amount = num(data.params, "amount", 20);
       p.health = Math.min(maxHealth, p.health + amount);
       dyn.enabled = false;

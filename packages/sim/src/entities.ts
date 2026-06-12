@@ -356,7 +356,7 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
   for (let i = 0; i < map.entities.length; i++) {
     const data = map.entities[i];
     const dyn = state.mapEntities[i];
-    if (!data || !dyn || dyn.dead) continue;
+    if (!data || !dyn || dyn.dead || !dyn.enabled) continue;
 
     if (data.type === "turret") {
       if (dyn.cooldown > 0) dyn.cooldown -= 1;

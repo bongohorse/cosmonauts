@@ -357,8 +357,20 @@ export class Renderer {
         g.circle(x + 3, y, 2).fill(0xffffff);
       } else if (data.type === "core") {
         g.poly([x, y - 10, x + 8, y, x, y + 10, x - 8, y]).fill(0xffffff);
-      } else if (data.type === "fireZone") {
-        g.poly([x - 6, y + 6, x, y - 8, x + 6, y + 6]).fill(0xffaa00);
+      } else if (data.type === "fireField") {
+        if (dyn.active) {
+          // Fire phase - bright orange/red
+          g.rect(x - data.size.w / 2, y - data.size.h / 2, data.size.w, data.size.h).fill({ color: 0xff3300, alpha: 0.8 });
+          g.poly([x - 6, y + 6, x, y - 8, x + 6, y + 6]).fill(0xff3300);
+        } else if (dyn.triggered) {
+          // Warning phase - blinking yellow/orange
+          const blink = Math.floor(curr.tick / 15) % 2 === 0;
+          g.rect(x - data.size.w / 2, y - data.size.h / 2, data.size.w, data.size.h).fill({ color: blink ? 0xffaa00 : 0xaa5500, alpha: 0.4 });
+          g.poly([x - 6, y + 6, x, y - 8, x + 6, y + 6]).fill(blink ? 0xffaa00 : 0xaa5500);
+        } else {
+          // Rest phase - dormant
+          g.poly([x - 6, y + 6, x, y - 8, x + 6, y + 6]).stroke({ color: 0xffaa00, width: 1 });
+        }
       } else if (data.type === "turret" && !dyn.dead) {
         // Draw rotatable cannon
         const team = teamVal === "RED" ? "RED" : "BLU";

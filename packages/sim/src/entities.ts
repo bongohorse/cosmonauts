@@ -148,6 +148,17 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
         dyn.active = false;
       }
     }
+
+    if (data.type === "fireField") {
+      if (!dyn.enabled) {
+        dyn.active = false;
+        dyn.triggered = false;
+        continue;
+      }
+      const currentPhase = state.tick % 1860;
+      dyn.triggered = (currentPhase >= 1260 && currentPhase < 1380); // 2s warning
+      dyn.active = (currentPhase >= 1380); // 8s fire
+    }
   }
 
   // 2. Process touch activators
@@ -560,7 +571,9 @@ function applyEntity(
       break;
     }
     case "fireField":
-      p.health = Math.max(0, p.health - num(data.params, "dps", 30) * DT);
+      if (dyn.active) {
+        p.health = Math.max(0, p.health - num(data.params, "dps", 400) * DT);
+      }
       break;
     case "healField":
       p.health = Math.min(maxHealth, p.health + num(data.params, "hps", 20) * DT);

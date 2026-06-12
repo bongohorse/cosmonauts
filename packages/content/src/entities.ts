@@ -61,7 +61,7 @@ export const ENTITY_TYPES: EntityTypeSpec[] = [
     color: "#ff7043",
     defaultSize: [3, 2],
     params: {
-      dps: { kind: "number", label: "damage/s", default: 30, min: 1, max: 500 },
+      dps: { kind: "number", label: "damage/s", default: 400, min: 1, max: 1000 },
     },
   },
   {

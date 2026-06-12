@@ -107,6 +107,7 @@ describe("map entities", () => {
       ],
     );
 
+    world.state.tick = 1380;
     run(world, 20, input({ moveX: 1 }));
     const h1 = player(world).health;
     run(world, 1, input({ moveX: 1 }));

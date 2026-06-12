@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { rand, clamp, approach, dsin, dcos } from "./math.js";
+import { approach, clamp, dcos, dsin, rand } from "./math.js";
 
 describe("math", () => {
   describe("clamp", () => {
@@ -82,7 +82,7 @@ describe("math", () => {
     });
 
     it("returns expected fixed values for a known seed", () => {
-      let state = 1;
+      const state = 1;
       const [val1, nextState1] = rand(state);
       expect(val1).toBeCloseTo(0.6270739405881613, 5);
       expect(nextState1).toBe(1831565814);

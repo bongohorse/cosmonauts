@@ -156,8 +156,8 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
         continue;
       }
       const currentPhase = state.tick % 1860;
-      dyn.triggered = (currentPhase >= 1260 && currentPhase < 1380); // 2s warning
-      dyn.active = (currentPhase >= 1380); // 8s fire
+      dyn.triggered = currentPhase >= 1260 && currentPhase < 1380; // 2s warning
+      dyn.active = currentPhase >= 1380; // 8s fire
     }
   }
 

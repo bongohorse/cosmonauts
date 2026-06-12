@@ -360,12 +360,18 @@ export class Renderer {
       } else if (data.type === "fireField") {
         if (dyn.active) {
           // Fire phase - bright orange/red
-          g.rect(x - data.size.w / 2, y - data.size.h / 2, data.size.w, data.size.h).fill({ color: 0xff3300, alpha: 0.8 });
+          g.rect(x - data.size.w / 2, y - data.size.h / 2, data.size.w, data.size.h).fill({
+            color: 0xff3300,
+            alpha: 0.8,
+          });
           g.poly([x - 6, y + 6, x, y - 8, x + 6, y + 6]).fill(0xff3300);
         } else if (dyn.triggered) {
           // Warning phase - blinking yellow/orange
           const blink = Math.floor(curr.tick / 15) % 2 === 0;
-          g.rect(x - data.size.w / 2, y - data.size.h / 2, data.size.w, data.size.h).fill({ color: blink ? 0xffaa00 : 0xaa5500, alpha: 0.4 });
+          g.rect(x - data.size.w / 2, y - data.size.h / 2, data.size.w, data.size.h).fill({
+            color: blink ? 0xffaa00 : 0xaa5500,
+            alpha: 0.4,
+          });
           g.poly([x - 6, y + 6, x, y - 8, x + 6, y + 6]).fill(blink ? 0xffaa00 : 0xaa5500);
         } else {
           // Rest phase - dormant

@@ -162,7 +162,7 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
       const mode = str(data.params, "mode") || "toggle";
 
       if (trigger === "touch") {
-        let anyPlayerInside = false;
+        let anyInside = false;
         for (const p of state.players) {
           const char = content.characters[p.characterId];
           if (char === undefined) continue;
@@ -177,19 +177,37 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
             char.hitbox.h / 2,
           );
           if (inside) {
-            anyPlayerInside = true;
+            anyInside = true;
             break;
           }
         }
 
+        if (!anyInside) {
+          for (const d of state.droids) {
+            if (aabbOverlap(data.pos.x, data.pos.y, data.size.w / 2, data.size.h / 2, d.pos.x, d.pos.y, 0.4, 0.45)) {
+              anyInside = true;
+              break;
+            }
+          }
+        }
+
+        if (!anyInside) {
+          for (const c of state.creeps) {
+            if (aabbOverlap(data.pos.x, data.pos.y, data.size.w / 2, data.size.h / 2, c.pos.x, c.pos.y, 0.4, 0.4)) {
+              anyInside = true;
+              break;
+            }
+          }
+        }
+
         if (mode === "momentary") {
-          dyn.active = anyPlayerInside;
+          dyn.active = anyInside;
         } else {
           // toggle or once: detect rising edge using dyn.active as "was touched last tick"
           const previouslyTouched = !!dyn.active;
-          dyn.active = anyPlayerInside;
+          dyn.active = anyInside;
 
-          if (anyPlayerInside && !previouslyTouched) {
+          if (anyInside && !previouslyTouched) {
             if (mode === "once" && !dyn.triggered) {
               dyn.triggered = true;
               triggerTargets(state, map, data.targets);

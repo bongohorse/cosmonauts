@@ -642,9 +642,9 @@ export function stepDroids(state: GameState, map: MapData, _content: ContentInde
       const pathNode = map.entities.find((e) => e.id === d.pathTargetId);
       if (pathNode) {
         const dx = pathNode.pos.x - d.pos.x;
-        const dist = Math.abs(dx);
-        if (dist > 0.5) {
-          moveDir = Math.sign(dx);
+        const dy = pathNode.pos.y - d.pos.y;
+        if (Math.abs(dx) > 0.5 || Math.abs(dy) > 1.0) {
+          moveDir = Math.abs(dx) > 0.1 ? Math.sign(dx) : 0;
         } else {
           // Reached node! Pick next node
           let nextId =

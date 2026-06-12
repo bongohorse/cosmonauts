@@ -3,15 +3,7 @@ import type { ShapeDef, Solidity, Vec2 } from "@cosmonauts/sim";
 import { Assets, Color, Sprite } from "pixi.js";
 import type { Renderer } from "../renderer";
 import { TILE_PX } from "../renderer";
-import {
-  blankDoc,
-  clearStorage,
-  compileDoc,
-  docFromJson,
-  docToDef,
-  type MapDoc,
-  saveToStorage,
-} from "./doc";
+import { blankDoc, compileDoc, docFromJson, docToDef, type MapDoc, saveToStorage } from "./doc";
 import { History } from "./history";
 
 type Tool = "select" | "rect" | "polygon" | "spawn" | "dummy" | "entity" | "brush";
@@ -1665,7 +1657,11 @@ export class Editor {
     const btnMirror = document.createElement("button");
     btnMirror.title = "Toggle Mirror Mode";
     btnMirror.dataset.action = "mirror";
-    btnMirror.innerHTML = `<span>Mirror</span><kbd>M</kbd>`;
+    const spanMirror = document.createElement("span");
+    spanMirror.textContent = "Mirror";
+    const kbdMirror = document.createElement("kbd");
+    kbdMirror.textContent = "M";
+    btnMirror.append(spanMirror, kbdMirror);
     btnMirror.addEventListener("click", () => {
       this.mirrorMode = !this.mirrorMode;
       this.updateStatus();
@@ -1804,7 +1800,7 @@ export class Editor {
 
   private refreshInspector(): void {
     const panel = this.inspector;
-    panel.innerHTML = "";
+    panel.replaceChildren();
     if (!this.active || this.selection.length === 0) {
       panel.style.display = "none";
       if (this.renderer.canvasElement) {
@@ -2439,11 +2435,11 @@ export class Editor {
     if (!confirm("Start a new blank map? (current map stays in undo history)")) return;
     this.history.push(this.doc);
     const newDoc = blankDoc();
-    newDoc.id = "custom-map-" + Math.random().toString(36).substring(2, 8);
+    newDoc.id = `custom-map-${Math.random().toString(36).substring(2, 8)}`;
     newDoc.name = "New Custom Map";
 
     // Save to storage and switch
-    localStorage.setItem("cosmonauts.editor.mapdoc." + newDoc.id, JSON.stringify(docToDef(newDoc)));
+    localStorage.setItem(`cosmonauts.editor.mapdoc.${newDoc.id}`, JSON.stringify(docToDef(newDoc)));
     this.onSwitchMap?.(newDoc.id);
   }
 }

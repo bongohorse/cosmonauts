@@ -611,6 +611,7 @@ export function stepDroids(state: GameState, map: MapData, _content: ContentInde
     // Walk forward if no target
     const speed = 2; // Slower
     let moveDir = 0;
+    let jumpRequested = false;
 
     if (targetPos) {
       const dx = targetPos.x - d.pos.x;
@@ -638,13 +639,16 @@ export function stepDroids(state: GameState, map: MapData, _content: ContentInde
         }
       }
     } else if (d.pathTargetId) {
-      // Follow path nodes
       const pathNode = map.entities.find((e) => e.id === d.pathTargetId);
       if (pathNode) {
         const dx = pathNode.pos.x - d.pos.x;
         const dy = pathNode.pos.y - d.pos.y;
         if (Math.abs(dx) > 0.5 || Math.abs(dy) > 1.0) {
           moveDir = Math.abs(dx) > 0.1 ? Math.sign(dx) : 0;
+          // Request jump if we are directly below the node
+          if (Math.abs(dx) <= 0.5 && dy < -0.5) {
+            jumpRequested = true;
+          }
         } else {
           // Reached node! Pick next node
           let nextId =
@@ -679,11 +683,15 @@ export function stepDroids(state: GameState, map: MapData, _content: ContentInde
 
       // Jump if stuck
       if (d.grounded && Math.abs(d.vel.x) < 0.5) {
-        d.vel.y = -12; // Jump force
-        d.grounded = false;
+        jumpRequested = true;
       }
     } else {
       d.vel.x = approach(d.vel.x, 0, 20 * DT);
+    }
+
+    if (jumpRequested && d.grounded) {
+      d.vel.y = -12; // Jump force
+      d.grounded = false;
     }
 
     // Move (very simplified)

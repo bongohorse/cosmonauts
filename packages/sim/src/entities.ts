@@ -184,7 +184,18 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
 
         if (!anyInside) {
           for (const d of state.droids) {
-            if (aabbOverlap(data.pos.x, data.pos.y, data.size.w / 2, data.size.h / 2, d.pos.x, d.pos.y, 0.4, 0.45)) {
+            if (
+              aabbOverlap(
+                data.pos.x,
+                data.pos.y,
+                data.size.w / 2,
+                data.size.h / 2,
+                d.pos.x,
+                d.pos.y,
+                0.4,
+                0.45,
+              )
+            ) {
               anyInside = true;
               break;
             }
@@ -193,7 +204,18 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
 
         if (!anyInside) {
           for (const c of state.creeps) {
-            if (aabbOverlap(data.pos.x, data.pos.y, data.size.w / 2, data.size.h / 2, c.pos.x, c.pos.y, 0.4, 0.4)) {
+            if (
+              aabbOverlap(
+                data.pos.x,
+                data.pos.y,
+                data.size.w / 2,
+                data.size.h / 2,
+                c.pos.x,
+                c.pos.y,
+                0.4,
+                0.4,
+              )
+            ) {
               anyInside = true;
               break;
             }

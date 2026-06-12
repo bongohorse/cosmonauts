@@ -1,6 +1,6 @@
 import { defaultParams, ENTITY_TYPES, type EntityDef, entityTypeSpec } from "@cosmonauts/content";
 import type { ShapeDef, Solidity, Vec2 } from "@cosmonauts/sim";
-import { Color } from "pixi.js";
+import { Assets, Color, Sprite } from "pixi.js";
 import type { Renderer } from "../renderer";
 import { TILE_PX } from "../renderer";
 import {
@@ -92,6 +92,7 @@ export class Editor {
   private inspector!: HTMLElement;
   private statusEl!: HTMLElement;
   private warningsEl!: HTMLElement;
+  private bgSprite: Sprite | null = null;
 
   constructor(
     private renderer: Renderer,
@@ -1481,6 +1482,7 @@ export class Editor {
     };
 
     const icons: Record<string, string> = {
+      bg: "M4 4h16v16H4z M14 9l-3 4-2-2-3 4h12z",
       select: "M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z",
       brush: "M12 19l7-7 3 3-7 7-3-3z M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z M2 2l7.586 7.586",
       rect: "M3 3h18v18H3z",
@@ -1603,6 +1605,7 @@ export class Editor {
     topBar.appendChild(topDiv);
 
     const actions: [string, string, string, () => void][] = [
+      ["bg", "Set Background", "", () => this.uploadBackground()],
       ["undo", "Undo", "", () => this.undo()],
       ["redo", "Redo", "", () => this.redo()],
       ["export", "Export", "", () => this.exportJson()],
@@ -2354,6 +2357,29 @@ export class Editor {
     a.download = `${this.doc.id}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
+  }
+
+  private uploadBackground(): void {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      const texture = await Assets.load({
+        src: url,
+        parser: "texture",
+      });
+      if (!this.bgSprite) {
+        this.bgSprite = new Sprite(texture);
+        this.bgSprite.alpha = 0.5;
+        this.renderer.world.addChildAt(this.bgSprite, 0);
+      } else {
+        this.bgSprite.texture = texture;
+      }
+    };
+    input.click();
   }
 
   private importJson(): void {

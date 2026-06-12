@@ -297,6 +297,9 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
     }
 
     // Apply trigger volumes to droids (fireZone, killZone, jumper, etc.)
+    // Droids and creeps cannot pick up flux cubes.
+    if (data.type === "fluxCube") continue;
+
     for (const d of state.droids) {
       if (!dyn.enabled) break;
       if (d.health <= 0) continue;

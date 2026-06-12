@@ -7,10 +7,7 @@ describe("isSolid", () => {
   const map = {
     width: 3,
     height: 2,
-    solid: [
-      true, false, true,
-      false, true, false,
-    ],
+    solid: [true, false, true, false, true, false],
   } as MapData;
 
   it("returns true for out-of-bounds coordinates", () => {

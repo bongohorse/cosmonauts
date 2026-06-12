@@ -566,14 +566,17 @@ export function stepDroids(state: GameState, map: MapData, _content: ContentInde
 
     // AI: find closest enemy target (player, turret, or core)
     let targetPos: Vec2 | null = null;
+    let targetHW = 0;
     let minDist = 15 * 15;
 
     for (const p of state.players) {
       if (p.health <= 0 || p.team === d.team) continue;
+      if (Math.abs(p.pos.y - d.pos.y) > 4) continue;
       const dist2 = (p.pos.x - d.pos.x) ** 2 + (p.pos.y - d.pos.y) ** 2;
       if (dist2 < minDist) {
         minDist = dist2;
         targetPos = p.pos;
+        targetHW = 0.4;
       }
     }
 
@@ -583,28 +586,34 @@ export function stepDroids(state: GameState, map: MapData, _content: ContentInde
       if (!data || !dyn || dyn.dead || (data.type !== "turret" && data.type !== "core")) continue;
       const team = typeof data.params.team === "string" ? data.params.team : undefined;
       if (team === d.team) continue;
+      if (Math.abs(data.pos.y - d.pos.y) > Math.max(4, data.size.h / 2 + 2)) continue;
       const dist2 = (data.pos.x - d.pos.x) ** 2 + (data.pos.y - d.pos.y) ** 2;
       if (dist2 < minDist) {
         minDist = dist2;
         targetPos = data.pos;
+        targetHW = data.size.w / 2;
       }
     }
 
     for (const otherD of state.droids) {
       if (otherD.id === d.id || otherD.health <= 0 || otherD.team === d.team) continue;
+      if (Math.abs(otherD.pos.y - d.pos.y) > 4) continue;
       const dist2 = (otherD.pos.x - d.pos.x) ** 2 + (otherD.pos.y - d.pos.y) ** 2;
       if (dist2 < minDist) {
         minDist = dist2;
         targetPos = otherD.pos;
+        targetHW = 0.4;
       }
     }
 
     for (const c of state.creeps) {
       if (c.health <= 0) continue;
+      if (Math.abs(c.pos.y - d.pos.y) > 4) continue;
       const dist2 = (c.pos.x - d.pos.x) ** 2 + (c.pos.y - d.pos.y) ** 2;
       if (dist2 < minDist) {
         minDist = dist2;
         targetPos = c.pos;
+        targetHW = 0.4;
       }
     }
 
@@ -616,7 +625,7 @@ export function stepDroids(state: GameState, map: MapData, _content: ContentInde
     if (targetPos) {
       const dx = targetPos.x - d.pos.x;
       const dist = Math.abs(dx);
-      if (dist > 2) {
+      if (dist > 2 + targetHW) {
         // Shorter attack range
         moveDir = Math.sign(dx);
       } else {

@@ -155,7 +155,7 @@ function renderShop(p: PlayerState): void {
     },
   ];
 
-  shopUpgradesEl.innerHTML = "";
+  shopUpgradesEl.textContent = "";
   for (const cfg of upgradesConfig) {
     const lvl = p.upgrades[cfg.id];
     const isMax = lvl >= cfg.max;

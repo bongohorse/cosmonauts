@@ -2083,7 +2083,7 @@ export class Editor {
           if (!spec) return;
 
           const newEntity: EntityDef = {
-            id: `e_${Math.random().toString(36).slice(2, 8)}`,
+            id: `e_${crypto.randomUUID()}`,
             // biome-ignore lint/suspicious/noExplicitAny: dynamic type
             type: convertSelect.value as any,
             pos: [cx, cy],
@@ -2439,7 +2439,7 @@ export class Editor {
     if (!confirm("Start a new blank map? (current map stays in undo history)")) return;
     this.history.push(this.doc);
     const newDoc = blankDoc();
-    newDoc.id = "custom-map-" + Math.random().toString(36).substring(2, 8);
+    newDoc.id = "custom-map-" + crypto.randomUUID();
     newDoc.name = "New Custom Map";
 
     // Save to storage and switch

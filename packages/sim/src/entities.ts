@@ -21,13 +21,14 @@ function bool(params: Params, key: string): boolean {
 }
 
 export function triggerTargets(state: GameState, map: MapData, targets?: string[]): void {
-  if (!targets) return;
-  for (const tId of targets) {
-    const idx = map.entities.findIndex((e) => e.id === tId);
-    if (idx !== -1) {
-      const targetDyn = state.mapEntities[idx];
-      if (targetDyn) {
-        targetDyn.enabled = !targetDyn.enabled;
+  if (!targets || targets.length === 0) return;
+  for (const t of targets) {
+    const targetIdx = map.entities.findIndex((e) => e.id === t);
+    if (targetIdx !== -1) {
+      const dyn = state.mapEntities[targetIdx];
+      if (dyn) {
+        dyn.enabled = !dyn.enabled;
+        dyn.active = true;
       }
     }
   }

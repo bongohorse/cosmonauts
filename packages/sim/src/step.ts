@@ -167,11 +167,12 @@ function projectileHitsWorld(
   nx: number,
   ny: number,
   radius: number,
+  entityIdToIndex: Map<string, number>,
 ): boolean {
   const r2 = radius * radius;
   for (const seg of map.segments) {
     // Check if this segment belongs to a door entity.
-    const entityIndex = map.entities.findIndex((e) => e.id === seg.shapeId);
+    const entityIndex = entityIdToIndex.get(seg.shapeId) ?? -1;
     if (entityIndex !== -1) {
       const data = map.entities[entityIndex];
       const dyn = state.mapEntities[entityIndex];
@@ -197,6 +198,12 @@ function stepProjectiles(state: GameState, map: MapData): void {
   const dummyHw = DUMMY_WIDTH / 2;
   const dummyHh = DUMMY_HEIGHT / 2;
 
+  const entityIdToIndex = new Map<string, number>();
+  for (let i = 0; i < map.entities.length; i++) {
+    const e = map.entities[i];
+    if (e) entityIdToIndex.set(e.id, i);
+  }
+
   for (let i = state.projectiles.length - 1; i >= 0; i--) {
     const pr = state.projectiles[i];
     if (pr === undefined) continue;
@@ -208,7 +215,7 @@ function stepProjectiles(state: GameState, map: MapData): void {
 
     let dead = pr.ticksLeft <= 0;
 
-    if (!dead && projectileHitsWorld(state, map, ox, oy, pr.pos.x, pr.pos.y, pr.radius)) {
+    if (!dead && projectileHitsWorld(state, map, ox, oy, pr.pos.x, pr.pos.y, pr.radius, entityIdToIndex)) {
       dead = true;
     }
 

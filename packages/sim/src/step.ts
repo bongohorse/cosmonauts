@@ -30,12 +30,17 @@ export function step(state: GameState, inputs: InputMap, content: ContentIndex):
   const map = content.maps[state.mapId];
   if (map === undefined) throw new Error(`unknown map "${state.mapId}"`);
 
+  const entityIdToIndex = new Map<string, number>();
+
   // Reset active state for momentary activators and timers at the start of the tick.
   // This allows touch or projectile hits to set it to true during the tick.
   for (let i = 0; i < map.entities.length; i++) {
+    const data = map.entities[i];
+    if (data) {
+      entityIdToIndex.set(data.id, i);
+    }
     const dyn = state.mapEntities[i];
     if (dyn === undefined) continue;
-    const data = map.entities[i];
     if (data && (data.type === "activator" || data.type === "timer")) {
       dyn.active = false;
     }
@@ -47,9 +52,9 @@ export function step(state: GameState, inputs: InputMap, content: ContentIndex):
     stepPlayer(state, player, inputs[player.id] ?? NEUTRAL_INPUT, char, map, content);
   }
 
-  stepProjectiles(state, map);
+  stepProjectiles(state, map, entityIdToIndex);
   stepMapEntities(state, map, content);
-  stepPickups(state, map, content);
+  stepPickups(state, map, content, entityIdToIndex);
   stepCreeps(state, map, content);
   stepDummies(state);
   stepDroids(state, map, content);
@@ -167,11 +172,12 @@ function projectileHitsWorld(
   nx: number,
   ny: number,
   radius: number,
+  entityIdToIndex: Map<string, number>,
 ): boolean {
   const r2 = radius * radius;
   for (const seg of map.segments) {
     // Check if this segment belongs to a door entity.
-    const entityIndex = map.entities.findIndex((e) => e.id === seg.shapeId);
+    const entityIndex = entityIdToIndex.get(seg.shapeId) ?? -1;
     if (entityIndex !== -1) {
       const data = map.entities[entityIndex];
       const dyn = state.mapEntities[entityIndex];
@@ -193,7 +199,11 @@ function projectileHitsWorld(
   return false;
 }
 
-function stepProjectiles(state: GameState, map: MapData): void {
+function stepProjectiles(
+  state: GameState,
+  map: MapData,
+  entityIdToIndex: Map<string, number>,
+): void {
   const dummyHw = DUMMY_WIDTH / 2;
   const dummyHh = DUMMY_HEIGHT / 2;
 
@@ -208,7 +218,10 @@ function stepProjectiles(state: GameState, map: MapData): void {
 
     let dead = pr.ticksLeft <= 0;
 
-    if (!dead && projectileHitsWorld(state, map, ox, oy, pr.pos.x, pr.pos.y, pr.radius)) {
+    if (
+      !dead &&
+      projectileHitsWorld(state, map, ox, oy, pr.pos.x, pr.pos.y, pr.radius, entityIdToIndex)
+    ) {
       dead = true;
     }
 
@@ -392,10 +405,11 @@ function pickupHitsWorld(
   ny: number,
   radius: number,
   velY: number,
+  entityIdToIndex: Map<string, number>,
 ): { hit: boolean; normalY: number } | null {
   const r2 = radius * radius;
   for (const seg of map.segments) {
-    const entityIndex = map.entities.findIndex((e) => e.id === seg.shapeId);
+    const entityIndex = entityIdToIndex.get(seg.shapeId) ?? -1;
     if (entityIndex !== -1) {
       const data = map.entities[entityIndex];
       const dyn = state.mapEntities[entityIndex];
@@ -427,7 +441,12 @@ function pickupHitsWorld(
   return null;
 }
 
-function stepPickups(state: GameState, map: MapData, content: ContentIndex): void {
+function stepPickups(
+  state: GameState,
+  map: MapData,
+  content: ContentIndex,
+  entityIdToIndex: Map<string, number>,
+): void {
   for (let i = state.pickups.length - 1; i >= 0; i--) {
     const pickup = state.pickups[i];
     if (pickup === undefined) continue;
@@ -486,6 +505,7 @@ function stepPickups(state: GameState, map: MapData, content: ContentIndex): voi
           pickup.pos.y,
           radius,
           pickup.vel.y,
+          entityIdToIndex,
         );
         if (hitX) {
           pickup.vel.x = 0;
@@ -502,6 +522,7 @@ function stepPickups(state: GameState, map: MapData, content: ContentIndex): voi
           nextY,
           radius,
           pickup.vel.y,
+          entityIdToIndex,
         );
         if (hitY) {
           if (pickup.vel.y > 0) {

@@ -361,20 +361,20 @@ export class Renderer {
         if (dyn.active) {
           // Fire phase - fast blinking bright red/orange
           const fastBlink = Math.floor(curr.tick / 4) % 2 === 0;
-          g.rect(x - data.size.w / 2, y - data.size.h / 2, data.size.w, data.size.h).fill({
+          g.rect(x - hw, y - hh, hw * 2, hh * 2).fill({
             color: fastBlink ? 0xff3300 : 0xff7700,
             alpha: 0.8,
           });
         } else if (dyn.triggered) {
           // Warning phase - blinking yellow/orange
           const blink = Math.floor(curr.tick / 15) % 2 === 0;
-          g.rect(x - data.size.w / 2, y - data.size.h / 2, data.size.w, data.size.h).fill({
+          g.rect(x - hw, y - hh, hw * 2, hh * 2).fill({
             color: blink ? 0xffaa00 : 0xaa5500,
             alpha: 0.4,
           });
         } else {
           // Rest phase - muted slightly visible area
-          g.rect(x - data.size.w / 2, y - data.size.h / 2, data.size.w, data.size.h).fill({
+          g.rect(x - hw, y - hh, hw * 2, hh * 2).fill({
             color: 0xffaa00,
             alpha: 0.1,
           });

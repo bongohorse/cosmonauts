@@ -552,6 +552,199 @@ function stepPickups(state: GameState, map: MapData, content: ContentIndex): voi
   }
 }
 
+function updateDroidMovement(
+  state: GameState,
+  map: MapData,
+  d: (typeof state.droids)[0],
+  targetPos: Vec2 | null,
+  targetHW: number,
+): void {
+  const speed = 2; // Slower
+  let moveDir = 0;
+  let jumpRequested = false;
+
+  if (targetPos) {
+    const dx = targetPos.x - d.pos.x;
+    const dist = Math.abs(dx);
+    if (dist > 2 + targetHW) {
+      // Shorter attack range
+      moveDir = Math.sign(dx);
+    } else {
+      // Attack!
+      d.facing = (Math.sign(dx) as 1 | -1) || d.facing;
+      if (d.attackCooldown === 0) {
+        const dy = targetPos.y - d.pos.y;
+        const distFull = Math.sqrt(dx * dx + dy * dy);
+        const pSpeed = 5; // Slow range attack
+        state.projectiles.push({
+          id: state.nextEntityId++,
+          team: d.team,
+          pos: { x: d.pos.x, y: d.pos.y },
+          vel: { x: (dx / distFull) * pSpeed, y: (dy / distFull) * pSpeed },
+          radius: 0.2,
+          damage: 20,
+          ticksLeft: 30,
+        });
+        d.attackCooldown = 60; // 1 second
+      }
+    }
+  } else if (d.pathTargetId) {
+    const pathNode = map.entities.find((e) => e.id === d.pathTargetId);
+    if (pathNode) {
+      const dx = pathNode.pos.x - d.pos.x;
+      const dy = pathNode.pos.y - d.pos.y;
+      if (Math.abs(dx) > 0.5 || Math.abs(dy) > 1.0) {
+        moveDir = Math.abs(dx) > 0.1 ? Math.sign(dx) : 0;
+        // Request jump if we are directly below the node
+        if (Math.abs(dx) <= 0.5 && dy < -0.5) {
+          jumpRequested = true;
+        }
+      } else {
+        // Reached node! Pick next node
+        let nextId =
+          typeof pathNode.params.nextId === "string" ? pathNode.params.nextId : undefined;
+        const branchId =
+          typeof pathNode.params.branchId === "string" ? pathNode.params.branchId : undefined;
+
+        if (nextId && branchId) {
+          const [val, nextRng] = rand(state.rng);
+          state.rng = nextRng;
+          if (val > 0.5) {
+            nextId = branchId;
+          }
+        } else if (branchId) {
+          nextId = branchId;
+        }
+
+        d.pathTargetId = nextId;
+        moveDir = d.facing; // Keep moving this tick
+      }
+    } else {
+      moveDir = d.facing;
+    }
+  } else {
+    // Just walk in facing direction
+    moveDir = d.facing;
+  }
+
+  if (moveDir !== 0) {
+    d.facing = moveDir as 1 | -1;
+    d.vel.x = approach(d.vel.x, moveDir * speed, 20 * DT);
+
+    // Jump if stuck
+    if (d.grounded && Math.abs(d.vel.x) < 0.5) {
+      jumpRequested = true;
+    }
+  } else {
+    d.vel.x = approach(d.vel.x, 0, 20 * DT);
+  }
+
+  if (jumpRequested && d.grounded) {
+    d.vel.y = -12; // Jump force
+    d.grounded = false;
+  }
+
+  // Move (very simplified)
+  d.vel.y += 30 * DT; // gravity
+
+  // Use player move logic by creating mock player and char objects
+  const mockP = {
+    id: d.id,
+    characterId: "",
+    team: d.team,
+    pos: d.pos,
+    vel: d.vel,
+    facing: d.facing,
+    grounded: d.grounded,
+    groundNX: 0,
+    groundNY: 0,
+    groundShapeId: d.groundShapeId,
+    groundGlass: false,
+    dropShapeId: "",
+    dropTicks: 0,
+    jumpsUsed: 0,
+    jumpCutApplied: false,
+    attackCooldown: 0,
+    health: d.health,
+    flux: 0,
+    upgrades: { speed: 0, cooldown: 0, damage: 0, jump: 0 },
+  };
+  // biome-ignore lint/suspicious/noExplicitAny: valid
+  const mockChar = { hitbox: { w: 0.8, h: 0.9 } } as any;
+
+  movePlayer(state, map, mockP as PlayerState, mockChar, false);
+
+  d.pos.x = mockP.pos.x;
+  d.pos.y = mockP.pos.y;
+  d.vel.x = mockP.vel.x;
+  d.vel.y = mockP.vel.y;
+  d.grounded = mockP.grounded;
+  d.groundShapeId = mockP.groundShapeId;
+}
+
+function findDroidTarget(
+  state: GameState,
+  map: MapData,
+  d: (typeof state.droids)[0],
+): { targetPos: Vec2; targetHW: number } | null {
+  let targetPos: Vec2 | null = null;
+  let targetHW = 0;
+  let minDist = 15 * 15;
+
+  for (const p of state.players) {
+    if (p.health <= 0 || p.team === d.team) continue;
+    if (Math.abs(p.pos.y - d.pos.y) > 4) continue;
+    const dist2 = (p.pos.x - d.pos.x) ** 2 + (p.pos.y - d.pos.y) ** 2;
+    if (dist2 < minDist) {
+      minDist = dist2;
+      targetPos = p.pos;
+      targetHW = 0.4;
+    }
+  }
+
+  for (let j = 0; j < map.entities.length; j++) {
+    const data = map.entities[j];
+    const dyn = state.mapEntities[j];
+    if (!data || !dyn || dyn.dead || (data.type !== "turret" && data.type !== "core")) continue;
+    const team = typeof data.params.team === "string" ? data.params.team : undefined;
+    if (team === d.team) continue;
+    if (Math.abs(data.pos.y - d.pos.y) > Math.max(4, data.size.h / 2 + 2)) continue;
+    const dist2 = (data.pos.x - d.pos.x) ** 2 + (data.pos.y - d.pos.y) ** 2;
+    if (dist2 < minDist) {
+      minDist = dist2;
+      targetPos = data.pos;
+      targetHW = data.size.w / 2;
+    }
+  }
+
+  for (const otherD of state.droids) {
+    if (otherD.id === d.id || otherD.health <= 0 || otherD.team === d.team) continue;
+    if (Math.abs(otherD.pos.y - d.pos.y) > 4) continue;
+    const dist2 = (otherD.pos.x - d.pos.x) ** 2 + (otherD.pos.y - d.pos.y) ** 2;
+    if (dist2 < minDist) {
+      minDist = dist2;
+      targetPos = otherD.pos;
+      targetHW = 0.4;
+    }
+  }
+
+  for (const c of state.creeps) {
+    if (c.health <= 0) continue;
+    if (Math.abs(c.pos.y - d.pos.y) > 4) continue;
+    const dist2 = (c.pos.x - d.pos.x) ** 2 + (c.pos.y - d.pos.y) ** 2;
+    if (dist2 < minDist) {
+      minDist = dist2;
+      targetPos = c.pos;
+      targetHW = 0.4;
+    }
+  }
+
+  if (targetPos) {
+    return { targetPos, targetHW };
+  }
+  return null;
+}
+
 export function stepDroids(state: GameState, map: MapData, _content: ContentIndex): void {
   for (let i = state.droids.length - 1; i >= 0; i--) {
     const d = state.droids[i];
@@ -565,180 +758,15 @@ export function stepDroids(state: GameState, map: MapData, _content: ContentInde
     if (d.attackCooldown > 0) d.attackCooldown -= 1;
 
     // AI: find closest enemy target (player, turret, or core)
+    const target = findDroidTarget(state, map, d);
     let targetPos: Vec2 | null = null;
     let targetHW = 0;
-    let minDist = 15 * 15;
-
-    for (const p of state.players) {
-      if (p.health <= 0 || p.team === d.team) continue;
-      if (Math.abs(p.pos.y - d.pos.y) > 4) continue;
-      const dist2 = (p.pos.x - d.pos.x) ** 2 + (p.pos.y - d.pos.y) ** 2;
-      if (dist2 < minDist) {
-        minDist = dist2;
-        targetPos = p.pos;
-        targetHW = 0.4;
-      }
+    if (target) {
+      targetPos = target.targetPos;
+      targetHW = target.targetHW;
     }
 
-    for (let j = 0; j < map.entities.length; j++) {
-      const data = map.entities[j];
-      const dyn = state.mapEntities[j];
-      if (!data || !dyn || dyn.dead || (data.type !== "turret" && data.type !== "core")) continue;
-      const team = typeof data.params.team === "string" ? data.params.team : undefined;
-      if (team === d.team) continue;
-      if (Math.abs(data.pos.y - d.pos.y) > Math.max(4, data.size.h / 2 + 2)) continue;
-      const dist2 = (data.pos.x - d.pos.x) ** 2 + (data.pos.y - d.pos.y) ** 2;
-      if (dist2 < minDist) {
-        minDist = dist2;
-        targetPos = data.pos;
-        targetHW = data.size.w / 2;
-      }
-    }
-
-    for (const otherD of state.droids) {
-      if (otherD.id === d.id || otherD.health <= 0 || otherD.team === d.team) continue;
-      if (Math.abs(otherD.pos.y - d.pos.y) > 4) continue;
-      const dist2 = (otherD.pos.x - d.pos.x) ** 2 + (otherD.pos.y - d.pos.y) ** 2;
-      if (dist2 < minDist) {
-        minDist = dist2;
-        targetPos = otherD.pos;
-        targetHW = 0.4;
-      }
-    }
-
-    for (const c of state.creeps) {
-      if (c.health <= 0) continue;
-      if (Math.abs(c.pos.y - d.pos.y) > 4) continue;
-      const dist2 = (c.pos.x - d.pos.x) ** 2 + (c.pos.y - d.pos.y) ** 2;
-      if (dist2 < minDist) {
-        minDist = dist2;
-        targetPos = c.pos;
-        targetHW = 0.4;
-      }
-    }
-
-    // Walk forward if no target
-    const speed = 2; // Slower
-    let moveDir = 0;
-    let jumpRequested = false;
-
-    if (targetPos) {
-      const dx = targetPos.x - d.pos.x;
-      const dist = Math.abs(dx);
-      if (dist > 2 + targetHW) {
-        // Shorter attack range
-        moveDir = Math.sign(dx);
-      } else {
-        // Attack!
-        d.facing = (Math.sign(dx) as 1 | -1) || d.facing;
-        if (d.attackCooldown === 0) {
-          const dy = targetPos.y - d.pos.y;
-          const distFull = Math.sqrt(dx * dx + dy * dy);
-          const pSpeed = 5; // Slow range attack
-          state.projectiles.push({
-            id: state.nextEntityId++,
-            team: d.team,
-            pos: { x: d.pos.x, y: d.pos.y },
-            vel: { x: (dx / distFull) * pSpeed, y: (dy / distFull) * pSpeed },
-            radius: 0.2,
-            damage: 20,
-            ticksLeft: 30,
-          });
-          d.attackCooldown = 60; // 1 second
-        }
-      }
-    } else if (d.pathTargetId) {
-      const pathNode = map.entities.find((e) => e.id === d.pathTargetId);
-      if (pathNode) {
-        const dx = pathNode.pos.x - d.pos.x;
-        const dy = pathNode.pos.y - d.pos.y;
-        if (Math.abs(dx) > 0.5 || Math.abs(dy) > 1.0) {
-          moveDir = Math.abs(dx) > 0.1 ? Math.sign(dx) : 0;
-          // Request jump if we are directly below the node
-          if (Math.abs(dx) <= 0.5 && dy < -0.5) {
-            jumpRequested = true;
-          }
-        } else {
-          // Reached node! Pick next node
-          let nextId =
-            typeof pathNode.params.nextId === "string" ? pathNode.params.nextId : undefined;
-          const branchId =
-            typeof pathNode.params.branchId === "string" ? pathNode.params.branchId : undefined;
-
-          if (nextId && branchId) {
-            const [val, nextRng] = rand(state.rng);
-            state.rng = nextRng;
-            if (val > 0.5) {
-              nextId = branchId;
-            }
-          } else if (branchId) {
-            nextId = branchId;
-          }
-
-          d.pathTargetId = nextId;
-          moveDir = d.facing; // Keep moving this tick
-        }
-      } else {
-        moveDir = d.facing;
-      }
-    } else {
-      // Just walk in facing direction
-      moveDir = d.facing;
-    }
-
-    if (moveDir !== 0) {
-      d.facing = moveDir as 1 | -1;
-      d.vel.x = approach(d.vel.x, moveDir * speed, 20 * DT);
-
-      // Jump if stuck
-      if (d.grounded && Math.abs(d.vel.x) < 0.5) {
-        jumpRequested = true;
-      }
-    } else {
-      d.vel.x = approach(d.vel.x, 0, 20 * DT);
-    }
-
-    if (jumpRequested && d.grounded) {
-      d.vel.y = -12; // Jump force
-      d.grounded = false;
-    }
-
-    // Move (very simplified)
-    d.vel.y += 30 * DT; // gravity
-
-    // Use player move logic by creating mock player and char objects
-    const mockP = {
-      id: d.id,
-      characterId: "",
-      team: d.team,
-      pos: d.pos,
-      vel: d.vel,
-      facing: d.facing,
-      grounded: d.grounded,
-      groundNX: 0,
-      groundNY: 0,
-      groundShapeId: d.groundShapeId,
-      groundGlass: false,
-      dropShapeId: "",
-      dropTicks: 0,
-      jumpsUsed: 0,
-      jumpCutApplied: false,
-      attackCooldown: 0,
-      health: d.health,
-      flux: 0,
-      upgrades: { speed: 0, cooldown: 0, damage: 0, jump: 0 },
-    };
-    // biome-ignore lint/suspicious/noExplicitAny: valid
-    const mockChar = { hitbox: { w: 0.8, h: 0.9 } } as any;
-
-    movePlayer(state, map, mockP as PlayerState, mockChar, false);
-
-    d.pos.x = mockP.pos.x;
-    d.pos.y = mockP.pos.y;
-    d.vel.x = mockP.vel.x;
-    d.vel.y = mockP.vel.y;
-    d.grounded = mockP.grounded;
-    d.groundShapeId = mockP.groundShapeId;
+    updateDroidMovement(state, map, d, targetPos, targetHW);
   }
 }
 

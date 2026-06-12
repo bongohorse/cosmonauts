@@ -427,7 +427,6 @@ function pickupHitsWorld(
   return null;
 }
 
-
 function applyPickupEffect(pickup: LivePickupState, p: PlayerState, maxHp: number): void {
   if (pickup.kind === "flux") {
     p.flux += pickup.amount;
@@ -519,16 +518,7 @@ function handlePhysicalPickup(
     }
     const hw = char.hitbox.w / 2;
     const hh = char.hitbox.h / 2;
-    const inside = aabbOverlap(
-      pickup.pos.x,
-      pickup.pos.y,
-      0.3,
-      0.3,
-      p.pos.x,
-      p.pos.y,
-      hw,
-      hh,
-    );
+    const inside = aabbOverlap(pickup.pos.x, pickup.pos.y, 0.3, 0.3, p.pos.x, p.pos.y, hw, hh);
     if (inside) {
       applyPickupEffect(pickup, p, char.stats.maxHealth);
       return true; // destroyed

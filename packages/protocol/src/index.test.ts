@@ -1,7 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { decodeClientMessage } from "./index.js";
-import type { ClientMessage } from "./index.js";
+import { describe, expect, it } from "vitest";
 import { ZodError } from "zod";
+import { decodeClientMessage } from "./index.js";
 
 describe("decodeClientMessage", () => {
   it("should successfully decode a valid hello message", () => {

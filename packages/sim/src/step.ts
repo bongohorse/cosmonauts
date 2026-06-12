@@ -21,7 +21,7 @@ import {
 import { closestSegSeg } from "./geometry";
 import { NEUTRAL_INPUT, type PlayerInput } from "./input";
 import { approach, rand, type Vec2 } from "./math";
-import type { GameState, PlayerState } from "./state";
+import type { GameState, LivePickupState, PlayerState } from "./state";
 
 export type InputMap = Record<number, PlayerInput>;
 
@@ -427,6 +427,116 @@ function pickupHitsWorld(
   return null;
 }
 
+
+function applyPickupEffect(pickup: LivePickupState, p: PlayerState, maxHp: number): void {
+  if (pickup.kind === "flux") {
+    p.flux += pickup.amount;
+  } else if (pickup.kind === "health") {
+    p.health = Math.min(maxHp, p.health + pickup.amount);
+  }
+}
+
+function handleHomingPickup(pickup: LivePickupState, target: PlayerState, maxHp: number): boolean {
+  if (pickup.kind === "health" && target.health >= maxHp) {
+    pickup.homingPlayerId = undefined;
+    pickup.vel.x = 0;
+    pickup.vel.y = 0;
+    return false;
+  }
+
+  const dx = target.pos.x - pickup.pos.x;
+  const dy = target.pos.y - pickup.pos.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  if (dist < 0.4) {
+    applyPickupEffect(pickup, target, maxHp);
+    return true; // destroyed
+  }
+
+  const speed = 15;
+  pickup.vel.x = (dx / dist) * speed;
+  pickup.vel.y = (dy / dist) * speed;
+  pickup.pos.x += pickup.vel.x * DT;
+  pickup.pos.y += pickup.vel.y * DT;
+
+  return false;
+}
+
+function handlePhysicalPickup(
+  pickup: LivePickupState,
+  state: GameState,
+  map: MapData,
+  content: ContentIndex,
+): boolean {
+  pickup.vel.y += 15 * DT;
+  const nextX = pickup.pos.x + pickup.vel.x * DT;
+  const nextY = pickup.pos.y + pickup.vel.y * DT;
+  const radius = 0.25;
+
+  const hitX = pickupHitsWorld(
+    state,
+    map,
+    pickup.pos.x,
+    pickup.pos.y,
+    nextX,
+    pickup.pos.y,
+    radius,
+    pickup.vel.y,
+  );
+  if (hitX) {
+    pickup.vel.x = 0;
+  } else {
+    pickup.pos.x = nextX;
+  }
+
+  const hitY = pickupHitsWorld(
+    state,
+    map,
+    pickup.pos.x,
+    pickup.pos.y,
+    pickup.pos.x,
+    nextY,
+    radius,
+    pickup.vel.y,
+  );
+  if (hitY) {
+    if (pickup.vel.y > 0) {
+      pickup.vel.y = 0;
+      pickup.vel.x = 0;
+    } else {
+      pickup.vel.y = 0;
+    }
+  } else {
+    pickup.pos.y = nextY;
+  }
+
+  for (const p of state.players) {
+    if (p.health <= 0) continue;
+    const char = content.characters[p.characterId];
+    if (char === undefined) continue;
+    if (pickup.kind === "health" && p.health >= char.stats.maxHealth) {
+      continue;
+    }
+    const hw = char.hitbox.w / 2;
+    const hh = char.hitbox.h / 2;
+    const inside = aabbOverlap(
+      pickup.pos.x,
+      pickup.pos.y,
+      0.3,
+      0.3,
+      p.pos.x,
+      p.pos.y,
+      hw,
+      hh,
+    );
+    if (inside) {
+      applyPickupEffect(pickup, p, char.stats.maxHealth);
+      return true; // destroyed
+    }
+  }
+  return false;
+}
+
 function stepPickups(state: GameState, map: MapData, content: ContentIndex): void {
   for (let i = state.pickups.length - 1; i >= 0; i--) {
     const pickup = state.pickups[i];
@@ -441,29 +551,7 @@ function stepPickups(state: GameState, map: MapData, content: ContentIndex): voi
         if (target && target.health > 0) {
           const char = content.characters[target.characterId];
           const maxHp = char ? char.stats.maxHealth : 100;
-          if (pickup.kind === "health" && target.health >= maxHp) {
-            pickup.homingPlayerId = undefined;
-            pickup.vel.x = 0;
-            pickup.vel.y = 0;
-          } else {
-            const dx = target.pos.x - pickup.pos.x;
-            const dy = target.pos.y - pickup.pos.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 0.4) {
-              if (pickup.kind === "flux") {
-                target.flux += pickup.amount;
-              } else if (pickup.kind === "health") {
-                target.health = Math.min(maxHp, target.health + pickup.amount);
-              }
-              destroyed = true;
-            } else {
-              const speed = 15;
-              pickup.vel.x = (dx / dist) * speed;
-              pickup.vel.y = (dy / dist) * speed;
-              pickup.pos.x += pickup.vel.x * DT;
-              pickup.pos.y += pickup.vel.y * DT;
-            }
-          }
+          destroyed = handleHomingPickup(pickup, target, maxHp);
         } else {
           pickup.homingPlayerId = undefined;
           pickup.vel.x = 0;
@@ -471,78 +559,8 @@ function stepPickups(state: GameState, map: MapData, content: ContentIndex): voi
         }
       }
 
-      if (pickup.homingPlayerId === undefined) {
-        pickup.vel.y += 15 * DT;
-        const nextX = pickup.pos.x + pickup.vel.x * DT;
-        const nextY = pickup.pos.y + pickup.vel.y * DT;
-        const radius = 0.25;
-
-        const hitX = pickupHitsWorld(
-          state,
-          map,
-          pickup.pos.x,
-          pickup.pos.y,
-          nextX,
-          pickup.pos.y,
-          radius,
-          pickup.vel.y,
-        );
-        if (hitX) {
-          pickup.vel.x = 0;
-        } else {
-          pickup.pos.x = nextX;
-        }
-
-        const hitY = pickupHitsWorld(
-          state,
-          map,
-          pickup.pos.x,
-          pickup.pos.y,
-          pickup.pos.x,
-          nextY,
-          radius,
-          pickup.vel.y,
-        );
-        if (hitY) {
-          if (pickup.vel.y > 0) {
-            pickup.vel.y = 0;
-            pickup.vel.x = 0;
-          } else {
-            pickup.vel.y = 0;
-          }
-        } else {
-          pickup.pos.y = nextY;
-        }
-
-        for (const p of state.players) {
-          if (p.health <= 0) continue;
-          const char = content.characters[p.characterId];
-          if (char === undefined) continue;
-          if (pickup.kind === "health" && p.health >= char.stats.maxHealth) {
-            continue;
-          }
-          const hw = char.hitbox.w / 2;
-          const hh = char.hitbox.h / 2;
-          const inside = aabbOverlap(
-            pickup.pos.x,
-            pickup.pos.y,
-            0.3,
-            0.3,
-            p.pos.x,
-            p.pos.y,
-            hw,
-            hh,
-          );
-          if (inside) {
-            if (pickup.kind === "flux") {
-              p.flux += pickup.amount;
-            } else if (pickup.kind === "health") {
-              p.health = Math.min(char.stats.maxHealth, p.health + pickup.amount);
-            }
-            destroyed = true;
-            break;
-          }
-        }
+      if (!destroyed && pickup.homingPlayerId === undefined) {
+        destroyed = handlePhysicalPickup(pickup, state, map, content);
       }
     }
 

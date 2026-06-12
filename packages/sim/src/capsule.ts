@@ -23,7 +23,7 @@ function segmentCollidable(
   velY: number,
 ): boolean {
   // Check if this segment belongs to an entity (door or teamBarrier)
-  const entityIndex = map.entities.findIndex((e) => e.id === seg.shapeId);
+  const entityIndex = map.entityIdToIndex[seg.shapeId] ?? -1;
   if (entityIndex !== -1) {
     const data = map.entities[entityIndex];
     const dyn = state.mapEntities[entityIndex];
@@ -230,7 +230,7 @@ export function movePlayer(
     p.groundShapeId = ground.seg.shapeId;
 
     let isGlass = ground.seg.solidity === "glass";
-    const entityIndex = map.entities.findIndex((e) => e.id === ground.seg.shapeId);
+    const entityIndex = map.entityIdToIndex[ground.seg.shapeId] ?? -1;
     if (entityIndex !== -1) {
       const data = map.entities[entityIndex];
       const dyn = state.mapEntities[entityIndex];

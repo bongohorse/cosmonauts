@@ -60,6 +60,7 @@ export interface MapData {
   segments: SegmentData[]; // the actual collision world (doc 06)
   shapes: ShapeData[]; // render-ready shape outlines
   entities: MapEntityData[]; // placed entities (doc 07)
+  entityIdToIndex: Record<string, number>; // fast lookup map from entity ID to index in `entities` array
   playerSpawns: { x: number; y: number; team: "RED" | "BLU" }[];
   dummySpawns: Vec2[];
 }

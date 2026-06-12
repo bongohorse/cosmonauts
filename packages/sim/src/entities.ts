@@ -23,7 +23,7 @@ function bool(params: Params, key: string): boolean {
 export function triggerTargets(state: GameState, map: MapData, targets?: string[]): void {
   if (!targets) return;
   for (const tId of targets) {
-    const idx = map.entities.findIndex((e) => e.id === tId);
+    const idx = map.entityIdToIndex[tId] ?? -1;
     if (idx !== -1) {
       const targetDyn = state.mapEntities[idx];
       if (targetDyn) {
@@ -57,7 +57,7 @@ export function resolveMomentaryWiring(state: GameState, map: MapData): void {
   }
 
   for (const tId of targetedByMomentary) {
-    const idx = map.entities.findIndex((e) => e.id === tId);
+    const idx = map.entityIdToIndex[tId] ?? -1;
     if (idx !== -1) {
       const targetData = map.entities[idx];
       const targetDyn = state.mapEntities[idx];
@@ -71,7 +71,7 @@ export function resolveMomentaryWiring(state: GameState, map: MapData): void {
 }
 
 export function triggerOnDestroyed(state: GameState, map: MapData, entityId: string): void {
-  const idx = map.entities.findIndex((e) => e.id === entityId);
+  const idx = map.entityIdToIndex[entityId] ?? -1;
   if (idx !== -1) {
     const data = map.entities[idx];
     if (data?.onDestroyed) {
@@ -554,7 +554,7 @@ function applyEntity(
     }
     case "teleporter": {
       if (dyn.cooldown > 0) break;
-      const targetIndex = map.entities.findIndex((e) => e.id === str(data.params, "targetId"));
+      const targetIndex = map.entityIdToIndex[str(data.params, "targetId")] ?? -1;
       const target = map.entities[targetIndex];
       const targetDyn = state.mapEntities[targetIndex];
       if (target === undefined || targetDyn === undefined || target.id === data.id) break;

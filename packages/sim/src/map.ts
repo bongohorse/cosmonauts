@@ -72,6 +72,12 @@ export function buildMap(
   compileTiles(width, height, solid, segments);
   for (const def of shapeDefs) compileShape(def, segments, shapes);
 
+  const entityIdToIndex: Record<string, number> = {};
+  for (let i = 0; i < entities.length; i++) {
+    const e = entities[i];
+    if (e) entityIdToIndex[e.id] = i;
+  }
+
   // Compile doors and teamBarriers to segments, keeping shapes separate (they render dynamically).
   const dummyShapes: ShapeData[] = [];
   for (const e of entities) {
@@ -97,5 +103,5 @@ export function buildMap(
     }
   }
 
-  return { id, name, width, height, solid, segments, shapes, entities, playerSpawns, dummySpawns };
+  return { id, name, width, height, solid, segments, shapes, entities, entityIdToIndex, playerSpawns, dummySpawns };
 }

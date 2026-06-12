@@ -171,7 +171,7 @@ function projectileHitsWorld(
   const r2 = radius * radius;
   for (const seg of map.segments) {
     // Check if this segment belongs to a door entity.
-    const entityIndex = map.entities.findIndex((e) => e.id === seg.shapeId);
+    const entityIndex = map.entityIdToIndex[seg.shapeId] ?? -1;
     if (entityIndex !== -1) {
       const data = map.entities[entityIndex];
       const dyn = state.mapEntities[entityIndex];
@@ -395,7 +395,7 @@ function pickupHitsWorld(
 ): { hit: boolean; normalY: number } | null {
   const r2 = radius * radius;
   for (const seg of map.segments) {
-    const entityIndex = map.entities.findIndex((e) => e.id === seg.shapeId);
+    const entityIndex = map.entityIdToIndex[seg.shapeId] ?? -1;
     if (entityIndex !== -1) {
       const data = map.entities[entityIndex];
       const dyn = state.mapEntities[entityIndex];
@@ -749,7 +749,7 @@ export function stepCreeps(state: GameState, map: MapData, _content: ContentInde
 
     if (c.health <= 0) {
       // Find the den and start its cooldown
-      const denIdx = map.entities.findIndex((e) => e.id === c.denId);
+      const denIdx = map.entityIdToIndex[c.denId] ?? -1;
       if (denIdx !== -1) {
         const denDyn = state.mapEntities[denIdx];
         const denData = map.entities[denIdx];

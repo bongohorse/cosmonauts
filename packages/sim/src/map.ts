@@ -103,5 +103,17 @@ export function buildMap(
     }
   }
 
-  return { id, name, width, height, solid, segments, shapes, entities, entityIdToIndex, playerSpawns, dummySpawns };
+  return {
+    id,
+    name,
+    width,
+    height,
+    solid,
+    segments,
+    shapes,
+    entities,
+    entityIdToIndex,
+    playerSpawns,
+    dummySpawns,
+  };
 }

@@ -215,7 +215,10 @@ function stepProjectiles(state: GameState, map: MapData): void {
 
     let dead = pr.ticksLeft <= 0;
 
-    if (!dead && projectileHitsWorld(state, map, ox, oy, pr.pos.x, pr.pos.y, pr.radius, entityIdToIndex)) {
+    if (
+      !dead &&
+      projectileHitsWorld(state, map, ox, oy, pr.pos.x, pr.pos.y, pr.radius, entityIdToIndex)
+    ) {
       dead = true;
     }
 

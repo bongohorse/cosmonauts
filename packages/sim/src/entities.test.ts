@@ -5,9 +5,20 @@ import { ARENA, entity, input, makeWorld, player, run } from "./test-helpers";
 
 describe("triggerTargets", () => {
   it("does nothing if targets is undefined or empty", () => {
-    const world = makeWorld(ARENA, [], [
-      { id: "e1", type: "door", pos: { x: 1, y: 1 }, size: { w: 1, h: 1 }, enabled: true, params: {} }
-    ]);
+    const world = makeWorld(
+      ARENA,
+      [],
+      [
+        {
+          id: "e1",
+          type: "door",
+          pos: { x: 1, y: 1 },
+          size: { w: 1, h: 1 },
+          enabled: true,
+          params: {},
+        },
+      ],
+    );
     triggerTargets(world.state, world.map, undefined);
     expect(world.state.mapEntities[0]?.enabled).toBe(true);
 
@@ -16,18 +27,43 @@ describe("triggerTargets", () => {
   });
 
   it("toggles the enabled state and sets active state to true for specified targets", () => {
-    const world = makeWorld(ARENA, [], [
-      { id: "e1", type: "door", pos: { x: 1, y: 1 }, size: { w: 1, h: 1 }, enabled: true, params: {} },
-      { id: "e2", type: "door", pos: { x: 2, y: 1 }, size: { w: 1, h: 1 }, enabled: false, params: {} },
-      { id: "e3", type: "door", pos: { x: 3, y: 1 }, size: { w: 1, h: 1 }, enabled: true, params: {} }
-    ]);
+    const world = makeWorld(
+      ARENA,
+      [],
+      [
+        {
+          id: "e1",
+          type: "door",
+          pos: { x: 1, y: 1 },
+          size: { w: 1, h: 1 },
+          enabled: true,
+          params: {},
+        },
+        {
+          id: "e2",
+          type: "door",
+          pos: { x: 2, y: 1 },
+          size: { w: 1, h: 1 },
+          enabled: false,
+          params: {},
+        },
+        {
+          id: "e3",
+          type: "door",
+          pos: { x: 3, y: 1 },
+          size: { w: 1, h: 1 },
+          enabled: true,
+          params: {},
+        },
+      ],
+    );
 
     triggerTargets(world.state, world.map, ["e1", "e2"]);
 
     expect(world.state.mapEntities[0]?.enabled).toBe(false); // was true
     expect(world.state.mapEntities[0]?.active).toBe(true);
 
-    expect(world.state.mapEntities[1]?.enabled).toBe(true);  // was false
+    expect(world.state.mapEntities[1]?.enabled).toBe(true); // was false
     expect(world.state.mapEntities[1]?.active).toBe(true);
 
     // e3 was not targeted, should remain untouched
@@ -36,9 +72,20 @@ describe("triggerTargets", () => {
   });
 
   it("ignores targets that do not exist in the map", () => {
-    const world = makeWorld(ARENA, [], [
-      { id: "e1", type: "door", pos: { x: 1, y: 1 }, size: { w: 1, h: 1 }, enabled: true, params: {} }
-    ]);
+    const world = makeWorld(
+      ARENA,
+      [],
+      [
+        {
+          id: "e1",
+          type: "door",
+          pos: { x: 1, y: 1 },
+          size: { w: 1, h: 1 },
+          enabled: true,
+          params: {},
+        },
+      ],
+    );
 
     triggerTargets(world.state, world.map, ["nonexistent_id"]);
     expect(world.state.mapEntities[0]?.enabled).toBe(true);

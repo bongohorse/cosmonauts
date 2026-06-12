@@ -1628,6 +1628,40 @@ export class Editor {
       topBar.appendChild(b);
     }
 
+    const bgScaleDiv = document.createElement("div");
+    bgScaleDiv.id = "editor-bg-scale";
+    bgScaleDiv.style.display = "none";
+    bgScaleDiv.style.alignItems = "center";
+    bgScaleDiv.style.gap = "4px";
+    bgScaleDiv.style.marginLeft = "auto";
+    bgScaleDiv.style.padding = "0 8px";
+
+    const bgScaleLabel = document.createElement("span");
+    bgScaleLabel.textContent = "BG Scale:";
+    bgScaleLabel.style.fontSize = "10px";
+    bgScaleLabel.style.color = "#9fb4ff";
+
+    const bgScaleInput = document.createElement("input");
+    bgScaleInput.type = "number";
+    bgScaleInput.step = "0.01";
+    bgScaleInput.value = "1.0";
+    bgScaleInput.style.width = "50px";
+    bgScaleInput.style.background = "#10142a";
+    bgScaleInput.style.color = "#ffffff";
+    bgScaleInput.style.border = "1px solid #2c3354";
+    bgScaleInput.style.borderRadius = "4px";
+    bgScaleInput.style.padding = "2px 4px";
+    bgScaleInput.addEventListener("input", () => {
+      if (this.bgSprite) {
+        const scale = parseFloat(bgScaleInput.value) || 1.0;
+        this.bgSprite.scale.set(scale);
+      }
+    });
+
+    bgScaleDiv.appendChild(bgScaleLabel);
+    bgScaleDiv.appendChild(bgScaleInput);
+    topBar.appendChild(bgScaleDiv);
+
     const btnMirror = document.createElement("button");
     btnMirror.title = "Toggle Mirror Mode";
     btnMirror.dataset.action = "mirror";
@@ -2375,6 +2409,8 @@ export class Editor {
         this.bgSprite = new Sprite(texture);
         this.bgSprite.alpha = 0.5;
         this.renderer.world.addChildAt(this.bgSprite, 0);
+        const scaleDiv = this.bar.querySelector<HTMLElement>("#editor-bg-scale");
+        if (scaleDiv) scaleDiv.style.display = "flex";
       } else {
         this.bgSprite.texture = texture;
       }

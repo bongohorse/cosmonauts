@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { encode, decodeClientMessage, type ClientMessage, type ServerMessage } from "./index.js";
+import { describe, expect, it } from "vitest";
+import { type ClientMessage, decodeClientMessage, encode, type ServerMessage } from "./index.js";
 
 describe("protocol encode/decode", () => {
   it("encodes a valid ClientMessage", () => {
@@ -34,7 +34,8 @@ describe("protocol encode/decode", () => {
   });
 
   it("decodes a valid input ClientMessage string", () => {
-    const raw = '{"type":"input","seq":1,"tick":100,"input":{"moveX":1,"down":false,"jump":true,"jumpHeld":true,"shoot":false,"aimX":0,"aimY":0}}';
+    const raw =
+      '{"type":"input","seq":1,"tick":100,"input":{"moveX":1,"down":false,"jump":true,"jumpHeld":true,"shoot":false,"aimX":0,"aimY":0}}';
     const msg = decodeClientMessage(raw);
     expect(msg).toEqual({
       type: "input",

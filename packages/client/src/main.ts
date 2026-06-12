@@ -11,7 +11,7 @@ import {
 } from "@cosmonauts/sim";
 import { Application } from "pixi.js";
 import { DebugPanel } from "./debug";
-import { blankDoc, compileDoc, docFromDef, getCustomMaps, loadFromStorage } from "./editor/doc";
+import { compileDoc, docFromDef, getCustomMaps, loadFromStorage } from "./editor/doc";
 import { Editor } from "./editor/editor";
 import { InputSource } from "./input";
 import { Renderer } from "./renderer";

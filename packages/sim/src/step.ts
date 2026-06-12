@@ -21,7 +21,7 @@ import {
 import { closestSegSeg } from "./geometry";
 import { NEUTRAL_INPUT, type PlayerInput } from "./input";
 import { approach, rand, type Vec2 } from "./math";
-import type { GameState, PlayerState } from "./state";
+import type { GameState, PlayerState, ProjectileState } from "./state";
 
 export type InputMap = Record<number, PlayerInput>;
 
@@ -193,6 +193,146 @@ function projectileHitsWorld(
   return false;
 }
 
+function checkProjectileActivators(state: GameState, map: MapData, pr: ProjectileState): boolean {
+  for (let j = 0; j < map.entities.length; j++) {
+    const entData = map.entities[j];
+    const entDyn = state.mapEntities[j];
+    if (entData && entDyn?.enabled && entData.type === "activator") {
+      const trigger = entData.params.trigger ?? "touch";
+      if (trigger === "damage") {
+        const hw = entData.size.w / 2;
+        const hh = entData.size.h / 2;
+        if (
+          aabbOverlap(
+            pr.pos.x,
+            pr.pos.y,
+            pr.radius,
+            pr.radius,
+            entData.pos.x,
+            entData.pos.y,
+            hw,
+            hh,
+          )
+        ) {
+          const mode = entData.params.mode ?? "toggle";
+          if (mode === "momentary") {
+            entDyn.active = true;
+          } else if (mode === "once") {
+            if (!entDyn.triggered) {
+              entDyn.triggered = true;
+              triggerTargets(state, map, entData.targets);
+            }
+          } else if (mode === "toggle" && entDyn.cooldown === 0) {
+            triggerTargets(state, map, entData.targets);
+            // Cooldown parameter converted to ticks on sim side:
+            const cdTicks =
+              typeof entData.params.cooldownTicks === "number" ? entData.params.cooldownTicks : 30;
+            entDyn.cooldown = cdTicks;
+          }
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+function checkProjectileDummies(
+  state: GameState,
+  pr: ProjectileState,
+  dummyHw: number,
+  dummyHh: number,
+): boolean {
+  for (const d of state.dummies) {
+    if (d.health <= 0) continue;
+    if (aabbOverlap(pr.pos.x, pr.pos.y, pr.radius, pr.radius, d.pos.x, d.pos.y, dummyHw, dummyHh)) {
+      d.health -= pr.damage;
+      if (d.health <= 0) {
+        d.respawnTicks = DUMMY_RESPAWN_TICKS;
+        spawnDroppedPickups(state, d.pos, pr.ownerId);
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+function checkProjectileCreeps(state: GameState, pr: ProjectileState): boolean {
+  for (const c of state.creeps) {
+    if (c.health <= 0) continue;
+    const thw = 0.4;
+    const thh = 0.45;
+    if (aabbOverlap(pr.pos.x, pr.pos.y, pr.radius, pr.radius, c.pos.x, c.pos.y, thw, thh)) {
+      c.health -= pr.damage;
+      return true;
+    }
+  }
+  return false;
+}
+
+function checkProjectileDroids(state: GameState, pr: ProjectileState): boolean {
+  for (const d of state.droids) {
+    if (d.health <= 0 || d.team === pr.team) continue;
+    const thw = 0.4;
+    const thh = 0.8;
+    if (aabbOverlap(pr.pos.x, pr.pos.y, pr.radius, pr.radius, d.pos.x, d.pos.y, thw, thh)) {
+      d.health -= pr.damage;
+      if (d.health <= 0) {
+        spawnDroppedPickups(state, d.pos, pr.ownerId);
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+function checkProjectileMapEntities(state: GameState, map: MapData, pr: ProjectileState): boolean {
+  for (let j = 0; j < map.entities.length; j++) {
+    const entData = map.entities[j];
+    const entDyn = state.mapEntities[j];
+    if (!entData || !entDyn || entDyn.health === undefined || entDyn.health <= 0) continue;
+    const team = typeof entData.params.team === "string" ? entData.params.team : undefined;
+    if (team === pr.team) continue;
+
+    const hw = entData.size.w / 2;
+    const hh = entData.size.h / 2;
+    if (
+      aabbOverlap(pr.pos.x, pr.pos.y, pr.radius, pr.radius, entData.pos.x, entData.pos.y, hw, hh)
+    ) {
+      entDyn.health -= pr.damage;
+      if (entDyn.health <= 0) {
+        entDyn.dead = true;
+        if (entData.type === "core") {
+          state.gameOver = { winner: pr.team, ticksLeft: 300 }; // 5 seconds at 60fps
+        }
+        if (entData.onDestroyed) triggerTargets(state, map, entData.onDestroyed);
+        spawnDroppedPickups(state, entData.pos, pr.ownerId);
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+function checkProjectilePlayers(state: GameState, pr: ProjectileState): boolean {
+  for (const target of state.players) {
+    if (target.team === pr.team || target.health <= 0) continue;
+    const thw = 0.4; // M2-era: shared hit size; per-character hitbox lookup comes with teams/M4
+    const thh = 0.8;
+    if (
+      aabbOverlap(pr.pos.x, pr.pos.y, pr.radius, pr.radius, target.pos.x, target.pos.y, thw, thh)
+    ) {
+      const oldHealth = target.health;
+      target.health = Math.max(0, target.health - pr.damage);
+      if (oldHealth > 0 && target.health <= 0) {
+        spawnPlayerDrops(state, target.pos, pr.ownerId);
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
 function stepProjectiles(state: GameState, map: MapData): void {
   const dummyHw = DUMMY_WIDTH / 2;
   const dummyHh = DUMMY_HEIGHT / 2;
@@ -214,160 +354,27 @@ function stepProjectiles(state: GameState, map: MapData): void {
 
     // Check hit against damage-triggered activators
     if (!dead) {
-      for (let j = 0; j < map.entities.length; j++) {
-        const entData = map.entities[j];
-        const entDyn = state.mapEntities[j];
-        if (entData && entDyn?.enabled && entData.type === "activator") {
-          const trigger = entData.params.trigger ?? "touch";
-          if (trigger === "damage") {
-            const hw = entData.size.w / 2;
-            const hh = entData.size.h / 2;
-            if (
-              aabbOverlap(
-                pr.pos.x,
-                pr.pos.y,
-                pr.radius,
-                pr.radius,
-                entData.pos.x,
-                entData.pos.y,
-                hw,
-                hh,
-              )
-            ) {
-              const mode = entData.params.mode ?? "toggle";
-              if (mode === "momentary") {
-                entDyn.active = true;
-              } else if (mode === "once") {
-                if (!entDyn.triggered) {
-                  entDyn.triggered = true;
-                  triggerTargets(state, map, entData.targets);
-                }
-              } else if (mode === "toggle" && entDyn.cooldown === 0) {
-                triggerTargets(state, map, entData.targets);
-                // Cooldown parameter converted to ticks on sim side:
-                const cdTicks =
-                  typeof entData.params.cooldownTicks === "number"
-                    ? entData.params.cooldownTicks
-                    : 30;
-                entDyn.cooldown = cdTicks;
-              }
-              dead = true;
-              break;
-            }
-          }
-        }
-      }
+      dead = checkProjectileActivators(state, map, pr);
     }
 
     if (!dead) {
-      for (const d of state.dummies) {
-        if (d.health <= 0) continue;
-        if (
-          aabbOverlap(pr.pos.x, pr.pos.y, pr.radius, pr.radius, d.pos.x, d.pos.y, dummyHw, dummyHh)
-        ) {
-          d.health -= pr.damage;
-          if (d.health <= 0) {
-            d.respawnTicks = DUMMY_RESPAWN_TICKS;
-            spawnDroppedPickups(state, d.pos, pr.ownerId);
-          }
-          dead = true;
-          break;
-        }
-      }
+      dead = checkProjectileDummies(state, pr, dummyHw, dummyHh);
     }
 
     if (!dead) {
-      for (const c of state.creeps) {
-        if (c.health <= 0) continue;
-        const thw = 0.4;
-        const thh = 0.45;
-        if (aabbOverlap(pr.pos.x, pr.pos.y, pr.radius, pr.radius, c.pos.x, c.pos.y, thw, thh)) {
-          c.health -= pr.damage;
-          dead = true;
-          break;
-        }
-      }
+      dead = checkProjectileCreeps(state, pr);
     }
 
     if (!dead) {
-      for (const d of state.droids) {
-        if (d.health <= 0 || d.team === pr.team) continue;
-        const thw = 0.4;
-        const thh = 0.8;
-        if (aabbOverlap(pr.pos.x, pr.pos.y, pr.radius, pr.radius, d.pos.x, d.pos.y, thw, thh)) {
-          d.health -= pr.damage;
-          if (d.health <= 0) {
-            spawnDroppedPickups(state, d.pos, pr.ownerId);
-          }
-          dead = true;
-          break;
-        }
-      }
+      dead = checkProjectileDroids(state, pr);
     }
 
     if (!dead) {
-      for (let j = 0; j < map.entities.length; j++) {
-        const entData = map.entities[j];
-        const entDyn = state.mapEntities[j];
-        if (!entData || !entDyn || entDyn.health === undefined || entDyn.health <= 0) continue;
-        const team = typeof entData.params.team === "string" ? entData.params.team : undefined;
-        if (team === pr.team) continue;
-
-        const hw = entData.size.w / 2;
-        const hh = entData.size.h / 2;
-        if (
-          aabbOverlap(
-            pr.pos.x,
-            pr.pos.y,
-            pr.radius,
-            pr.radius,
-            entData.pos.x,
-            entData.pos.y,
-            hw,
-            hh,
-          )
-        ) {
-          entDyn.health -= pr.damage;
-          if (entDyn.health <= 0) {
-            entDyn.dead = true;
-            if (entData.type === "core") {
-              state.gameOver = { winner: pr.team, ticksLeft: 300 }; // 5 seconds at 60fps
-            }
-            if (entData.onDestroyed) triggerTargets(state, map, entData.onDestroyed);
-            spawnDroppedPickups(state, entData.pos, pr.ownerId);
-          }
-          dead = true;
-          break;
-        }
-      }
+      dead = checkProjectileMapEntities(state, map, pr);
     }
 
     if (!dead) {
-      for (const target of state.players) {
-        if (target.team === pr.team || target.health <= 0) continue;
-        const thw = 0.4; // M2-era: shared hit size; per-character hitbox lookup comes with teams/M4
-        const thh = 0.8;
-        if (
-          aabbOverlap(
-            pr.pos.x,
-            pr.pos.y,
-            pr.radius,
-            pr.radius,
-            target.pos.x,
-            target.pos.y,
-            thw,
-            thh,
-          )
-        ) {
-          const oldHealth = target.health;
-          target.health = Math.max(0, target.health - pr.damage);
-          if (oldHealth > 0 && target.health <= 0) {
-            spawnPlayerDrops(state, target.pos, pr.ownerId);
-          }
-          dead = true;
-          break;
-        }
-      }
+      dead = checkProjectilePlayers(state, pr);
     }
 
     if (dead) state.projectiles.splice(i, 1);

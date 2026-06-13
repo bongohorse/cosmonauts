@@ -58,6 +58,12 @@ All from the repo root (Node ≥ 22, pnpm 11 — auto-selected via `packageManag
 
 CI (`.github/workflows/ci.yml`) runs biome ci, typecheck, test, build, bench.
 
+**PR gate:** `main` is protected by a ruleset — direct push is rejected; branch, open a PR
+(`gh pr create`), and merge once `ci` is green (squash only). Run `pnpm lint:fix` before
+committing to avoid the common Biome format-diff failure. The full pre-PR checklist +
+constraints for other agents (Jules/Gemini) live in `AGENTS.md`/`GEMINI.md`;
+`scripts/jules-setup.sh` is the canonical env setup that mirrors CI.
+
 ## Architecture notes
 
 - Packages export raw TypeScript (`"exports": "./src/index.ts"`) — no build step for

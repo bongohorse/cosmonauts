@@ -6,7 +6,7 @@ This file provides guidance and strict instructions to Gemini and other AI codin
 
 Cosmonauts is an open-source, browser-based 2D action-platformer MOBA. Our goal is to build a high-performance modern browser game using cutting-edge web tools. The architecture relies on a deterministic, fixed-timestep simulation core separated from its renderer.
 
-- **Status:** Milestones 1 through 4 are complete (including an in-game map editor MVP). **Milestone 5 (Map Entities)** is currently in progress. The roadmap then proceeds to M6 (Abilities/Heroes) and M7 (Netcode).
+- **Status:** Milestones 1 through 5 are complete (deterministic sim, Pixi.js v8 renderer, segment/capsule collision, in-game map editor, and all core map entities). **Milestone 6 (Abilities & Hero Framework)** is currently in progress. The roadmap then proceeds to M7 (Shop & Economy), M8 (AI/Bots/Game-Modes), M9 (Netcode), and M10 (Roster Expansion).
 - **Hard Rule:** Netcode is deliberately deferred until the local prototype is highly polished. Do not attempt to implement networking or sockets unprompted.
 
 ## Tech Stack & Modern Tooling
@@ -33,7 +33,7 @@ The codebase is structured as a monorepo containing distinct packages:
 
 ## Fundamental Design Decisions (Do Not Relitigate)
 
-1. **Physics:** Velocity-based, with no rigid-body physics engine (e.g., Matter.js or Box2D). Level geometry uses line segments with capsule-based world collision (see doc 06). Combat hitboxes use standard AABB.
+1. **Physics:** Velocity-based, with no rigid-body physics engine (e.g., Matter.js or Box2D). Level geometry uses line segments with capsule-based world collision (see `docs/wiki/mechanics/physics.md`). Combat hitboxes use standard AABB.
 2. **Determinism:** `packages/sim` must remain cross-engine deterministic.
    - **No `Math.random()`**: Use `rand()` from `math.ts` with PRNG state in `GameState.rng`.
    - **No `Date` or timers**: Rely exclusively on integer ticks (60Hz) to drive duration.
@@ -57,4 +57,4 @@ All commands are run from the repo root:
 - **Surgical Edits**: Prefer minimal, precise changes to existing logic. Do not rewrite files unless absolutely necessary.
 - **Testing**: Whenever modifying `packages/sim`, add or update corresponding tests in `packages/sim/src/*.test.ts`.
 - **Editor Integration**: New map entities (defined in `packages/content/src/entities.ts`) must be equipped with Zod schemas so they automatically appear in the editor palette.
-- **Consult Docs**: Design documents live in `docs/`. **CRITICAL:** Whenever you start a new session, you must read these files to be up to date with the project architecture! For example, read `docs/01-analysis.md` for the roadmap, `docs/06-geometry-v2.md` for collision, and `docs/M6-RENDERER-UPGRADES.md` before doing any work on the PixiJS renderer or Milestone 6 UI/graphics.
+- **Consult Docs**: Design documents live in `docs/`. **CRITICAL:** Whenever you start a new session, you must read these files to be up to date with the project architecture! Start with `docs/ROADMAP.md` (architecture + milestones), consult `docs/wiki/` for specific mechanics (e.g. `docs/wiki/mechanics/physics.md` for collision), and always read `docs/M6-RENDERER-UPGRADES.md` before doing any work on the PixiJS renderer or Milestone 6 UI/graphics. (The older numbered docs `01`–`09` were consolidated into these.)

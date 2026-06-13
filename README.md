@@ -4,12 +4,13 @@ An open-source, browser-based 2D action-platformer MOBA. The gameplay feel chase
 [Awesomenauts](https://en.wikipedia.org/wiki/Awesomenauts) (Ronimo Games, 2012);
 everything else — characters, world, art — is original.
 
-**Status: Milestone 4 complete (in-game map editor MVP).** Press **Tab** in the game to
-flip into edit mode: draw platforms (any rotation, glass, team-colored), place spawns and
-target dummies, then Tab back and play your map instantly. Work autosaves to the browser
-and exports/imports as JSON. Next up: placeable map entities (jumpers, teleporters,
-barriers, turrets…), which will appear in the editor palette automatically. Multiplayer
-comes after the creation tools.
+**Status: Milestones 1–5 complete; now building heroes & abilities (Milestone 6).** Press
+**Tab** in the game to flip into edit mode: draw platforms (any rotation, glass,
+team-colored), place spawns, target dummies, and map entities (jumpers, teleporters,
+barriers, turrets, cores, droid spawners…), then Tab back and play your map instantly.
+Work autosaves to the browser and exports/imports as JSON. Next up: turning generic
+capsules into distinct heroes with unique abilities. Multiplayer comes after the
+creation tools and single-player feel are solid.
 
 ## Play the sandbox
 
@@ -33,13 +34,13 @@ The "tuning" panel edits character stats live — changes apply on the next sim 
   new characters are pull requests against data files, not engine code.
 - **`packages/client`** — Pixi.js v8 renderer + input. Interpolates between sim states;
   never mutates them.
-- **`packages/protocol`** — wire message schemas (Milestone 3).
-- **`packages/server`** — authoritative game server (Milestone 3). Currently a headless
+- **`packages/protocol`** — wire message schemas (Milestone 9).
+- **`packages/server`** — authoritative game server (Milestone 9). Currently a headless
   benchmark: `pnpm sim:bench` (~6,000× realtime per match on one core).
 
 The design docs in [`docs/`](docs/README.md) explain every decision — start with the
-[technical analysis](docs/01-analysis.md). The roadmap is in
-[doc 01 §8](docs/01-analysis.md#8-roadmap).
+[architecture & roadmap](docs/ROADMAP.md), then dig into specific mechanics in the
+[wiki](docs/wiki/index.md).
 
 ## Development
 

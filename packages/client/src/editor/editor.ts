@@ -3,15 +3,7 @@ import type { ShapeDef, Solidity, Vec2 } from "@cosmonauts/sim";
 import { Assets, Color, Sprite } from "pixi.js";
 import type { Renderer } from "../renderer";
 import { TILE_PX } from "../renderer";
-import {
-  blankDoc,
-  clearStorage,
-  compileDoc,
-  docFromJson,
-  docToDef,
-  type MapDoc,
-  saveToStorage,
-} from "./doc";
+import { blankDoc, compileDoc, docFromJson, docToDef, type MapDoc, saveToStorage } from "./doc";
 import { History } from "./history";
 
 type Tool = "select" | "rect" | "polygon" | "spawn" | "dummy" | "entity" | "brush";
@@ -1665,7 +1657,11 @@ export class Editor {
     const btnMirror = document.createElement("button");
     btnMirror.title = "Toggle Mirror Mode";
     btnMirror.dataset.action = "mirror";
-    btnMirror.innerHTML = `<span>Mirror</span><kbd>M</kbd>`;
+    const mirrorLabel = document.createElement("span");
+    mirrorLabel.textContent = "Mirror";
+    const mirrorKey = document.createElement("kbd");
+    mirrorKey.textContent = "M";
+    btnMirror.append(mirrorLabel, mirrorKey);
     btnMirror.addEventListener("click", () => {
       this.mirrorMode = !this.mirrorMode;
       this.updateStatus();

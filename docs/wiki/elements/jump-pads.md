@@ -4,7 +4,7 @@ Jump Pads (referred to as `jumper` entities) are trigger volumes that provide ra
 
 ## Mechanics
 
-- **Impulse on Touch:** Whenever an Awesomenaut touches a `jumper` volume, they are instantly launched in a specific direction.
+- **Impulse on Touch:** Whenever a hero touches a `jumper` volume, they are instantly launched in a specific direction.
 - **Configurable Velocity:** The launch force is governed by two parameters:
   - `direction`: The angle of launch in degrees. Unlike standard platforms, a jumper's launch direction is *fully rotatable* (e.g., straight up, 45-degree angle, or horizontal).
   - `strength`: The magnitude of the launch impulse applied to the character's velocity.

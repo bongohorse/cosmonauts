@@ -14,4 +14,4 @@ Ribbit IV is a classic 2-lane swamp map and serves as one of the fundamental com
 ## Map Elements & Objectives
 
 - **Neutral Creeps:** The central lush jungle contains 4 Small Beast Creeps.
-- **Solar Bosses:** Ribbit IV uniquely features **two** Solar Bosses (acid-spitting monsters), positioned symmetrically on each side of the map. Defeating one grants a massive 5000 HP heal, 60 Flux (distributed to the team), and 50 global XP.
+- **Boss Creeps:** Ribbit IV uniquely features **two** Boss Creeps (acid-spitting monsters), positioned symmetrically on each side of the map. Defeating one grants a massive 5000 HP heal, 60 Flux (distributed to the team), and 50 global XP.

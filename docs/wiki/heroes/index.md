@@ -1,4 +1,4 @@
-# Awesomenaut Heroes
+# Heroes
 
 This directory contains the detailed documentation for all playable characters in the game. Each hero has unique stats, abilities, upgrades, and roles.
 
@@ -29,7 +29,7 @@ This directory contains the detailed documentation for all playable characters i
 - [Scoop of Justice](./scoop-of-justice.md)
 - [Sentry X-58](./sentry-x-58.md)
 - [Sheriff Lonestar](./sheriff-lonestar.md)
-- [Skølldir](./skolldir.md)
+- [Skølldir](./sk-lldir.md)
 - [Skree](./skree.md)
 - [Smiles](./smiles.md)
 - [Snork Gunk](./snork-gunk.md)

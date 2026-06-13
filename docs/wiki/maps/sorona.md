@@ -13,4 +13,4 @@ Sorona is a large 2-lane wasteland map with a massive central open area that hea
 - **Neutral Creeps:** Contains 4 worm creeps (positioned symmetrically, two on the left and two on the right, above the turrets).
 - **The Sandworm:** The middle of the bottom lane features a button that opens a shaft to a Giant Sandworm. 
   - The worm stays exposed as long as the button is held down.
-  - It instantly kills any Awesomenaut or Droid that touches it (forcing them to drop all their carried Flux). This is a primary tool for environmental kills and wave clearing.
+  - It instantly kills any hero or Droid that touches it (forcing them to drop all their carried Flux). This is a primary tool for environmental kills and wave clearing.

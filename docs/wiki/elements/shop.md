@@ -1,6 +1,6 @@
 # Zork's Mega Shop
 
-The Shop (often referred to as Zork's Mega Shop) is where Awesomenauts spend their hard-earned Flux to purchase stat modifiers and ability upgrades.
+The Shop (often referred to as Zork's Mega Shop) is where heroes spend their hard-earned Flux to purchase stat modifiers and ability upgrades.
 
 ## Mechanics
 

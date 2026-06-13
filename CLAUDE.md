@@ -16,8 +16,9 @@ is original. Geometric placeholder art is used until gameplay is proven.
   (physics, combat, ai-bots, progression, roles, status-effects). The Roadmap says *what
   and when*; the Wiki says *how* (exact numbers, tick rates, ability behavior).
 - `docs/M6-RENDERER-UPGRADES.md` — **always read before touching the PixiJS renderer.**
-- `docs/KNOWLEDGE_BASE.md` — historical Awesomenauts brain-dump; mostly migrated into the
-  Wiki, kept for reference.
+- `docs/KNOWLEDGE_BASE.md` — the raw *Awesomenauts* reference baseline (exact original
+  numbers/names we calibrate against). Keeps original terms ("Solar", original character
+  names) by design; the wiki is the canonical Cosmonauts adaptation ("Flux", "Boss Creep").
 
 (Older numbered docs `01`–`09` no longer exist — they were consolidated into the above.)
 

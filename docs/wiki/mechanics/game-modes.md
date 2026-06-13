@@ -13,7 +13,7 @@ Cosmonauts supports several game modes tailored for competitive, casual, and off
 - **Custom Match:** Unranked matches with extreme granular control over the simulation rules. The host can modify parameters via a global `MatchConfig` object. Options include:
   - Disabling turrets (`turretsEnabled: false`).
   - Modifying physics (`frictionMultiplier`, damage-to-knockback ratios).
-  - Modifying the economy (`droidXpMultiplier`, custom respawn curves, starting Solar).
+  - Modifying the economy (`droidXpMultiplier`, custom respawn curves, starting Flux).
   - Specialized rule sets like Team Deathmatch, Randomnauts, Instagib, or enabling `explodeOnDeath`.
 - **Tutorial:** A heavily scripted, simplified version of Ribbit IV designed to teach new players the core mechanics.
 

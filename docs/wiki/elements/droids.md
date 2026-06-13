@@ -4,7 +4,7 @@ Droids are the map/lane creep units that push objectives and engage in combat fo
 
 ## Role & Mechanics
 
-- **Pushing & Tanking:** Droids block enemy pushes and, most importantly, tank damage from enemy Turrets. Turrets prioritize droids over Awesomenauts, making them essential for sieging bases.
+- **Pushing & Tanking:** Droids block enemy pushes and, most importantly, tank damage from enemy Turrets. Turrets prioritize droids over heroes, making them essential for sieging bases.
 - **Pathing:** They spawn and automatically walk along predefined waypoints in their lane, attacking enemies they encounter via melee.
 - **Spawners:** Droids spawn from a `droidSpawner` entity on a fixed interval per lane.
 

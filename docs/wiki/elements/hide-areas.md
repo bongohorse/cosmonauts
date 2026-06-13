@@ -1,6 +1,6 @@
 # Hide Areas (Hide Zones)
 
-Hide Areas (referred to as `hideZone` entities in the Cosmonauts map format) are specialized trigger volumes that provide stealth and ambush opportunities for Awesomenauts.
+Hide Areas (referred to as `hideZone` entities in the Cosmonauts map format) are specialized trigger volumes that provide stealth and ambush opportunities for heroes.
 
 ## Mechanics
 

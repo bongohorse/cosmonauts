@@ -110,3 +110,48 @@ This document serves as the single source of truth for the overarching architect
 - *Performance:* Optimize `aabbOverlap` checks with Spatial Hashing / QuadTrees.
 - *Holiday Themes:* Load cosmetic prop layers conditionally based on system dates. ([Themes Wiki](./wiki/maps/holiday-themes.md))
 - *Particle Engine:* Build a custom Pixi.js emitter wrapper matching the Awesomenauts particle schema.
+
+---
+
+## Part 4 — Future Features & Live-Service Backlog (post-M10)
+
+A parking lot for ideas beyond the current M1–M10 plan — not yet scheduled or designed, but
+recorded so nothing is lost. Grouping is thematic, not priority. Many build on milestones
+already planned (noted inline). **New future-feature ideas go here.**
+
+### Online Play & Matchmaking (extends M9 Netcode)
+- **Player vs Player** — the core M9 deliverable.
+- **Player vs Bots**, and mixed PvP/bot lobbies.
+- **Bot takeover on disconnect** — a bot seamlessly assumes a dropped player's hero (builds on M8 bots + M9 netcode).
+- **Ranked matchmaking + Elo** rating, placements, and a ladder.
+- **Custom matches** with full custom settings (extends the M8 `MatchConfig`).
+- **Server browser** (Counter-Strike style): community-hosted lobbies / game modes that others can find and join.
+
+### Spectating & Replays
+> Near-free from the architecture: the sim is deterministic and input-driven, so a match is
+> just its seed + input log. Replays and spectating are a recording/playback layer, not new simulation.
+- **Replay system** — record and re-watch past matches.
+- **Live spectating** with an intentional **delay (e.g. 30–120 s)** to prevent stream-sniping / ghosting.
+- **"Live now" widget** — a panel showing who is currently live / which matches are streamable right now, as an entry point to spectate.
+- Browse and replay **past matches** from a history list.
+
+### Community Content & Tooling
+- **Custom maps**: build (in-game editor exists, M4), **share**, and **map voting** in lobbies.
+- **Workshop** — browse/publish community maps, heroes, and game modes (Steam Workshop or equivalent).
+- **Hero editor** — author new heroes (stats + abilities + upgrades), data-driven via the content schemas.
+- **Particle editor** — author the particle/VFX schema (pairs with the *Particle Engine* backlog item above).
+- **AI generators** — assisted generation of maps and heroes.
+
+### Client UX & Platform
+- **Player / hero selection screen**.
+- **Settings menu**: keybinds, **FPS cap**, **graphics quality (low–high)**, audio.
+- **UI layer** — polished HUD/menus (replacing the primitive Pixi rectangles; see the *UI* backlog item above).
+- **Mobile support** — touch controls and a responsive layout.
+
+### Social
+- **Chat**: global, all-chat, and team-chat channels.
+- **Chat filter / moderation**.
+
+### Accounts, Identity & Progression
+- **Steam login / auth** (and/or other providers) for persistence, ranking, and ownership of custom content.
+- **Achievements** — unlockable achievements and player profile stats.

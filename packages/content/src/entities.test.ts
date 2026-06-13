@@ -1,6 +1,6 @@
+import { TICK_RATE } from "@cosmonauts/sim";
 import { describe, expect, it } from "vitest";
 import { type EntityDef, toEntityData } from "./entities";
-import { TICK_RATE } from "@cosmonauts/sim";
 
 describe("toEntityData", () => {
   it("converts basic entity properties correctly", () => {

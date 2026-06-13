@@ -58,3 +58,22 @@ All commands are run from the repo root:
 - **Testing**: Whenever modifying `packages/sim`, add or update corresponding tests in `packages/sim/src/*.test.ts`.
 - **Editor Integration**: New map entities (defined in `packages/content/src/entities.ts`) must be equipped with Zod schemas so they automatically appear in the editor palette.
 - **Consult Docs**: Design documents live in `docs/`. **CRITICAL:** Whenever you start a new session, you must read these files to be up to date with the project architecture! Start with `docs/ROADMAP.md` (architecture + milestones), consult `docs/wiki/` for specific mechanics (e.g. `docs/wiki/mechanics/physics.md` for collision), and always read `docs/M6-RENDERER-UPGRADES.md` before doing any work on the PixiJS renderer. (The older numbered docs `01`–`09` were consolidated into these.)
+
+## Before You Open a Pull Request
+
+Every check below must pass locally first — CI (`.github/workflows/ci.yml`) runs the same, and a PR that fails will not be merged. The canonical setup + validation script is [`scripts/jules-setup.sh`](scripts/jules-setup.sh).
+
+1. `pnpm lint` — Biome **lint and formatting**. Run `pnpm lint:fix` first to auto-format; CI fails on any formatting diff (the most common avoidable failure).
+2. `pnpm typecheck` — `tsc --noEmit` across all packages.
+3. `pnpm test` — the full Vitest suite.
+4. `pnpm build` — the production client build.
+
+## Hard Constraints (do not violate)
+
+- **pnpm only.** This repo pins pnpm via `package.json` `packageManager`. Never run `npm`/`yarn`/`bun`, and never commit `bun.lock`, `package-lock.json`, or `yarn.lock` — `pnpm-lock.yaml` is the only tracked lockfile. (Bun ships pre-installed in some agent images; do not use it here.)
+- **One concern per PR.** Do not bundle unrelated changes — e.g. import cleanups or reformatting untouched code — into a feature or test PR. Spotted an unrelated cleanup? Open a separate small PR.
+- **Never open multiple PRs that create the same file.** They collide and only one can merge. Group related work (e.g. all tests for one module) into a single PR.
+- **No premature optimization.** The sim runs ~6000× realtime (`pnpm sim:bench`); do not optimize lookups or loops without a profiling-backed reason.
+- **Keep refactors surgical.** Do not rewrite or restructure a working file for style alone — only when a change actually requires it.
+- **Test PRs add tests only.** A test must not change runtime/source behavior. If behavior should change, that is a separate PR with its own justification and integration coverage.
+- **Label accurately.** Do not file "XSS"/"security" PRs for non-issues (e.g. assigning a constant empty string to `innerHTML`, or `Math.random` for non-security editor IDs).

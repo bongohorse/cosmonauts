@@ -13,11 +13,14 @@ To streamline our architecture and project management, all technical design docu
    The Wiki contains the highly specific, detailed mechanics. While the Roadmap dictates *what* we are building and *when*, the Wiki dictates *how* it works (e.g., exact damage numbers, tick rates, collision mechanics, hero abilities).
 
 3. **[KNOWLEDGE_BASE.md](./KNOWLEDGE_BASE.md)**
-   The raw initial brain-dump of the Awesomenauts cloned mechanics. (Its contents have been actively migrated to the structured Wiki, but it serves as a historical reference).
+   The raw *Awesomenauts* reference baseline — the exact original-game numbers, names, and mechanics we calibrate the feel against. By design it keeps the original terminology (e.g. "Solar", original character names); the **Wiki is the canonical Cosmonauts adaptation** (e.g. "Flux", "Boss Creep"). Treat it as a frozen reference archive, not a spec.
+
+4. **[M6-RENDERER-UPGRADES.md](./M6-RENDERER-UPGRADES.md)**
+   PixiJS v8 renderer implementation guide. **Read this before touching `packages/client` rendering code.**
 
 ---
 
-## Current Status (2026-06-10)
+## Current Status (2026-06-13)
 
 **Done:** The foundation (M1-M5) is complete. We have a deterministic simulation core, a Pixi.js renderer, segment-based collision, an in-game map editor, and all core map entities (Jumpers, Base Cores, Turrets, Creeps). 
 

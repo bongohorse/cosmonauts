@@ -16,6 +16,6 @@ The core simulation mechanics govern how the game operates at a fundamental 60Hz
 - **Status Effects:** Slows, stuns, snares, and knockbacks.
 
 ### 3. Economy & Progression
-- **Solar:** The primary currency. Earned globally over time, by killing droids, enemy Awesomenauts, or neutral creeps.
-- **Upgrades:** Purchased from the shop using Solar.
+- **Flux:** The primary currency. Earned globally over time, by killing droids, enemy heroes, or neutral creeps.
+- **Upgrades:** Purchased from the shop using Flux.
 - **Experience (Levels):** Team-wide levels that scale base health and damage.

@@ -1,6 +1,6 @@
-# GEMINI.md
+# agents.md
 
-This file provides guidance and strict instructions to Gemini and other AI coding assistants when working with code in this repository.
+This file provides guidance and strict instructions to Jules and other AI coding assistants when working with code in this repository.
 
 ## Project Overview
 
@@ -57,4 +57,4 @@ All commands are run from the repo root:
 - **Surgical Edits**: Prefer minimal, precise changes to existing logic. Do not rewrite files unless absolutely necessary.
 - **Testing**: Whenever modifying `packages/sim`, add or update corresponding tests in `packages/sim/src/*.test.ts`.
 - **Editor Integration**: New map entities (defined in `packages/content/src/entities.ts`) must be equipped with Zod schemas so they automatically appear in the editor palette.
-- **Consult Docs**: Design documents live in `docs/`. **CRITICAL:** Whenever you start a new session, you must read these files to be up to date with the project architecture! Start with `docs/ROADMAP.md` (architecture + milestones), consult `docs/wiki/` for specific mechanics (e.g. `docs/wiki/mechanics/physics.md` for collision), and always read `docs/M6-RENDERER-UPGRADES.md` before doing any work on the PixiJS renderer or Milestone 6 UI/graphics. (The older numbered docs `01`–`09` were consolidated into these.)
+- **Consult Docs**: Design documents live in `docs/`. **CRITICAL:** Whenever you start a new session, you must read these files to be up to date with the project architecture! Start with `docs/ROADMAP.md` (architecture + milestones), consult `docs/wiki/` for specific mechanics (e.g. `docs/wiki/mechanics/physics.md` for collision), and always read `docs/M6-RENDERER-UPGRADES.md` before doing any work on the PixiJS renderer. (The older numbered docs `01`–`09` were consolidated into these.)

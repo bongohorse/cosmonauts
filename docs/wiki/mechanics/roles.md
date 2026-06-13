@@ -1,6 +1,6 @@
 # Character Roles
 
-Awesomenauts are categorized into five primary roles. While roles are not strictly binding, they dictate base stat scaling profiles and general playstyles.
+Cosmonauts heroes are categorized into five primary roles. While roles are not strictly binding, they dictate base stat scaling profiles and general playstyles.
 
 ## Assassin
 - **Traits:** Possess lower than average health but high burst damage and mobility. Adept at chasing, escaping, and eliminating isolated or vulnerable targets.

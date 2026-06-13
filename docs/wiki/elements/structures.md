@@ -6,7 +6,7 @@ Structures are the primary stationary objectives and defensive points on the map
 
 Turrets are massive, high-damage defensive structures that block lane progress. 
 
-- **Targeting:** They prioritize attacking Droids over Awesomenauts. To siege a Turret effectively, a team must push a wave of their own Droids into its range to tank the damage.
+- **Targeting:** They prioritize attacking Droids over heroes. To siege a Turret effectively, a team must push a wave of their own Droids into its range to tank the damage.
 - **Wiring & Events:** Turrets fire an `onDestroyed` event when their health reaches zero. This is crucial for map flow, as destroying a turret will often trigger a `teamBarrier` to downgrade, opening up the next section of the map or granting access to the enemy base.
 - **Rewards:** Destroying an enemy Turret unlocks the **Super Droid** for the attacking team. The Super Droid joins that lane's next wave, providing a powerful snowball effect for objective play.
 

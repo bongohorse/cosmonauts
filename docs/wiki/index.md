@@ -1,11 +1,11 @@
-# Awesomenauts Knowledge Wiki
+# Cosmonauts Knowledge Wiki
 
 Welcome to the comprehensive, local knowledge base for **Cosmonauts**. This wiki serves as the central source of truth for all game mechanics, maps, elements, and heroes. All data here is designed to directly inform the `packages/content` Zod schemas and the `packages/sim` simulation logic.
 
 ## Categories
 
 ### 1. [Heroes](./heroes/index.md)
-Detailed statistics, backstories, abilities, and upgrades for all 34 playable Awesomenauts. 
+Detailed statistics, backstories, abilities, and upgrades for all 34 playable heroes. 
 
 ### 2. [Maps](./maps/index.md)
 Layouts, mechanics, and specific features of the various battlegrounds.

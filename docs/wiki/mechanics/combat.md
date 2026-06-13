@@ -4,7 +4,7 @@ Combat in Cosmonauts revolves around the interplay between basic attacks, active
 
 ## Abilities vs Auto-Attacks
 
-- **Auto-Attacks:** Every Awesomenaut has a basic attack that costs no resources. The rate at which this attack fires is dictated by the character's **Attack Speed**.
+- **Auto-Attacks:** Every hero has a basic attack that costs no resources. The rate at which this attack fires is dictated by the character's **Attack Speed**.
 - **Active Abilities:** Characters typically have two unique active abilities. These provide high-impact effects (damage, mobility, crowd control) but are limited by **Cooldowns** (measured in simulation ticks or seconds).
 
 ## Ability Mechanics

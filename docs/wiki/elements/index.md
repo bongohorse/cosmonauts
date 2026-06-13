@@ -1,6 +1,6 @@
 # Elements
 
-Elements are the interactive entities and objects that populate the game world alongside the Awesomenauts. They are crucial for map control, farming, and progression.
+Elements are the interactive entities and objects that populate the game world alongside the heroes. They are crucial for map control, farming, and progression.
 
 ## Categories
 
@@ -10,10 +10,10 @@ Elements are the interactive entities and objects that populate the game world a
 
 ### 2. NPCs (Non-Player Characters)
 - **Droids:** Small robotic minions that spawn periodically from the base and push lanes. They are essential for tanking turret damage.
-- **Jungle Creeps:** Neutral creatures that spawn in specific map areas. Killing them grants Solar and usually provides lifesteal for health regeneration.
-- **Solar Bosses:** Large neutral monsters that require teamwork to defeat, dropping a massive Solar bounty.
+- **Jungle Creeps:** Neutral creatures that spawn in specific map areas. Killing them grants Flux and usually provides lifesteal for health regeneration.
+- **Boss Creeps:** Large neutral monsters that require teamwork to defeat, dropping a massive Flux bounty.
 
 ### 3. Pickups & Environment
 - **Healthpacks:** Restore a fixed amount of health instantly when picked up.
-- **Solar Drops:** Currency used to purchase upgrades in the shop.
+- **Flux Drops:** Currency used to purchase upgrades in the shop.
 - **Buff Orbs:** Map-specific drops like the Stealth Orb on Aiguillon.

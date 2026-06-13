@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { aabbOverlap, isSolid } from "./collision";
+import type { MapData } from "./content-types";
 import { ARENA, input, makeWorld, player, run } from "./test-helpers";
 
 describe("tile collision", () => {
@@ -39,5 +41,43 @@ describe("tile collision", () => {
     // Ceiling is row 0; head (center - half height) can never pass its bottom edge at y=1.
     expect(minY - 0.8).toBeGreaterThanOrEqual(1 - 1e-3);
     expect(player(world).grounded).toBe(true);
+  });
+});
+
+describe("aabbOverlap", () => {
+  it("detects identical and partially overlapping boxes", () => {
+    expect(aabbOverlap(0, 0, 1, 1, 0, 0, 1, 1)).toBe(true);
+    expect(aabbOverlap(0, 0, 1, 1, 1.5, 0, 1, 1)).toBe(true);
+  });
+  it("treats a fully-contained box as overlapping", () => {
+    expect(aabbOverlap(0, 0, 2, 2, 0, 0, 0.5, 0.5)).toBe(true);
+  });
+  it("returns false when separated on either axis", () => {
+    expect(aabbOverlap(0, 0, 1, 1, 3, 0, 1, 1)).toBe(false);
+    expect(aabbOverlap(0, 0, 1, 1, 0, 3, 1, 1)).toBe(false);
+  });
+  it("treats exactly-touching edges as non-overlapping (strict <)", () => {
+    expect(aabbOverlap(0, 0, 1, 1, 2, 0, 1, 1)).toBe(false);
+  });
+});
+
+describe("isSolid", () => {
+  // 3x2 grid, row-major: index = ty * width + tx
+  const map = {
+    width: 3,
+    height: 2,
+    solid: [false, true, false, false, false, true],
+  } as unknown as MapData;
+
+  it("reads the row-major solid grid", () => {
+    expect(isSolid(map, 1, 0)).toBe(true);
+    expect(isSolid(map, 0, 0)).toBe(false);
+    expect(isSolid(map, 2, 1)).toBe(true);
+  });
+  it("treats out-of-bounds tiles as solid", () => {
+    expect(isSolid(map, -1, 0)).toBe(true);
+    expect(isSolid(map, 0, -1)).toBe(true);
+    expect(isSolid(map, 3, 0)).toBe(true);
+    expect(isSolid(map, 0, 2)).toBe(true);
   });
 });

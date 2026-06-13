@@ -115,6 +115,256 @@ export function isTargetVisible(
  * Disabled entities are inert; types without a behavior here are ignored, so
  * the sim tolerates content from newer waves.
  */
+function handleTimer(data: MapEntityData, dyn: MapEntityState): void {
+  if (!dyn.enabled) {
+    dyn.timerElapsed = 0;
+    dyn.active = false;
+    return;
+  }
+  dyn.timerElapsed = (dyn.timerElapsed ?? 0) + 1;
+  const period = num(data.params, "periodTicks", 120);
+  const onDuration = num(data.params, "onDurationTicks", 60);
+  const startDelay = num(data.params, "startDelayTicks", 0);
+  if (dyn.timerElapsed >= startDelay) {
+    const t = dyn.timerElapsed - startDelay;
+    const cycleTime = t % period;
+    dyn.active = cycleTime < onDuration;
+  } else {
+    dyn.active = false;
+  }
+}
+
+function handleFireFieldTick(state: GameState, dyn: MapEntityState): void {
+  if (!dyn.enabled) {
+    dyn.active = false;
+    dyn.triggered = false;
+    return;
+  }
+  const currentPhase = state.tick % 1860;
+  dyn.triggered = currentPhase >= 1260 && currentPhase < 1380; // 2s warning
+  dyn.active = currentPhase >= 1380; // 8s fire
+}
+
+function handleActivator(
+  state: GameState,
+  map: MapData,
+  content: ContentIndex,
+  data: MapEntityData,
+  dyn: MapEntityState,
+): void {
+  const trigger = str(data.params, "trigger") || "touch";
+  const mode = str(data.params, "mode") || "toggle";
+
+  if (trigger === "touch") {
+    let anyInside = false;
+    for (const p of state.players) {
+      const char = content.characters[p.characterId];
+      if (char === undefined) continue;
+      const inside = aabbOverlap(
+        data.pos.x,
+        data.pos.y,
+        data.size.w / 2,
+        data.size.h / 2,
+        p.pos.x,
+        p.pos.y,
+        char.hitbox.w / 2,
+        char.hitbox.h / 2,
+      );
+      if (inside) {
+        anyInside = true;
+        break;
+      }
+    }
+
+    if (!anyInside) {
+      for (const d of state.droids) {
+        if (
+          aabbOverlap(
+            data.pos.x,
+            data.pos.y,
+            data.size.w / 2,
+            data.size.h / 2,
+            d.pos.x,
+            d.pos.y,
+            0.4,
+            0.45,
+          )
+        ) {
+          anyInside = true;
+          break;
+        }
+      }
+    }
+
+    if (!anyInside) {
+      for (const c of state.creeps) {
+        if (
+          aabbOverlap(
+            data.pos.x,
+            data.pos.y,
+            data.size.w / 2,
+            data.size.h / 2,
+            c.pos.x,
+            c.pos.y,
+            0.4,
+            0.4,
+          )
+        ) {
+          anyInside = true;
+          break;
+        }
+      }
+    }
+
+    if (mode === "momentary") {
+      dyn.active = anyInside;
+    } else {
+      // toggle or once: detect rising edge using dyn.active as "was touched last tick"
+      const previouslyTouched = !!dyn.active;
+      dyn.active = anyInside;
+
+      if (anyInside && !previouslyTouched) {
+        if (mode === "once" && !dyn.triggered) {
+          dyn.triggered = true;
+          triggerTargets(state, map, data.targets);
+        } else if (mode === "toggle" && dyn.cooldown === 0) {
+          triggerTargets(state, map, data.targets);
+          dyn.cooldown = num(data.params, "cooldownTicks", 30);
+        }
+      }
+    }
+  }
+}
+
+function handleTurret(
+  state: GameState,
+  map: MapData,
+  data: MapEntityData,
+  dyn: MapEntityState,
+): void {
+  if (dyn.cooldown > 0) dyn.cooldown -= 1;
+  if (dyn.cooldown <= 0) {
+    const team = str(data.params, "team") || "RED";
+    const range = num(data.params, "range", 15);
+    const dps = num(data.params, "dps", 50);
+
+    let targetPos: Vec2 | null = null;
+    let minDist = range * range;
+
+    // Find closest enemy player
+    for (const p of state.players) {
+      if (p.health <= 0 || p.team === team) continue;
+      const dx = p.pos.x - data.pos.x;
+      const dy = p.pos.y - data.pos.y;
+      const dist2 = dx * dx + dy * dy;
+      // biome-ignore lint/suspicious/noExplicitAny: valid
+      if (dist2 < minDist && isTargetVisible(state, map, p.pos, team as any)) {
+        minDist = dist2;
+        targetPos = p.pos;
+      }
+    }
+
+    // Find closest enemy droid
+    for (const d of state.droids) {
+      if (d.health <= 0 || d.team === team) continue;
+      const dx = d.pos.x - data.pos.x;
+      const dy = d.pos.y - data.pos.y;
+      const dist2 = dx * dx + dy * dy;
+      // biome-ignore lint/suspicious/noExplicitAny: valid
+      if (dist2 < minDist && isTargetVisible(state, map, d.pos, team as any)) {
+        minDist = dist2;
+        targetPos = d.pos;
+      }
+    }
+
+    // Find closest creep (neutral, so anyone can target them)
+    for (const c of state.creeps) {
+      if (c.health <= 0) continue;
+      const dx = c.pos.x - data.pos.x;
+      const dy = c.pos.y - data.pos.y;
+      const dist2 = dx * dx + dy * dy;
+      // biome-ignore lint/suspicious/noExplicitAny: valid
+      if (dist2 < minDist && isTargetVisible(state, map, c.pos, team as any)) {
+        minDist = dist2;
+        targetPos = c.pos;
+      }
+    }
+
+    if (targetPos) {
+      // Shoot!
+      const dx = targetPos.x - data.pos.x;
+      // Shoot from the top of the turret (Y axis points down, so subtract half height)
+      const startY = data.pos.y - data.size.h / 2;
+      const dy = targetPos.y - startY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const speed = 20;
+      state.projectiles.push({
+        id: state.nextEntityId++,
+        // biome-ignore lint/suspicious/noExplicitAny: valid
+        team: team as any,
+        pos: { x: data.pos.x, y: startY },
+        vel: { x: (dx / dist) * speed, y: (dy / dist) * speed },
+        radius: 0.3,
+        damage: dps * (30 / 60), // assume it shoots every 30 ticks (0.5s)
+        ticksLeft: 60,
+      });
+      dyn.cooldown = 30; // 0.5s cooldown
+    }
+  }
+}
+
+function handleDroidSpawner(state: GameState, data: MapEntityData, dyn: MapEntityState): void {
+  const intervalTicks = num(data.params, "intervalTicks", 600); // 10s default
+  if (intervalTicks <= 0) return;
+
+  if (dyn.cooldown > 0) dyn.cooldown -= 1;
+  if (dyn.cooldown <= 0) {
+    dyn.cooldown = intervalTicks;
+
+    const team = str(data.params, "team") || "RED";
+    const count = num(data.params, "count", 2);
+
+    for (let j = 0; j < count; j++) {
+      state.droids.push({
+        id: state.nextEntityId++,
+        type: "small",
+        // biome-ignore lint/suspicious/noExplicitAny: valid
+        team: team as any,
+        pos: { x: data.pos.x + j * 1.5, y: data.pos.y },
+        vel: { x: 0, y: 0 },
+        health: 250,
+        maxHealth: 250,
+        facing: team === "RED" ? 1 : -1,
+        grounded: false,
+        groundShapeId: "",
+        attackCooldown: 0,
+        pathTargetId: str(data.params, "pathId"),
+      });
+    }
+  }
+}
+
+function handleCreepDen(state: GameState, data: MapEntityData, dyn: MapEntityState): void {
+  if (dyn.cooldown > 0) dyn.cooldown -= 1;
+
+  const hasAliveCreep = state.creeps.some((c) => c.denId === data.id);
+  if (!hasAliveCreep && dyn.cooldown <= 0) {
+    state.creeps.push({
+      id: state.nextEntityId++,
+      pos: { x: data.pos.x, y: data.pos.y },
+      vel: { x: 0, y: 0 },
+      health: 150,
+      maxHealth: 150,
+      facing: 1,
+      grounded: false,
+      groundShapeId: "",
+      fleeTicks: 0,
+      origin: { x: data.pos.x, y: data.pos.y },
+      denId: data.id,
+    });
+  }
+}
+
 export function stepMapEntities(state: GameState, map: MapData, content: ContentIndex): void {
   // 1. Process timer ticks
   for (let i = 0; i < map.entities.length; i++) {
@@ -131,33 +381,11 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
     }
 
     if (data.type === "timer") {
-      if (!dyn.enabled) {
-        dyn.timerElapsed = 0;
-        dyn.active = false;
-        continue;
-      }
-      dyn.timerElapsed = (dyn.timerElapsed ?? 0) + 1;
-      const period = num(data.params, "periodTicks", 120);
-      const onDuration = num(data.params, "onDurationTicks", 60);
-      const startDelay = num(data.params, "startDelayTicks", 0);
-      if (dyn.timerElapsed >= startDelay) {
-        const t = dyn.timerElapsed - startDelay;
-        const cycleTime = t % period;
-        dyn.active = cycleTime < onDuration;
-      } else {
-        dyn.active = false;
-      }
+      handleTimer(data, dyn);
     }
 
     if (data.type === "fireField") {
-      if (!dyn.enabled) {
-        dyn.active = false;
-        dyn.triggered = false;
-        continue;
-      }
-      const currentPhase = state.tick % 1860;
-      dyn.triggered = currentPhase >= 1260 && currentPhase < 1380; // 2s warning
-      dyn.active = currentPhase >= 1380; // 8s fire
+      handleFireFieldTick(state, dyn);
     }
   }
 
@@ -169,88 +397,7 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
     if (!dyn.enabled) continue;
 
     if (data.type === "activator") {
-      const trigger = str(data.params, "trigger") || "touch";
-      const mode = str(data.params, "mode") || "toggle";
-
-      if (trigger === "touch") {
-        let anyInside = false;
-        for (const p of state.players) {
-          const char = content.characters[p.characterId];
-          if (char === undefined) continue;
-          const inside = aabbOverlap(
-            data.pos.x,
-            data.pos.y,
-            data.size.w / 2,
-            data.size.h / 2,
-            p.pos.x,
-            p.pos.y,
-            char.hitbox.w / 2,
-            char.hitbox.h / 2,
-          );
-          if (inside) {
-            anyInside = true;
-            break;
-          }
-        }
-
-        if (!anyInside) {
-          for (const d of state.droids) {
-            if (
-              aabbOverlap(
-                data.pos.x,
-                data.pos.y,
-                data.size.w / 2,
-                data.size.h / 2,
-                d.pos.x,
-                d.pos.y,
-                0.4,
-                0.45,
-              )
-            ) {
-              anyInside = true;
-              break;
-            }
-          }
-        }
-
-        if (!anyInside) {
-          for (const c of state.creeps) {
-            if (
-              aabbOverlap(
-                data.pos.x,
-                data.pos.y,
-                data.size.w / 2,
-                data.size.h / 2,
-                c.pos.x,
-                c.pos.y,
-                0.4,
-                0.4,
-              )
-            ) {
-              anyInside = true;
-              break;
-            }
-          }
-        }
-
-        if (mode === "momentary") {
-          dyn.active = anyInside;
-        } else {
-          // toggle or once: detect rising edge using dyn.active as "was touched last tick"
-          const previouslyTouched = !!dyn.active;
-          dyn.active = anyInside;
-
-          if (anyInside && !previouslyTouched) {
-            if (mode === "once" && !dyn.triggered) {
-              dyn.triggered = true;
-              triggerTargets(state, map, data.targets);
-            } else if (mode === "toggle" && dyn.cooldown === 0) {
-              triggerTargets(state, map, data.targets);
-              dyn.cooldown = num(data.params, "cooldownTicks", 30);
-            }
-          }
-        }
-      }
+      handleActivator(state, map, content, data, dyn);
     }
   }
 
@@ -370,127 +517,15 @@ export function stepMapEntities(state: GameState, map: MapData, content: Content
     if (!data || !dyn || dyn.dead || !dyn.enabled) continue;
 
     if (data.type === "turret") {
-      if (dyn.cooldown > 0) dyn.cooldown -= 1;
-      if (dyn.cooldown <= 0) {
-        const team = str(data.params, "team") || "RED";
-        const range = num(data.params, "range", 15);
-        const dps = num(data.params, "dps", 50);
-
-        let targetPos: Vec2 | null = null;
-        let minDist = range * range;
-
-        // Find closest enemy player
-        for (const p of state.players) {
-          if (p.health <= 0 || p.team === team) continue;
-          const dx = p.pos.x - data.pos.x;
-          const dy = p.pos.y - data.pos.y;
-          const dist2 = dx * dx + dy * dy;
-          // biome-ignore lint/suspicious/noExplicitAny: valid
-          if (dist2 < minDist && isTargetVisible(state, map, p.pos, team as any)) {
-            minDist = dist2;
-            targetPos = p.pos;
-          }
-        }
-
-        // Find closest enemy droid
-        for (const d of state.droids) {
-          if (d.health <= 0 || d.team === team) continue;
-          const dx = d.pos.x - data.pos.x;
-          const dy = d.pos.y - data.pos.y;
-          const dist2 = dx * dx + dy * dy;
-          // biome-ignore lint/suspicious/noExplicitAny: valid
-          if (dist2 < minDist && isTargetVisible(state, map, d.pos, team as any)) {
-            minDist = dist2;
-            targetPos = d.pos;
-          }
-        }
-
-        // Find closest creep (neutral, so anyone can target them)
-        for (const c of state.creeps) {
-          if (c.health <= 0) continue;
-          const dx = c.pos.x - data.pos.x;
-          const dy = c.pos.y - data.pos.y;
-          const dist2 = dx * dx + dy * dy;
-          // biome-ignore lint/suspicious/noExplicitAny: valid
-          if (dist2 < minDist && isTargetVisible(state, map, c.pos, team as any)) {
-            minDist = dist2;
-            targetPos = c.pos;
-          }
-        }
-
-        if (targetPos) {
-          // Shoot!
-          const dx = targetPos.x - data.pos.x;
-          // Shoot from the top of the turret (Y axis points down, so subtract half height)
-          const startY = data.pos.y - data.size.h / 2;
-          const dy = targetPos.y - startY;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          const speed = 20;
-          state.projectiles.push({
-            id: state.nextEntityId++,
-            // biome-ignore lint/suspicious/noExplicitAny: valid
-            team: team as any,
-            pos: { x: data.pos.x, y: startY },
-            vel: { x: (dx / dist) * speed, y: (dy / dist) * speed },
-            radius: 0.3,
-            damage: dps * (30 / 60), // assume it shoots every 30 ticks (0.5s)
-            ticksLeft: 60,
-          });
-          dyn.cooldown = 30; // 0.5s cooldown
-        }
-      }
+      handleTurret(state, map, data, dyn);
     }
 
     if (data.type === "droidSpawner") {
-      const intervalTicks = num(data.params, "intervalTicks", 600); // 10s default
-      if (intervalTicks <= 0) continue;
-
-      if (dyn.cooldown > 0) dyn.cooldown -= 1;
-      if (dyn.cooldown <= 0) {
-        dyn.cooldown = intervalTicks;
-
-        const team = str(data.params, "team") || "RED";
-        const count = num(data.params, "count", 2);
-
-        for (let j = 0; j < count; j++) {
-          state.droids.push({
-            id: state.nextEntityId++,
-            type: "small",
-            // biome-ignore lint/suspicious/noExplicitAny: valid
-            team: team as any,
-            pos: { x: data.pos.x + j * 1.5, y: data.pos.y },
-            vel: { x: 0, y: 0 },
-            health: 250,
-            maxHealth: 250,
-            facing: team === "RED" ? 1 : -1,
-            grounded: false,
-            groundShapeId: "",
-            attackCooldown: 0,
-            pathTargetId: str(data.params, "pathId"),
-          });
-        }
-      }
+      handleDroidSpawner(state, data, dyn);
     }
 
     if (data.type === "creepDen") {
-      if (dyn.cooldown > 0) dyn.cooldown -= 1;
-
-      const hasAliveCreep = state.creeps.some((c) => c.denId === data.id);
-      if (!hasAliveCreep && dyn.cooldown <= 0) {
-        state.creeps.push({
-          id: state.nextEntityId++,
-          pos: { x: data.pos.x, y: data.pos.y },
-          vel: { x: 0, y: 0 },
-          health: 150,
-          maxHealth: 150,
-          facing: 1,
-          grounded: false,
-          groundShapeId: "",
-          fleeTicks: 0,
-          origin: { x: data.pos.x, y: data.pos.y },
-          denId: data.id,
-        });
-      }
+      handleCreepDen(state, data, dyn);
     }
   }
   // Instant kill-and-respawn (doc 07 killZone), applied to every death cause
@@ -524,6 +559,98 @@ function respawnPlayer(
   p.dropTicks = 0;
 }
 
+function applyJumper(data: MapEntityData, dyn: MapEntityState, p: PlayerState): void {
+  if (dyn.cooldown > 0) return;
+  const rad = num(data.params, "direction", 90) * DEG_TO_RAD;
+  const strength = num(data.params, "strength", 22);
+  p.vel.x = dcos(rad) * strength;
+  p.vel.y = -dsin(rad) * strength;
+  p.grounded = false;
+  p.jumpCutApplied = true;
+  dyn.cooldown = num(data.params, "cooldownTicks", 30);
+}
+
+function applyForceField(data: MapEntityData, p: PlayerState): void {
+  p.vel.x += num(data.params, "forceX", 0) * DT;
+  p.vel.y += num(data.params, "forceY", -50) * DT;
+  // If the net force is lifting the player, unground them so they don't
+  // get snapped back by the grounded-tangent logic in stepPlayer.
+  if (p.vel.y < -0.01) p.grounded = false;
+}
+
+function applyTeleporter(
+  state: GameState,
+  map: MapData,
+  data: MapEntityData,
+  dyn: MapEntityState,
+  p: PlayerState,
+): void {
+  if (dyn.cooldown > 0) return;
+  const targetIndex = map.entities.findIndex((e) => e.id === str(data.params, "targetId"));
+  const target = map.entities[targetIndex];
+  const targetDyn = state.mapEntities[targetIndex];
+  if (target === undefined || targetDyn === undefined || target.id === data.id) return;
+  p.pos.x = target.pos.x;
+  p.pos.y = target.pos.y;
+  if (!bool(data.params, "preserveVelocity")) {
+    p.vel.x = 0;
+    p.vel.y = 0;
+  }
+  p.grounded = false;
+  const cd = num(data.params, "cooldownTicks", 60);
+  dyn.cooldown = cd;
+  targetDyn.cooldown = Math.max(targetDyn.cooldown, cd); // no instant ping-pong
+}
+
+function applyFireField(data: MapEntityData, dyn: MapEntityState, p: PlayerState): void {
+  if (dyn.active) {
+    p.health = Math.max(0, p.health - num(data.params, "dps", 400) * DT);
+  }
+}
+
+function applyHealField(data: MapEntityData, p: PlayerState, maxHealth: number): void {
+  p.health = Math.min(maxHealth, p.health + num(data.params, "hps", 20) * DT);
+}
+
+function applyKillZone(p: PlayerState): void {
+  p.health = 0;
+}
+
+function applyFluxCube(data: MapEntityData, dyn: MapEntityState, p: PlayerState): void {
+  const denomStr = str(data.params, "denomination") || "1";
+  const denom = denomStr === "5" ? 5 : 1;
+  p.flux += denom;
+  dyn.enabled = false;
+  const respawnTicks = num(data.params, "respawnTimeTicks", 0);
+  if (respawnTicks > 0) {
+    dyn.cooldown = respawnTicks;
+  }
+}
+
+function applyHealthPickup(
+  data: MapEntityData,
+  dyn: MapEntityState,
+  p: PlayerState,
+  maxHealth: number,
+): void {
+  if (p.health >= maxHealth) return;
+  const amount = num(data.params, "amount", 20);
+  p.health = Math.min(maxHealth, p.health + amount);
+  dyn.enabled = false;
+  const respawnTicks = num(data.params, "respawnTimeTicks", 0);
+  if (respawnTicks > 0) {
+    dyn.cooldown = respawnTicks;
+  }
+}
+
+function applyShop(data: MapEntityData, p: PlayerState, maxHealth: number): void {
+  const baseTeam = str(data.params, "team") || "RED";
+  if (p.team === baseTeam) {
+    const hps = num(data.params, "hps", 50);
+    p.health = Math.min(maxHealth, p.health + hps * DT);
+  }
+}
+
 function applyEntity(
   state: GameState,
   map: MapData,
@@ -533,86 +660,33 @@ function applyEntity(
   maxHealth: number,
 ): void {
   switch (data.type) {
-    case "jumper": {
-      if (dyn.cooldown > 0) break;
-      const rad = num(data.params, "direction", 90) * DEG_TO_RAD;
-      const strength = num(data.params, "strength", 22);
-      p.vel.x = dcos(rad) * strength;
-      p.vel.y = -dsin(rad) * strength;
-      p.grounded = false;
-      p.jumpCutApplied = true;
-      dyn.cooldown = num(data.params, "cooldownTicks", 30);
+    case "jumper":
+      applyJumper(data, dyn, p);
       break;
-    }
-    case "forceField": {
-      p.vel.x += num(data.params, "forceX", 0) * DT;
-      p.vel.y += num(data.params, "forceY", -50) * DT;
-      // If the net force is lifting the player, unground them so they don't
-      // get snapped back by the grounded-tangent logic in stepPlayer.
-      if (p.vel.y < -0.01) p.grounded = false;
+    case "forceField":
+      applyForceField(data, p);
       break;
-    }
-    case "teleporter": {
-      if (dyn.cooldown > 0) break;
-      const targetIndex = map.entities.findIndex((e) => e.id === str(data.params, "targetId"));
-      const target = map.entities[targetIndex];
-      const targetDyn = state.mapEntities[targetIndex];
-      if (target === undefined || targetDyn === undefined || target.id === data.id) break;
-      p.pos.x = target.pos.x;
-      p.pos.y = target.pos.y;
-      if (!bool(data.params, "preserveVelocity")) {
-        p.vel.x = 0;
-        p.vel.y = 0;
-      }
-      p.grounded = false;
-      const cd = num(data.params, "cooldownTicks", 60);
-      dyn.cooldown = cd;
-      targetDyn.cooldown = Math.max(targetDyn.cooldown, cd); // no instant ping-pong
+    case "teleporter":
+      applyTeleporter(state, map, data, dyn, p);
       break;
-    }
     case "fireField":
-      if (dyn.active) {
-        p.health = Math.max(0, p.health - num(data.params, "dps", 400) * DT);
-      }
+      applyFireField(data, dyn, p);
       break;
     case "healField":
-      p.health = Math.min(maxHealth, p.health + num(data.params, "hps", 20) * DT);
+      applyHealField(data, p, maxHealth);
       break;
     case "killZone":
-      p.health = 0;
+      applyKillZone(p);
       break;
-    case "fluxCube": {
-      const denomStr = str(data.params, "denomination") || "1";
-      const denom = denomStr === "5" ? 5 : 1;
-      p.flux += denom;
-      dyn.enabled = false;
-      const respawnTicks = num(data.params, "respawnTimeTicks", 0);
-      if (respawnTicks > 0) {
-        dyn.cooldown = respawnTicks;
-      }
+    case "fluxCube":
+      applyFluxCube(data, dyn, p);
       break;
-    }
-    case "healthPickup": {
-      if (p.health >= maxHealth) {
-        break;
-      }
-      const amount = num(data.params, "amount", 20);
-      p.health = Math.min(maxHealth, p.health + amount);
-      dyn.enabled = false;
-      const respawnTicks = num(data.params, "respawnTimeTicks", 0);
-      if (respawnTicks > 0) {
-        dyn.cooldown = respawnTicks;
-      }
+    case "healthPickup":
+      applyHealthPickup(data, dyn, p, maxHealth);
       break;
-    }
-    case "shop": {
-      const baseTeam = str(data.params, "team") || "RED";
-      if (p.team === baseTeam) {
-        const hps = num(data.params, "hps", 50);
-        p.health = Math.min(maxHealth, p.health + hps * DT);
-      }
+    case "shop":
+      applyShop(data, p, maxHealth);
       break;
-    }
     default:
       break;
   }

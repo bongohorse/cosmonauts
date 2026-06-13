@@ -123,10 +123,18 @@ already planned (noted inline). **New future-feature ideas go here.**
 - **Player vs Player** — the core M9 deliverable.
 - **Player vs Bots**, and mixed PvP/bot lobbies.
 - **Bot takeover on disconnect** — a bot seamlessly assumes a dropped player's hero (builds on M8 bots + M9 netcode).
+- **Reconnect / rejoin in progress** — a dropped player rejoins and reclaims their hero from the fill-bot (the other half of bot-takeover; clean given the authoritative server).
 - **Ranked matchmaking + Elo** rating, placements, and a ladder.
 - **Custom matches** with full custom settings (extends the M8 `MatchConfig`).
 - **Server browser** (Counter-Strike style): community-hosted lobbies / game modes that others can find and join.
 - **Anti-cheat** — the authoritative server + zod-validated client inputs are the foundation (clients submit inputs, not state, so they cannot fabricate positions/health); layer on server-side anomaly/input-rate detection and replay-based review of reported matches. (The delayed live-spectate below is also an anti-stream-sniping measure.)
+
+### Gameplay & Modes
+- **Practice / sandbox mode** — free-play with dummies, infinite flux, and cooldown resets to trial heroes/builds; doubles as a balance-testing tool.
+- **Tutorial** — a scripted intro teaching core mechanics (the KB specs one).
+- **Co-op vs AI** — a full team of players against bots.
+- **Draft / pick-ban phase** for ranked.
+- **Surrender / forfeit vote**.
 
 ### Spectating & Replays
 > Near-free from the architecture: the sim is deterministic and input-driven, so a match is
@@ -135,6 +143,7 @@ already planned (noted inline). **New future-feature ideas go here.**
 - **Live spectating** with an intentional **delay (e.g. 30–120 s)** to prevent stream-sniping / ghosting.
 - **"Live now" widget** — a panel showing who is currently live / which matches are streamable right now, as an entry point to spectate.
 - Browse and replay **past matches** from a history list.
+- **Kill-cam / death recap** and **replay highlight/clip export** — both fall out of the replay layer.
 
 ### Community Content & Tooling
 - **Custom maps**: build (in-game editor exists, M4), **share**, and **map voting** in lobbies.
@@ -142,6 +151,7 @@ already planned (noted inline). **New future-feature ideas go here.**
 - **Hero editor** — author new heroes (stats + abilities + upgrades), data-driven via the content schemas.
 - **Particle editor** — author the particle/VFX schema (pairs with the *Particle Engine* backlog item above).
 - **AI generators** — assisted generation of maps and heroes.
+- **Mod / behavior API** — extend the planned JSON-driven behavior trees into broader community modding.
 
 ### Community & Web Presence
 - **Feature-request board with voting** — public idea submission + upvotes to surface community priorities (e.g. Nolt, like Rust's [rust.nolt.io](https://rust.nolt.io/)). Until this exists, this Part 4 list is the capture point.
@@ -155,10 +165,30 @@ already planned (noted inline). **New future-feature ideas go here.**
 - **Mobile support** — touch controls and a responsive layout.
 - **In-game changelog** — a "what's new" / patch-notes panel surfaced in-client.
 
+### Accessibility & Localization
+- **Colorblind / accessibility modes** — important here specifically: the game is red-vs-blue team-coded, so colorblind support is closer to essential than optional.
+- **Localization / i18n** — community-contributed translations fit the open-source model.
+- **In-client hero/ability codex + tooltips** — learn kits without leaving the game (reuses the wiki content).
+
 ### Social
 - **Chat**: global, all-chat, and team-chat channels.
 - **Chat filter / moderation**.
+- **Pings / quick-chat / emote wheel** — non-text comms; great for cross-language play and reduces chat toxicity.
+- **Friends list + party / invite system** (the KB references parties).
+- **Player reporting + review queue** — pairs with anti-cheat and chat moderation.
 
 ### Accounts, Identity & Progression
 - **Steam login / auth** (and/or other providers) for persistence, ranking, and ownership of custom content.
 - **Achievements** — unlockable achievements and player profile stats.
+- **Match history + per-hero stats dashboard** and **leaderboards** (global / per-hero) — pair with the replay system and Elo.
+- **Ranked seasons** with resets and cosmetic rewards.
+- **Cosmetic-only unlocks / skins / announcer packs** — explicitly non-pay-to-win, fed by the workshop.
+
+### Platform & Infrastructure
+- **Cross-platform play** — web / desktop / mobile run the same deterministic sim, so cross-play is nearly free.
+- **Self-hostable dedicated-server binary** — pairs with the server browser; open-source-friendly (community-hosted servers).
+- **Cloud-synced settings & custom maps** — tied to the account / Steam login.
+- **Balance telemetry** — aggregate match data to tune heroes data-drivenly (closes the loop on the data-driven content design).
+
+### Audio & Feel
+- **Announcer** — first blood, "base under attack", drill at 1/3 HP, etc. (the KB lists the hooks); big for the Awesomenauts feel.

@@ -126,6 +126,7 @@ already planned (noted inline). **New future-feature ideas go here.**
 - **Ranked matchmaking + Elo** rating, placements, and a ladder.
 - **Custom matches** with full custom settings (extends the M8 `MatchConfig`).
 - **Server browser** (Counter-Strike style): community-hosted lobbies / game modes that others can find and join.
+- **Anti-cheat** — the authoritative server + zod-validated client inputs are the foundation (clients submit inputs, not state, so they cannot fabricate positions/health); layer on server-side anomaly/input-rate detection and replay-based review of reported matches. (The delayed live-spectate below is also an anti-stream-sniping measure.)
 
 ### Spectating & Replays
 > Near-free from the architecture: the sim is deterministic and input-driven, so a match is
@@ -147,6 +148,7 @@ already planned (noted inline). **New future-feature ideas go here.**
 - **Settings menu**: keybinds, **FPS cap**, **graphics quality (low–high)**, audio.
 - **UI layer** — polished HUD/menus (replacing the primitive Pixi rectangles; see the *UI* backlog item above).
 - **Mobile support** — touch controls and a responsive layout.
+- **In-game changelog** — a "what's new" / patch-notes panel surfaced in-client.
 
 ### Social
 - **Chat**: global, all-chat, and team-chat channels.

@@ -128,6 +128,8 @@ already planned (noted inline). **New future-feature ideas go here.**
 - **Custom matches** with full custom settings (extends the M8 `MatchConfig`).
 - **Server browser** (Counter-Strike style): community-hosted lobbies / game modes that others can find and join.
 - **Anti-cheat** — the authoritative server + zod-validated client inputs are the foundation (clients submit inputs, not state, so they cannot fabricate positions/health); layer on server-side anomaly/input-rate detection and replay-based review of reported matches. (The delayed live-spectate below is also an anti-stream-sniping measure.)
+- **Region selection + ping-based matchmaking** — route players to nearby servers for low latency.
+- **Smurf / boost protection** for ranked integrity.
 
 ### Gameplay & Modes
 - **Practice / sandbox mode** — free-play with dummies, infinite flux, and cooldown resets to trial heroes/builds; doubles as a balance-testing tool.
@@ -135,6 +137,7 @@ already planned (noted inline). **New future-feature ideas go here.**
 - **Co-op vs AI** — a full team of players against bots.
 - **Draft / pick-ban phase** for ranked.
 - **Surrender / forfeit vote**.
+- **Bot difficulty levels** (0–6 bars, per the KB) for practice and bot matches.
 
 ### Spectating & Replays
 > Near-free from the architecture: the sim is deterministic and input-driven, so a match is
@@ -144,6 +147,9 @@ already planned (noted inline). **New future-feature ideas go here.**
 - **"Live now" widget** — a panel showing who is currently live / which matches are streamable right now, as an entry point to spectate.
 - Browse and replay **past matches** from a history list.
 - **Kill-cam / death recap** and **replay highlight/clip export** — both fall out of the replay layer.
+- **Observer / caster tools** — player names, gold/level graphs, draft view, and a telestrator for casting.
+- **Replay playback controls** — variable speed, free-cam, and jump-to-event.
+- **Tournament / bracket system** for community events.
 
 ### Community Content & Tooling
 - **Custom maps**: build (in-game editor exists, M4), **share**, and **map voting** in lobbies.
@@ -152,6 +158,8 @@ already planned (noted inline). **New future-feature ideas go here.**
 - **Particle editor** — author the particle/VFX schema (pairs with the *Particle Engine* backlog item above).
 - **AI generators** — assisted generation of maps and heroes.
 - **Mod / behavior API** — extend the planned JSON-driven behavior trees into broader community modding.
+- **In-editor "playtest with bots"** button — test a map without leaving the editor.
+- **Curated / featured community maps** with tags and discovery.
 
 ### Community & Web Presence
 - **Feature-request board with voting** — public idea submission + upvotes to surface community priorities (e.g. Nolt, like Rust's [rust.nolt.io](https://rust.nolt.io/)). Until this exists, this Part 4 list is the capture point.
@@ -164,11 +172,19 @@ already planned (noted inline). **New future-feature ideas go here.**
 - **UI layer** — polished HUD/menus (replacing the primitive Pixi rectangles; see the *UI* backlog item above).
 - **Mobile support** — touch controls and a responsive layout.
 - **In-game changelog** — a "what's new" / patch-notes panel surfaced in-client.
+- **Minimap** — the KB relies on it (structure HP, hidden-unit reveal, health-pack dots); core MOBA UI.
+- **Post-match scoreboard** with detailed per-player stats and a **damage breakdown**.
+- **Camera options** — zoom, lock-to-hero, free-cam, edge-pan.
+- **Main-menu news feed** — surface the web changelog / events in-client.
+- **Loadout presets + shareable build codes** — the shop already has 3-of-6 upgrade loadouts and recommended builds (KB); add presets and shareable codes.
 
 ### Accessibility & Localization
 - **Colorblind / accessibility modes** — important here specifically: the game is red-vs-blue team-coded, so colorblind support is closer to essential than optional.
 - **Localization / i18n** — community-contributed translations fit the open-source model.
 - **In-client hero/ability codex + tooltips** — learn kits without leaving the game (reuses the wiki content).
+- **Reduced-motion / reduced-flashing (photosensitivity-safe) mode** — a responsibility item for a particle/VFX-heavy game.
+- **Controller / gamepad support**; **UI scaling**.
+- **Subtitles / captions** for the announcer and key audio cues.
 
 ### Social
 - **Chat**: global, all-chat, and team-chat channels.
@@ -176,6 +192,8 @@ already planned (noted inline). **New future-feature ideas go here.**
 - **Pings / quick-chat / emote wheel** — non-text comms; great for cross-language play and reduces chat toxicity.
 - **Friends list + party / invite system** (the KB references parties).
 - **Player reporting + review queue** — pairs with anti-cheat and chat moderation.
+- **Honor / commendation system** — positive-behavior reinforcement (proven anti-toxicity).
+- **Player mute / block**.
 
 ### Accounts, Identity & Progression
 - **Steam login / auth** (and/or other providers) for persistence, ranking, and ownership of custom content.
@@ -183,12 +201,21 @@ already planned (noted inline). **New future-feature ideas go here.**
 - **Match history + per-hero stats dashboard** and **leaderboards** (global / per-hero) — pair with the replay system and Elo.
 - **Ranked seasons** with resets and cosmetic rewards.
 - **Cosmetic-only unlocks / skins / announcer packs** — explicitly non-pay-to-win, fed by the workshop.
+- **Account data export** (privacy / GDPR).
 
 ### Platform & Infrastructure
 - **Cross-platform play** — web / desktop / mobile run the same deterministic sim, so cross-play is nearly free.
 - **Self-hostable dedicated-server binary** — pairs with the server browser; open-source-friendly (community-hosted servers).
 - **Cloud-synced settings & custom maps** — tied to the account / Steam login.
 - **Balance telemetry** — aggregate match data to tune heroes data-drivenly (closes the loop on the data-driven content design).
+- **Server status page** — public uptime / incident status.
 
 ### Audio & Feel
 - **Announcer** — first blood, "base under attack", drill at 1/3 HP, etc. (the KB lists the hooks); big for the Awesomenauts feel.
+
+### Live Ops & Balancing
+- **Test realm / PTR** — try balance changes before they go live (fits the data-driven content model + open source).
+- **Seasonal events / limited-time modes** — ties the holiday-themes backlog item.
+
+### Sustainability
+- **Donations / Patreon** ("support the project"); a cosmetic-only store *if* ever monetized — never pay-to-win.

@@ -12,6 +12,8 @@ is original. Geometric placeholder art is used until gameplay is proven.
 
 - `docs/ROADMAP.md` — the single hub for architecture, the four design pillars, and
   milestones M1–M10. Start here.
+- `docs/BACKLOG.md` — not-yet-scheduled work: known issues / tech debt + the post-M10
+  feature & live-service idea parking lot. New feature ideas go here, not in the roadmap.
 - `docs/wiki/` — specific mechanics: `heroes/`, `elements/`, `maps/`, `mechanics/`
   (physics, combat, ai-bots, progression, roles, status-effects). The Roadmap says *what
   and when*; the Wiki says *how* (exact numbers, tick rates, ability behavior).

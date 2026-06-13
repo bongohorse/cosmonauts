@@ -18,6 +18,9 @@ To streamline our architecture and project management, all technical design docu
 4. **[M6-RENDERER-UPGRADES.md](./M6-RENDERER-UPGRADES.md)**
    PixiJS v8 renderer implementation guide. **Read this before touching `packages/client` rendering code.**
 
+5. **[BACKLOG.md](./BACKLOG.md)**
+   Not-yet-scheduled work: near-term known issues / tech debt, and the post-M10 feature & live-service idea parking lot. New feature ideas go here — the Roadmap stays the committed plan.
+
 ---
 
 ## Current Status (2026-06-13)

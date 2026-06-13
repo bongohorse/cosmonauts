@@ -143,6 +143,11 @@ already planned (noted inline). **New future-feature ideas go here.**
 - **Particle editor** — author the particle/VFX schema (pairs with the *Particle Engine* backlog item above).
 - **AI generators** — assisted generation of maps and heroes.
 
+### Community & Web Presence
+- **Feature-request board with voting** — public idea submission + upvotes to surface community priorities (e.g. Nolt, like Rust's [rust.nolt.io](https://rust.nolt.io/)). Until this exists, this Part 4 list is the capture point.
+- **Public web changelog** — a richer, illustrated public-facing changelog (cf. Rust's [facepunch.com/changes](https://rust.facepunch.com/changes/)), complementing the in-game changelog and the repo `CHANGELOG.md`.
+- **Public player wiki** — a community-facing game wiki on a free host like **wiki.gg** ([terraria.wiki.gg](https://terraria.wiki.gg/)) rather than Fandom (cf. [wiki.facepunch.com/rust](https://wiki.facepunch.com/rust/)). Distinct from the internal `docs/wiki/` (the design source-of-truth).
+
 ### Client UX & Platform
 - **Player / hero selection screen**.
 - **Settings menu**: keybinds, **FPS cap**, **graphics quality (low–high)**, audio.

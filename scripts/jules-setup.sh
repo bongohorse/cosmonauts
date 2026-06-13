@@ -17,7 +17,7 @@ corepack enable pnpm
 pnpm install --frozen-lockfile
 
 # Validation gate — every step also runs in CI; a PR that fails any will not merge.
-pnpm run lint        # Biome: lint + formatting (run `pnpm lint:fix` to auto-fix)
+pnpm exec biome ci . # Biome lint + format, exactly as CI runs it (run `pnpm lint:fix` to auto-fix)
 pnpm run typecheck   # tsc --noEmit across all packages
 pnpm run test        # Vitest
 pnpm run build       # client production build

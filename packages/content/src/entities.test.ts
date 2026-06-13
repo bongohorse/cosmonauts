@@ -1,4 +1,3 @@
-import { TICK_RATE } from "@cosmonauts/sim";
 import { describe, expect, it } from "vitest";
 import { type EntityDef, toEntityData } from "./entities";
 
@@ -14,7 +13,7 @@ describe("toEntityData", () => {
 
   it("converts duration params from authored seconds to ticks", () => {
     const jumper = toEntityData({ id: "j1", type: "jumper", pos: [0, 0] } as EntityDef);
-    expect(jumper.params.cooldownTicks).toBe(Math.round(0.5 * TICK_RATE));
+    expect(jumper.params.cooldownTicks).toBe(30); // 0.5s authored @ 60Hz
     expect(jumper.params.cooldown).toBeUndefined();
 
     const tele = toEntityData({
@@ -23,7 +22,7 @@ describe("toEntityData", () => {
       pos: [0, 0],
       params: { cooldown: 1.5 },
     } as EntityDef);
-    expect(tele.params.cooldownTicks).toBe(Math.round(1.5 * TICK_RATE));
+    expect(tele.params.cooldownTicks).toBe(90); // 1.5s authored @ 60Hz
     expect(tele.params.targetId).toBe(""); // entityId default
     expect(tele.params.preserveVelocity).toBe(false);
   });

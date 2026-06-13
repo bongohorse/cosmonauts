@@ -65,7 +65,8 @@ describe("cloneState", () => {
     });
 
     expect(state.tick).toBe(0);
-    expect(state.players[0]?.health).not.toBe(0);
+    expect(state.players).toHaveLength(1);
+    expect(state.players[0]?.health).toBe(100); // unchanged from maxHealth, not the clone's 0
     expect(state.projectiles).toHaveLength(0);
   });
 });
